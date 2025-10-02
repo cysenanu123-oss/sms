@@ -21,10 +21,68 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <span class="text-sm text-gray-700" x-text="user?.first_name + ' ' + user?.last_name"></span>
-                    <button @click="logout()" class="text-red-600 hover:text-red-800">
-                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
-                    </button>
+                    <!-- Profile Dropdown -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
+                            <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                                <span x-text="user?.first_name?.charAt(0) + user?.last_name?.charAt(0)"></span>
+                            </div>
+                            <i class="fas fa-chevron-down text-gray-600 text-sm"></i>
+                        </button>
+
+                        <!-- Dropdown Menu -->
+                        <div x-show="open" @click.away="open = false" 
+                             x-transition:enter="transition ease-out duration-100"
+                             x-transition:enter-start="transform opacity-0 scale-95"
+                             x-transition:enter-end="transform opacity-100 scale-100"
+                             x-transition:leave="transition ease-in duration-75"
+                             x-transition:leave-start="transform opacity-100 scale-100"
+                             x-transition:leave-end="transform opacity-0 scale-95"
+                             class="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl z-50 border border-gray-200">
+                            
+                            <div class="p-4 border-b">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+                                        <span x-text="user?.first_name?.charAt(0) + user?.last_name?.charAt(0)"></span>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900" x-text="user?.first_name + ' ' + user?.last_name"></p>
+                                        <p class="text-sm text-gray-600" x-text="user?.email"></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-4 space-y-3">
+                                <div class="flex items-center text-sm">
+                                    <i class="fas fa-id-card w-6 text-gray-500"></i>
+                                    <span class="text-gray-600">Student ID:</span>
+                                    <span class="ml-auto font-semibold text-gray-900">STU-2024-001</span>
+                                </div>
+                                <div class="flex items-center text-sm">
+                                    <i class="fas fa-chalkboard w-6 text-gray-500"></i>
+                                    <span class="text-gray-600">Class:</span>
+                                    <span class="ml-auto font-semibold text-gray-900">Grade 10-A</span>
+                                </div>
+                                <div class="flex items-center text-sm">
+                                    <i class="fas fa-calendar w-6 text-gray-500"></i>
+                                    <span class="text-gray-600">Academic Year:</span>
+                                    <span class="ml-auto font-semibold text-gray-900">2024-2025</span>
+                                </div>
+                                <div class="flex items-center text-sm">
+                                    <i class="fas fa-phone w-6 text-gray-500"></i>
+                                    <span class="text-gray-600">Contact:</span>
+                                    <span class="ml-auto font-semibold text-gray-900">+233 XX XXX XXXX</span>
+                                </div>
+                            </div>
+
+                            <div class="border-t p-2">
+                                <button @click="logout()" class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded flex items-center">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>
+                                    <span>Logout</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -80,51 +138,126 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- My Courses -->
+        <!-- Timetable Section -->
+        <div class="bg-white rounded-lg shadow mb-8">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-900">
+                    <i class="fas fa-calendar-alt mr-2 text-blue-600"></i>My Timetable
+                </h3>
+                <button @click="downloadTimetable()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center">
+                    <i class="fas fa-download mr-2"></i>Download Timetable
+                </button>
+            </div>
+            <div class="p-6 overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Time</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Monday</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Tuesday</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Wednesday</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Thursday</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Friday</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="py-3 px-4 text-sm font-medium">8:00 AM</td>
+                            <td class="py-3 px-4"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Mathematics</span></td>
+                            <td class="py-3 px-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Science</span></td>
+                            <td class="py-3 px-4"><span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">English</span></td>
+                            <td class="py-3 px-4"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">History</span></td>
+                            <td class="py-3 px-4"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Mathematics</span></td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="py-3 px-4 text-sm font-medium">9:00 AM</td>
+                            <td class="py-3 px-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Science</span></td>
+                            <td class="py-3 px-4"><span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">English</span></td>
+                            <td class="py-3 px-4"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Mathematics</span></td>
+                            <td class="py-3 px-4"><span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">Geography</span></td>
+                            <td class="py-3 px-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Science</span></td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="py-3 px-4 text-sm font-medium">10:00 AM</td>
+                            <td class="py-3 px-4"><span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">Break</span></td>
+                            <td class="py-3 px-4"><span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">Break</span></td>
+                            <td class="py-3 px-4"><span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">Break</span></td>
+                            <td class="py-3 px-4"><span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">Break</span></td>
+                            <td class="py-3 px-4"><span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">Break</span></td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="py-3 px-4 text-sm font-medium">10:30 AM</td>
+                            <td class="py-3 px-4"><span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">English</span></td>
+                            <td class="py-3 px-4"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">History</span></td>
+                            <td class="py-3 px-4"><span class="bg-pink-100 text-pink-800 px-2 py-1 rounded text-xs">Art</span></td>
+                            <td class="py-3 px-4"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Mathematics</span></td>
+                            <td class="py-3 px-4"><span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">English</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- My Courses with Marks -->
             <div class="bg-white rounded-lg shadow">
                 <div class="p-6 border-b">
                     <h3 class="text-lg font-bold text-gray-900">
-                        <i class="fas fa-book-open mr-2 text-blue-600"></i>My Courses
+                        <i class="fas fa-book-open mr-2 text-blue-600"></i>My Courses & Marks
                     </h3>
                 </div>
                 <div class="p-6">
                     <div class="space-y-4">
-                        <div class="border-l-4 border-blue-500 bg-blue-50 p-4 rounded">
-                            <h4 class="font-semibold text-gray-900">Mathematics</h4>
-                            <p class="text-sm text-gray-600">Teacher: Ms. Johnson</p>
-                            <div class="mt-2">
-                                <div class="flex justify-between text-sm mb-1">
-                                    <span>Progress</span>
-                                    <span class="font-semibold">78%</span>
+                        <div class="border-l-4 border-blue-500 bg-blue-50 p-4 rounded cursor-pointer hover:bg-blue-100" @click="viewCourseDetails('Mathematics')">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">Mathematics</h4>
+                                    <p class="text-sm text-gray-600">Teacher: Ms. Johnson</p>
                                 </div>
-                                <div class="bg-gray-200 rounded-full h-2">
+                                <span class="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">78%</span>
+                            </div>
+                            <div class="mt-2">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span>Last Test: 85/100</span>
+                                    <span>Mid-Term: 72/100</span>
+                                </div>
+                                <div class="bg-gray-200 rounded-full h-2 mt-2">
                                     <div class="bg-blue-600 h-2 rounded-full" style="width: 78%"></div>
                                 </div>
                             </div>
                         </div>
-                        <div class="border-l-4 border-green-500 bg-green-50 p-4 rounded">
-                            <h4 class="font-semibold text-gray-900">Science</h4>
-                            <p class="text-sm text-gray-600">Teacher: Mr. Smith</p>
-                            <div class="mt-2">
-                                <div class="flex justify-between text-sm mb-1">
-                                    <span>Progress</span>
-                                    <span class="font-semibold">92%</span>
+                        <div class="border-l-4 border-green-500 bg-green-50 p-4 rounded cursor-pointer hover:bg-green-100" @click="viewCourseDetails('Science')">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">Science</h4>
+                                    <p class="text-sm text-gray-600">Teacher: Mr. Smith</p>
                                 </div>
-                                <div class="bg-gray-200 rounded-full h-2">
+                                <span class="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">92%</span>
+                            </div>
+                            <div class="mt-2">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span>Last Test: 95/100</span>
+                                    <span>Mid-Term: 88/100</span>
+                                </div>
+                                <div class="bg-gray-200 rounded-full h-2 mt-2">
                                     <div class="bg-green-600 h-2 rounded-full" style="width: 92%"></div>
                                 </div>
                             </div>
                         </div>
-                        <div class="border-l-4 border-purple-500 bg-purple-50 p-4 rounded">
-                            <h4 class="font-semibold text-gray-900">English</h4>
-                            <p class="text-sm text-gray-600">Teacher: Mrs. Davis</p>
-                            <div class="mt-2">
-                                <div class="flex justify-between text-sm mb-1">
-                                    <span>Progress</span>
-                                    <span class="font-semibold">85%</span>
+                        <div class="border-l-4 border-purple-500 bg-purple-50 p-4 rounded cursor-pointer hover:bg-purple-100" @click="viewCourseDetails('English')">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h4 class="font-semibold text-gray-900">English</h4>
+                                    <p class="text-sm text-gray-600">Teacher: Mrs. Davis</p>
                                 </div>
-                                <div class="bg-gray-200 rounded-full h-2">
+                                <span class="bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-semibold">85%</span>
+                            </div>
+                            <div class="mt-2">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span>Last Test: 82/100</span>
+                                    <span>Mid-Term: 88/100</span>
+                                </div>
+                                <div class="bg-gray-200 rounded-full h-2 mt-2">
                                     <div class="bg-purple-600 h-2 rounded-full" style="width: 85%"></div>
                                 </div>
                             </div>
@@ -133,52 +266,203 @@
                 </div>
             </div>
 
-            <!-- Upcoming Assignments -->
+            <!-- Assignments Upload -->
             <div class="bg-white rounded-lg shadow">
                 <div class="p-6 border-b">
                     <h3 class="text-lg font-bold text-gray-900">
-                        <i class="fas fa-clipboard-list mr-2 text-purple-600"></i>Upcoming Assignments
+                        <i class="fas fa-clipboard-list mr-2 text-purple-600"></i>Submit Assignments
                     </h3>
                 </div>
                 <div class="p-6">
                     <div class="space-y-4">
                         <div class="border-l-4 border-red-500 bg-red-50 p-4 rounded">
-                            <div class="flex justify-between items-start">
+                            <div class="flex justify-between items-start mb-3">
                                 <div>
                                     <h4 class="font-semibold text-gray-900">Math Homework</h4>
                                     <p class="text-sm text-gray-600">Chapter 5 Problems</p>
                                 </div>
                                 <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">Due Tomorrow</span>
                             </div>
+                            <div class="flex items-center space-x-2">
+                                <input type="file" id="mathFile" class="hidden" @change="handleFileUpload($event, 'Math Homework')">
+                                <button @click="document.getElementById('mathFile').click()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center">
+                                    <i class="fas fa-upload mr-1"></i>Upload
+                                </button>
+                                <span class="text-xs text-gray-500">No file selected</span>
+                            </div>
                         </div>
                         <div class="border-l-4 border-yellow-500 bg-yellow-50 p-4 rounded">
-                            <div class="flex justify-between items-start">
+                            <div class="flex justify-between items-start mb-3">
                                 <div>
                                     <h4 class="font-semibold text-gray-900">Science Project</h4>
                                     <p class="text-sm text-gray-600">Solar System Model</p>
                                 </div>
                                 <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Due in 3 days</span>
                             </div>
+                            <div class="flex items-center space-x-2">
+                                <input type="file" id="scienceFile" class="hidden" @change="handleFileUpload($event, 'Science Project')">
+                                <button @click="document.getElementById('scienceFile').click()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center">
+                                    <i class="fas fa-upload mr-1"></i>Upload
+                                </button>
+                                <span class="text-xs text-gray-500">No file selected</span>
+                            </div>
                         </div>
                         <div class="border-l-4 border-blue-500 bg-blue-50 p-4 rounded">
-                            <div class="flex justify-between items-start">
+                            <div class="flex justify-between items-start mb-3">
                                 <div>
                                     <h4 class="font-semibold text-gray-900">English Essay</h4>
                                     <p class="text-sm text-gray-600">Book Review</p>
                                 </div>
                                 <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Due in 1 week</span>
                             </div>
+                            <div class="flex items-center space-x-2">
+                                <input type="file" id="englishFile" class="hidden" @change="handleFileUpload($event, 'English Essay')">
+                                <button @click="document.getElementById('englishFile').click()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center">
+                                    <i class="fas fa-upload mr-1"></i>Upload
+                                </button>
+                                <span class="text-xs text-gray-500">No file selected</span>
+                            </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Marks Section -->
+        <div class="bg-white rounded-lg shadow mb-8">
+            <div class="p-6 border-b">
+                <h3 class="text-lg font-bold text-gray-900">
+                    <i class="fas fa-chart-bar mr-2 text-green-600"></i>Recent Test Results
+                </h3>
+            </div>
+            <div class="p-6 overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b bg-gray-50">
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Subject</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Test Name</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Score</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Grade</th>
+                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="py-3 px-4 font-medium text-gray-900">Mathematics</td>
+                            <td class="py-3 px-4 text-gray-600">Algebra Quiz</td>
+                            <td class="py-3 px-4 text-gray-600">Sep 28, 2024</td>
+                            <td class="py-3 px-4 font-semibold text-blue-600">85/100</td>
+                            <td class="py-3 px-4"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold">B+</span></td>
+                            <td class="py-3 px-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Published</span></td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="py-3 px-4 font-medium text-gray-900">Science</td>
+                            <td class="py-3 px-4 text-gray-600">Biology Test</td>
+                            <td class="py-3 px-4 text-gray-600">Sep 25, 2024</td>
+                            <td class="py-3 px-4 font-semibold text-green-600">95/100</td>
+                            <td class="py-3 px-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">A</span></td>
+                            <td class="py-3 px-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Published</span></td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="py-3 px-4 font-medium text-gray-900">English</td>
+                            <td class="py-3 px-4 text-gray-600">Grammar Test</td>
+                            <td class="py-3 px-4 text-gray-600">Sep 22, 2024</td>
+                            <td class="py-3 px-4 font-semibold text-purple-600">82/100</td>
+                            <td class="py-3 px-4"><span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold">B</span></td>
+                            <td class="py-3 px-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Published</span></td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="py-3 px-4 font-medium text-gray-900">History</td>
+                            <td class="py-3 px-4 text-gray-600">Mid-Term Exam</td>
+                            <td class="py-3 px-4 text-gray-600">Sep 20, 2024</td>
+                            <td class="py-3 px-4 font-semibold text-gray-400">--/100</td>
+                            <td class="py-3 px-4"><span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-semibold">--</span></td>
+                            <td class="py-3 px-4"><span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">Pending</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Details Modal -->
+    <div x-show="showCourseModal" x-cloak class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" @click.self="showCourseModal = false">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-900" x-text="selectedCourse + ' - Course Details'"></h3>
+                <button @click="showCourseModal = false" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Course Information</h4>
+                        <div class="bg-gray-50 rounded p-4 space-y-2">
+                            <p class="text-sm"><span class="font-medium">Teacher:</span> Ms. Johnson</p>
+                            <p class="text-sm"><span class="font-medium">Credits:</span> 3.0</p>
+                            <p class="text-sm"><span class="font-medium">Room:</span> A-101</p>
+                            <p class="text-sm"><span class="font-medium">Schedule:</span> Mon, Wed, Fri - 8:00 AM</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Grade Breakdown</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">Tests & Quizzes (40%)</span>
+                                <span class="font-semibold text-blue-600">85/100</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">Assignments (30%)</span>
+                                <span class="font-semibold text-green-600">90/100</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">Mid-Term (20%)</span>
+                                <span class="font-semibold text-purple-600">72/100</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">Participation (10%)</span>
+                                <span class="font-semibold text-orange-600">95/100</span>
+                            </div>
+                            <div class="border-t pt-2 mt-2 flex justify-between items-center">
+                                <span class="font-semibold">Overall Grade</span>
+                                <span class="font-bold text-lg text-blue-600">78%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-2">Upcoming Topics</h4>
+                        <ul class="space-y-2">
+                            <li class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                <span class="text-sm">Quadratic Equations</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-circle text-blue-500 mt-1 mr-2 text-xs"></i>
+                                <span class="text-sm">Trigonometry Basics</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i class="fas fa-circle text-gray-300 mt-1 mr-2 text-xs"></i>
+                                <span class="text-sm">Calculus Introduction</span>
+                            </li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+
     <script>
 function studentDashboard() {
     return {
         user: null,
+        showCourseModal: false,
+        selectedCourse: '',
 
         async init() {
             const token = localStorage.getItem('access_token');
@@ -215,6 +499,75 @@ function studentDashboard() {
                 alert('Error verifying access');
                 window.location.href = '/auth/';
             }
+        },
+
+        downloadTimetable() {
+            // Create a simple timetable document
+            const timetableData = `
+EXCELLENCE ACADEMY
+STUDENT TIMETABLE
+Academic Year 2024-2025
+
+Student: ${this.user.first_name} ${this.user.last_name}
+Class: Grade 10-A
+Student ID: STU-2024-001
+
+WEEKLY SCHEDULE
+================
+
+TIME        MONDAY      TUESDAY     WEDNESDAY   THURSDAY    FRIDAY
+------------------------------------------------------------------------
+8:00 AM     Math        Science     English     History     Math
+9:00 AM     Science     English     Math        Geography   Science
+10:00 AM    BREAK       BREAK       BREAK       BREAK       BREAK
+10:30 AM    English     History     Art         Math        English
+11:30 AM    History     Geography   Science     English     Art
+12:30 PM    LUNCH       LUNCH       LUNCH       LUNCH       LUNCH
+1:30 PM     P.E.        Music       P.E.        Science     Computer
+2:30 PM     Computer    Art         Geography   Music       History
+
+Generated on: ${new Date().toLocaleDateString()}
+            `;
+
+            // Create blob and download
+            const blob = new Blob([timetableData], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Timetable_${this.user.first_name}_${this.user.last_name}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            alert('Timetable downloaded successfully!');
+        },
+
+        handleFileUpload(event, assignmentName) {
+            const file = event.target.files[0];
+            if (file) {
+                // Display file name
+                const span = event.target.nextElementSibling.nextElementSibling;
+                span.textContent = file.name;
+                span.classList.remove('text-gray-500');
+                span.classList.add('text-green-600');
+
+                // In a real application, you would upload the file to the server here
+                alert(`File "${file.name}" selected for ${assignmentName}. Ready to submit!`);
+                
+                // Simulate upload
+                setTimeout(() => {
+                    if (confirm(`Submit ${file.name} for ${assignmentName}?`)) {
+                        alert('Assignment submitted successfully!');
+                        span.textContent = 'Submitted ✓';
+                    }
+                }, 500);
+            }
+        },
+
+        viewCourseDetails(courseName) {
+            this.selectedCourse = courseName;
+            this.showCourseModal = true;
         },
 
         logout() {
