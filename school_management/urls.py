@@ -25,11 +25,15 @@ urlpatterns = [
     path('api/v1/dashboard/', include('apps.dashboard.urls')),
     path('api/v1/admissions/', include('apps.admissions.public_urls')),  # Public application submission
     path('api/v1/admin/admissions/', include('apps.admissions.urls')),  # Admin management (protected)
+
+    # Frontend pages
+    path('', include('apps.frontend.urls')),
 ]
 
 # Media files (for uploaded documents)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    
 
 # Admin customization
 admin.site.site_header = "Excellence Academy Management"

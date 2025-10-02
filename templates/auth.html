@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +9,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js" defer></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen" x-data="authSystem()" x-init="checkExistingLogin()">
+
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen" x-data="authSystem()"
+    x-init="checkExistingLogin()">
     <nav class="bg-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center py-6">
@@ -39,32 +42,33 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         <i class="fas fa-envelope mr-2"></i>Email or Username
                     </label>
-                    <input type="text" x-model="loginForm.email_or_username" 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                           placeholder="Enter your email or username" required>
+                    <input type="text" x-model="loginForm.email_or_username"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="Enter your email or username" required>
                 </div>
-                
+
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         <i class="fas fa-lock mr-2"></i>Password
                     </label>
                     <div class="relative">
-                        <input :type="showPassword ? 'text' : 'password'" x-model="loginForm.password" 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 pr-10"
-                               placeholder="Enter your password" required>
-                        <button type="button" @click="showPassword = !showPassword" 
-                                class="absolute right-3 top-3 text-gray-500 hover:text-gray-700">
+                        <input :type="showPassword ? 'text' : 'password'" x-model="loginForm.password"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 pr-10"
+                            placeholder="Enter your password" required>
+                        <button type="button" @click="showPassword = !showPassword"
+                            class="absolute right-3 top-3 text-gray-500 hover:text-gray-700">
                             <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
                         </button>
                     </div>
                 </div>
-                
+
                 <div x-show="loginError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p class="text-red-700 text-sm"><i class="fas fa-exclamation-circle mr-2"></i><span x-text="loginError"></span></p>
+                    <p class="text-red-700 text-sm"><i class="fas fa-exclamation-circle mr-2"></i><span
+                            x-text="loginError"></span></p>
                 </div>
-                
-                <button type="submit" :disabled="loginLoading" 
-                        class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold">
+
+                <button type="submit" :disabled="loginLoading"
+                    class="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold">
                     <span x-show="!loginLoading">
                         <i class="fas fa-sign-in-alt mr-2"></i>Login
                     </span>
@@ -77,14 +81,20 @@
             <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <p class="text-xs font-semibold text-blue-900 mb-2">Test Accounts:</p>
                 <div class="space-y-2 text-xs">
-                    <button @click="quickLogin('admin', 'admin123')" class="w-full text-left px-3 py-2 bg-white rounded hover:bg-blue-100 transition">
-                        <i class="fas fa-user-shield mr-2 text-indigo-600"></i>Admin: <span class="font-mono">admin / admin123</span>
+                    <button @click="quickLogin('admin', 'admin123')"
+                        class="w-full text-left px-3 py-2 bg-white rounded hover:bg-blue-100 transition">
+                        <i class="fas fa-user-shield mr-2 text-indigo-600"></i>Admin: <span class="font-mono">admin /
+                            admin123</span>
                     </button>
-                    <button @click="quickLogin('teacher1', 'teacher123')" class="w-full text-left px-3 py-2 bg-white rounded hover:bg-blue-100 transition">
-                        <i class="fas fa-chalkboard-teacher mr-2 text-green-600"></i>Teacher: <span class="font-mono">teacher1 / teacher123</span>
+                    <button @click="quickLogin('teacher1', 'teacher123')"
+                        class="w-full text-left px-3 py-2 bg-white rounded hover:bg-blue-100 transition">
+                        <i class="fas fa-chalkboard-teacher mr-2 text-green-600"></i>Teacher: <span
+                            class="font-mono">teacher1 / teacher123</span>
                     </button>
-                    <button @click="quickLogin('parent1', 'parent123')" class="w-full text-left px-3 py-2 bg-white rounded hover:bg-blue-100 transition">
-                        <i class="fas fa-users mr-2 text-orange-600"></i>Parent: <span class="font-mono">parent1 / parent123</span>
+                    <button @click="quickLogin('parent1', 'parent123')"
+                        class="w-full text-left px-3 py-2 bg-white rounded hover:bg-blue-100 transition">
+                        <i class="fas fa-users mr-2 text-orange-600"></i>Parent: <span class="font-mono">parent1 /
+                            parent123</span>
                     </button>
                 </div>
             </div>
@@ -102,20 +112,45 @@
                 loginLoading: false,
                 loginError: '',
 
-                checkExistingLogin() {
+                async checkExistingLogin() {
                     const token = localStorage.getItem('access_token');
                     const user = localStorage.getItem('user_data');
-                    
+
                     if (token && user) {
-                        const userData = JSON.parse(user);
-                        this.redirectToDashboard(userData.role);
+                        try {
+                            // Verify the token is still valid
+                            const userData = JSON.parse(user);
+                            const response = await fetch(`/api/v1/dashboard/verify-${userData.role}/`, {
+                                method: 'GET',
+                                headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+
+                            if (response.ok) {
+                                // Token is valid, redirect to dashboard
+                                this.redirectToDashboard(userData.role);
+                            } else {
+                                // Token is invalid/expired, clear it
+                                localStorage.removeItem('access_token');
+                                localStorage.removeItem('refresh_token');
+                                localStorage.removeItem('user_data');
+                            }
+                        } catch (error) {
+                            // Error validating token, clear it
+                            console.error('Token validation error:', error);
+                            localStorage.removeItem('access_token');
+                            localStorage.removeItem('refresh_token');
+                            localStorage.removeItem('user_data');
+                        }
                     }
                 },
 
                 async login() {
                     this.loginLoading = true;
                     this.loginError = '';
-                    
+
                     try {
                         const response = await fetch('/api/v1/auth/login/', {
                             method: 'POST',
@@ -124,15 +159,15 @@
                             },
                             body: JSON.stringify(this.loginForm)
                         });
-                        
+
                         const data = await response.json();
-                        
+
                         if (data.success) {
                             // FIXED: Access nested data structure correctly
                             localStorage.setItem('access_token', data.data.tokens.access);
                             localStorage.setItem('refresh_token', data.data.tokens.refresh);
                             localStorage.setItem('user_data', JSON.stringify(data.data.user));
-                            
+
                             this.redirectToDashboard(data.data.user.role);
                         } else {
                             // Handle error messages from backend
@@ -164,11 +199,12 @@
                         'parent': '/dashboard/parent/',
                         'student': '/dashboard/student/'
                     };
-                    
+
                     window.location.href = dashboards[role] || '/';
                 }
             }
         }
     </script>
 </body>
+
 </html>
