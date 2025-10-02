@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { color: #667eea; }
+        .user-info { display: flex; gap: 15px; align-items: center; }
+        .badge { background: #667eea; color: white; padding: 8px 16px; border-radius: 20px; }
+        .logout-btn { background: #ef4444; color: white; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; }
+        .logout-btn:hover { background: #dc2626; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .card h2 { color: #1f2937; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Student Dashboard</h1>
+            <div class="user-info">
+                <div class="badge">{{ user.username }}</div>
+                <button class="logout-btn" onclick="handleLogout()">Logout</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Welcome, {{ user.username }}!</h2>
+            <p>User Type: <strong>{{ user.user_type }}</strong></p>
+            <p>Email: {{ user.email }}</p>
+        </div>
+        
+        <div class="card">
+            <h2>Your Classes</h2>
+            <p>Your class information will appear here.</p>
+        </div>
+    </div>
+
+    <script>
+        async function handleLogout() {
+            if (!confirm('Are you sure you want to logout?')) return;
+            try {
+                const csrftoken = getCookie('csrftoken');
+                const response = await fetch('/api/v1/auth/logout/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                    },
+                    credentials: 'include',
+                });
+                if (response.ok) {
+                    window.location.href = '/auth/';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+</html>
+

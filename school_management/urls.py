@@ -1,0 +1,36 @@
+from django.contrib import admin
+from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
+from django.views.generic import TemplateView
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+
+    # Public pages
+    path('', TemplateView.as_view(
+        template_name='application_form.html'), name='home'),
+    path('auth/', TemplateView.as_view(template_name='auth.html'), name='auth'),
+
+    # Dashboards
+    path('dashboard/admin/', TemplateView.as_view(template_name='admin_dashboard.html'),
+         name='admin-dashboard'),
+    path('dashboard/parent/', TemplateView.as_view(template_name='parent_dashboard.html'),
+         name='parent-dashboard'),
+    path('dashboard/teacher/', TemplateView.as_view(
+        template_name='teacher_dashboard.html'), name='teacher-dashboard'),
+    path('dashboard/student/', TemplateView.as_view(
+        template_name='student_dashboard.html'), name='student-dashboard'),
+
+    # API - only include what exists
+    path('api/v1/auth/', include('apps.accounts.urls')),
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)
+
+# Admin customization
+admin.site.site_header = "School Management System"
+admin.site.site_title = "School Admin"
+admin.site.index_title = "Welcome to School Management System"

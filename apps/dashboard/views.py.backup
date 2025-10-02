@@ -1,0 +1,31 @@
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+
+@login_required(login_url='/auth/')
+def admin_dashboard(request):
+    if getattr(request.user, 'role', '').lower() not in ['admin', 'super_admin'] and not request.user.is_superuser:
+        messages.error(request, 'Access denied')
+        return redirect('/auth/')
+    return render(request, 'admin_dashboard.html', {'user': request.user})
+
+@login_required(login_url='/auth/')
+def teacher_dashboard(request):
+    if getattr(request.user, 'role', '').lower() != 'teacher' and not request.user.is_superuser:
+        messages.error(request, 'Access denied')
+        return redirect('/auth/')
+    return render(request, 'teacher_dashboard.html', {'user': request.user})
+
+@login_required(login_url='/auth/')
+def student_dashboard(request):
+    if getattr(request.user, 'role', '').lower() != 'student' and not request.user.is_superuser:
+        messages.error(request, 'Access denied')
+        return redirect('/auth/')
+    return render(request, 'dashboard/student_dashboard.html', {'user': request.user})
+
+@login_required(login_url='/auth/')
+def parent_dashboard(request):
+    if getattr(request.user, 'role', '').lower() != 'parent' and not request.user.is_superuser:
+        messages.error(request, 'Access denied')
+        return redirect('/auth/')
+    return render(request, 'parent_dashboard.html', {'user': request.user})

@@ -1,0 +1,40 @@
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from django.contrib.auth import authenticate, login, logout
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework_simplejwt.tokens import RefreshToken
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@csrf_exempt
+def login_view(request):
+    email_or_username = request.data.get('email_or_username')
+    password = request.data.get('password')
+    
+    if not email_or_username or not password:
+        return Response({'success': False, 'errors': {'general': ['Credentials required']}}, status=400)
+    
+    from .models import User
+    try:
+        user = User.objects.get(email=email_or_username) if '@' in email_or_username else User.objects.get(username=email_or_username)
+        if not user.check_password(password):
+            raise User.DoesNotExist
+    except User.DoesNotExist:
+        return Response({'success': False, 'errors': {'general': ['Invalid credentials']}}, status=401)
+    
+    login(request, user)
+    refresh = RefreshToken.for_user(user)
+    
+    return Response({
+        'success': True,
+        'tokens': {'access': str(refresh.access_token), 'refresh': str(refresh)},
+        'user': {'id': user.id, 'username': user.username, 'email': user.email, 'role': user.role}
+    })
+
+@api_view(['POST'])
+@csrf_exempt
+def logout_view(request):
+    logout(request)
+    return Response({'success': True})

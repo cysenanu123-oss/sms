@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - School Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100" x-data="teacherDashboard()" x-init="init()">
+    <!-- Top Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <i class="fas fa-chalkboard-teacher text-3xl text-indigo-600 mr-3"></i>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">Teacher Dashboard</h1>
+                        <p class="text-xs text-gray-600">School Management System</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <!-- Quick Date Display -->
+                    <div class="hidden md:block text-right">
+                        <p class="text-sm font-medium text-gray-900" x-text="currentDate"></p>
+                        <p class="text-xs text-gray-600" x-text="currentTime"></p>
+                    </div>
+
+                    <!-- Notifications -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="relative p-2 text-gray-600 hover:text-indigo-600">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span x-show="pendingTasks > 0"
+                                class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                                x-text="pendingTasks"></span>
+                        </button>
+
+                        <div x-show="open" @click.away="open = false"
+                            class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200"
+                            x-transition>
+                            <div class="p-4 border-b border-gray-200">
+                                <h3 class="font-semibold text-gray-900">Pending Tasks</h3>
+                            </div>
+                            <div class="max-h-96 overflow-y-auto">
+                                <div class="p-4 border-b border-gray-100 hover:bg-gray-50">
+                                    <p class="text-sm text-gray-800">5 assignments to grade - Grade 6A</p>
+                                    <p class="text-xs text-gray-500 mt-1">Due today</p>
+                                </div>
+                                <div class="p-4 border-b border-gray-100 hover:bg-gray-50">
+                                    <p class="text-sm text-gray-800">Attendance not marked - Grade 6B</p>
+                                    <p class="text-xs text-gray-500 mt-1">2 hours ago</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Menu -->
+                    <div class="flex items-center space-x-3">
+                        <div class="text-right hidden md:block">
+                            <p class="text-sm font-medium text-gray-900"
+                                x-text="user.first_name + ' ' + user.last_name"></p>
+                            <p class="text-xs text-gray-600">Teacher</p>
+                        </div>
+                        <div class="bg-indigo-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
+                            <span x-text="user.first_name.charAt(0) + user.last_name.charAt(0)"></span>
+                        </div>
+                        <button @click="logout()" class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg overflow-y-auto">
+            <nav class="mt-5 px-2">
+                <a @click="currentView = 'overview'"
+                    :class="currentView === 'overview' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-home mr-3"></i>
+                    Overview
+                </a>
+
+                <a @click="currentView = 'classes'"
+                    :class="currentView === 'classes' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-school mr-3"></i>
+                    My Classes
+                </a>
+
+                <a @click="currentView = 'attendance'"
+                    :class="currentView === 'attendance' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-calendar-check mr-3"></i>
+                    Mark Attendance
+                    <span x-show="unmarkedClasses > 0"
+                        class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1"
+                        x-text="unmarkedClasses"></span>
+                </a>
+
+                <a @click="currentView = 'grades'"
+                    :class="currentView === 'grades' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-clipboard-list mr-3"></i>
+                    Enter Grades
+                </a>
+
+                <a @click="currentView = 'assignments'"
+                    :class="currentView === 'assignments' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-tasks mr-3"></i>
+                    Assignments
+                </a>
+
+                <a @click="currentView = 'timetable'"
+                    :class="currentView === 'timetable' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-calendar-alt mr-3"></i>
+                    My Timetable
+                </a>
+
+                <a @click="currentView = 'reports'"
+                    :class="currentView === 'reports' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-chart-bar mr-3"></i>
+                    Reports
+                </a>
+
+                <a @click="currentView = 'resources'"
+                    :class="currentView === 'resources' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-folder-open mr-3"></i>
+                    Resources
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
+            <!-- Overview Section -->
+            <div x-show="currentView === 'overview'">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Welcome back, <span x-text="user.first_name"></span>!
+                    </h2>
+                    <p class="text-gray-600">Here's what's happening in your classes today.</p>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Total Classes</p>
+                                <p class="text-3xl font-bold text-gray-900" x-text="stats.total_classes"></p>
+                            </div>
+                            <div class="bg-blue-100 rounded-full p-4">
+                                <i class="fas fa-school text-blue-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Total Students</p>
+                                <p class="text-3xl font-bold text-gray-900" x-text="stats.total_students"></p>
+                            </div>
+                            <div class="bg-green-100 rounded-full p-4">
+                                <i class="fas fa-user-graduate text-green-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Pending Assignments</p>
+                                <p class="text-3xl font-bold text-gray-900" x-text="stats.pending_assignments"></p>
+                            </div>
+                            <div class="bg-orange-100 rounded-full p-4">
+                                <i class="fas fa-clipboard-list text-orange-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Avg Attendance</p>
+                                <p class="text-3xl font-bold text-gray-900" x-text="stats.avg_attendance + '%'"></p>
+                            </div>
+                            <div class="bg-purple-100 rounded-full p-4">
+                                <i class="fas fa-calendar-check text-purple-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Today's Schedule & Quick Actions -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Today's Schedule -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Today's Schedule</h3>
+                        <div class="space-y-3">
+                            <template x-for="period in todaySchedule" :key="period.id">
+                                <div
+                                    class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                                    <div class="flex items-center">
+                                        <div class="bg-indigo-100 rounded p-2 mr-3">
+                                            <i class="fas fa-clock text-indigo-600"></i>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-900" x-text="period.time"></p>
+                                            <p class="text-sm text-gray-600"
+                                                x-text="period.class + ' - ' + period.subject"></p>
+                                        </div>
+                                    </div>
+                                    <button @click="markAttendanceQuick(period)"
+                                        class="text-indigo-600 hover:text-indigo-800 text-sm">
+                                        Mark Attendance →
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button @click="currentView = 'attendance'"
+                                class="flex flex-col items-center p-4 border-2 border-indigo-200 rounded-lg hover:bg-indigo-50 transition">
+                                <i class="fas fa-calendar-check text-indigo-600 text-2xl mb-2"></i>
+                                <span class="text-sm font-medium">Mark Attendance</span>
+                            </button>
+
+                            <button @click="currentView = 'grades'"
+                                class="flex flex-col items-center p-4 border-2 border-green-200 rounded-lg hover:bg-green-50 transition">
+                                <i class="fas fa-pen text-green-600 text-2xl mb-2"></i>
+                                <span class="text-sm font-medium">Enter Grades</span>
+                            </button>
+
+                            <button @click="currentView = 'assignments'"
+                                class="flex flex-col items-center p-4 border-2 border-orange-200 rounded-lg hover:bg-orange-50 transition">
+                                <i class="fas fa-tasks text-orange-600 text-2xl mb-2"></i>
+                                <span class="text-sm font-medium">Assignments</span>
+                            </button>
+
+                            <button @click="currentView = 'reports'"
+                                class="flex flex-col items-center p-4 border-2 border-purple-200 rounded-lg hover:bg-purple-50 transition">
+                                <i class="fas fa-chart-line text-purple-600 text-2xl mb-2"></i>
+                                <span class="text-sm font-medium">View Reports</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mark Attendance Section -->
+            <div x-show="currentView === 'attendance'">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Mark Attendance</h2>
+                    <p class="text-gray-600">Record student attendance for your classes</p>
+                </div>
+
+                <!-- Class Selection -->
+                <div class="bg-white rounded-lg shadow p-6 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
+                            <select x-model="selectedClass" @change="loadStudents()"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                <option value="">Choose a class</option>
+                                <template x-for="cls in myClasses" :key="cls.id">
+                                    <option :value="cls.id" x-text="cls.name"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                            <input type="date" x-model="attendanceDate" :max="new Date().toISOString().split('T')[0]"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Period</label>
+                            <select x-model="selectedPeriod"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                <option value="1">Period 1</option>
+                                <option value="2">Period 2</option>
+                                <option value="3">Period 3</option>
+                                <option value="4">Period 4</option>
+                                <option value="5">Period 5</option>
+                                <option value="6">Period 6</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Quick Mark All Buttons -->
+                    <div class="mt-4 flex space-x-3">
+                        <button @click="markAllPresent()"
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                            <i class="fas fa-check mr-2"></i>Mark All Present
+                        </button>
+                        <button @click="markAllAbsent()"
+                            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                            <i class="fas fa-times mr-2"></i>Mark All Absent
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Students List for Attendance -->
+                <div x-show="selectedClass" class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900">Student Attendance</h3>
+                        <p class="text-sm text-gray-600">Total Students: <span x-text="students.length"></span></p>
+                    </div>
+
+                    <div class="p-6">
+                        <div class="space-y-3">
+                            <template x-for="(student, index) in students" :key="student.id">
+                                <div
+                                    class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                                    <div class="flex items-center flex-1">
+                                        <div
+                                            class="bg-gray-200 rounded-full w-10 h-10 flex items-center justify-center mr-4">
+                                            <span class="font-medium text-gray-700" x-text="index + 1"></span>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-900" x-text="student.name"></p>
+                                            <p class="text-sm text-gray-600">Roll No: <span
+                                                    x-text="student.roll_number"></span></p>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex space-x-2">
+                                        <button @click="student.attendance = 'present'"
+                                            :class="student.attendance === 'present' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'"
+                                            class="px-4 py-2 rounded-lg hover:opacity-80 transition">
+                                            <i class="fas fa-check mr-1"></i>Present
+                                        </button>
+                                        <button @click="student.attendance = 'absent'"
+                                            :class="student.attendance === 'absent' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'"
+                                            class="px-4 py-2 rounded-lg hover:opacity-80 transition">
+                                            <i class="fas fa-times mr-1"></i>Absent
+                                        </button>
+                                        <button @click="student.attendance = 'late'"
+                                            :class="student.attendance === 'late' ? 'bg-yellow-600 text-white' : 'bg-gray-200 text-gray-700'"
+                                            class="px-4 py-2 rounded-lg hover:opacity-80 transition">
+                                            <i class="fas fa-clock mr-1"></i>Late
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Save Attendance Button -->
+                        <div class="mt-6 flex justify-end space-x-3">
+                            <button @click="cancelAttendance()"
+                                class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                                Cancel
+                            </button>
+                            <button @click="saveAttendance()"
+                                class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                                <i class="fas fa-save mr-2"></i>Save Attendance
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enter Grades Section -->
+            <div x-show="currentView === 'grades'">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Enter Grades</h2>
+                    <p class="text-gray-600">Record test scores and assessments</p>
+                </div>
+
+                <!-- Exam Selection -->
+                <div class="bg-white rounded-lg shadow p-6 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
+                            <select x-model="gradeClass" @change="loadStudentsForGrades()"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                <option value="">Choose a class</option>
+                                <template x-for="cls in myClasses" :key="cls.id">
+                                    <option :value="cls.id" x-text="cls.name"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Exam Type</label>
+                            <select x-model="examType"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                <option value="quiz">Quiz</option>
+                                <option value="test">Class Test</option>
+                                <option value="midterm">Mid-term Exam</option>
+                                <option value="final">Final Exam</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Total Marks</label>
+                            <input type="number" x-model="totalMarks"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                placeholder="100">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Exam Date</label>
+                            <input type="date" x-model="examDate"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grade Entry Table -->
+                <div x-show="gradeClass" class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900">Enter Marks</h3>
+                            <p class="text-sm text-gray-600">Total Students: <span x-text="students.length"></span></p>
+                        </div>
+                        <button @click="calculateGrades()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-calculator mr-2"></i>Calculate Grades
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Roll No
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student
+                                        Name</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Marks
+                                        Obtained</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        Percentage</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grade
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Remarks
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <template x-for="student in students" :key="student.id">
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                                            x-text="student.roll_number"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                                            x-text="student.name"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <input type="number" x-model="student.marks" :max="totalMarks" min="0"
+                                                @input="calculateStudentGrade(student)"
+                                                class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                placeholder="0">
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                                            x-text="student.percentage ? student.percentage.toFixed(1) + '%' : '-'">
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span :class="{
+                                                'bg-green-100 text-green-800': student.grade && (student.grade === 'A' || student.grade === 'A+'),
+                                                'bg-blue-100 text-blue-800': student.grade && (student.grade === 'B' || student.grade === 'B+'),
+                                                'bg-yellow-100 text-yellow-800': student.grade && (student.grade === 'C' || student.grade === 'C+'),
+                                                'bg-red-100 text-red-800': student.grade && (student.grade === 'D' || student.grade === 'F')
+                                            }" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                                x-text="student.grade || '-'"></span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <input type="text" x-model="student.remarks"
+                                                class="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                placeholder="Optional">
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Save Grades Button -->
+                    <div class="p-6 border-t border-gray-200 flex justify-between items-center">
+                        <div class="text-sm text-gray-600">
+                            <p>Class Average: <span class="font-semibold" x-text="classAverage.toFixed(1) + '%'"></span>
+                            </p>
+                            <p>Pass Rate: <span class="font-semibold" x-text="passRate.toFixed(1) + '%'"></span></p>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button @click="currentView = 'overview'"
+                                class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                                Cancel
+                            </button>
+                            <button @click="saveGrades()"
+                                class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                                <i class="fas fa-save mr-2"></i>Save Grades
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Assignments Section -->
+            <div x-show="currentView === 'assignments'">
+                <div class="mb-6 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Assignments</h2>
+                        <p class="text-gray-600">Create and manage assignments</p>
+                    </div>
+                    <button @click="showCreateAssignment = true"
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                        <i class="fas fa-plus mr-2"></i>Create Assignment
+                    </button>
+                </div>
+
+                <!-- Assignments List -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <template x-for="assignment in assignments" :key="assignment.id">
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900" x-text="assignment.title"></h3>
+                                    <p class="text-sm text-gray-600" x-text="assignment.class"></p>
+                                </div>
+                                <span :class="{
+                                    'bg-green-100 text-green-800': assignment.status === 'active',
+                                    'bg-gray-100 text-gray-800': assignment.status === 'closed'
+                                }" class="px-3 py-1 rounded-full text-xs font-medium"
+                                    x-text="assignment.status.toUpperCase()"></span>
+                            </div>
+
+                            <p class="text-sm text-gray-700 mb-4" x-text="assignment.description"></p>
+
+                            <div class="flex items-center justify-between text-sm mb-4">
+                                <div>
+                                    <i class="fas fa-calendar text-gray-400 mr-2"></i>
+                                    <span class="text-gray-600">Due: <span x-text="assignment.due_date"></span></span>
+                                </div>
+                                <div>
+                                    <i class="fas fa-users text-gray-400 mr-2"></i>
+                                    <span class="text-gray-600"><span x-text="assignment.submissions"></span>/<span
+                                            x-text="assignment.total_students"></span> submitted</span>
+                                </div>
+                            </div>
+
+                            <div class="flex space-x-2">
+                                <button
+                                    class="flex-1 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100">
+                                    <i class="fas fa-eye mr-2"></i>View Submissions
+                                </button>
+                                <button class="px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- My Classes Section -->
+            <div x-show="currentView === 'classes'">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">My Classes</h2>
+                    <p class="text-gray-600">View and manage your assigned classes</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <template x-for="cls in myClasses" :key="cls.id">
+                        <div class="bg-white rounded-lg shadow hover:shadow-lg transition p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="bg-indigo-100 rounded-full p-3">
+                                    <i class="fas fa-school text-indigo-600 text-xl"></i>
+                                </div>
+                                <span class="text-2xl font-bold text-gray-900" x-text="cls.total_students"></span>
+                            </div>
+
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2" x-text="cls.name"></h3>
+                            <p class="text-sm text-gray-600 mb-4" x-text="cls.subject"></p>
+
+                            <div class="space-y-2 text-sm mb-4">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Average Attendance:</span>
+                                    <span class="font-medium" x-text="cls.avg_attendance + '%'"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Class Average:</span>
+                                    <span class="font-medium" x-text="cls.class_average + '%'"></span>
+                                </div>
+                            </div>
+
+                            <div class="flex space-x-2">
+                                <button @click="viewClassDetails(cls)"
+                                    class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                                    View Details
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Timetable Section -->
+            <div x-show="currentView === 'timetable'">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">My Timetable</h2>
+                    <p class="text-gray-600">Your weekly teaching schedule</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monday</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tuesday</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Wednesday
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thursday
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Friday</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <template x-for="period in timetablePeriods" :key="period.time">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                                        x-text="period.time"></td>
+                                    <template x-for="day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']"
+                                        :key="day">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div x-show="period[day]" class="bg-indigo-50 rounded p-2">
+                                                <p class="text-sm font-medium text-indigo-900"
+                                                    x-text="period[day]?.class"></p>
+                                                <p class="text-xs text-indigo-600" x-text="period[day]?.subject"></p>
+                                            </div>
+                                        </td>
+                                    </template>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Reports Section -->
+            <div x-show="currentView === 'reports'">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Generate Reports</h2>
+                    <p class="text-gray-600">Create performance and attendance reports</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Class Performance Report -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Class Performance Report</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
+                                <select
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                    <option>Grade 6-A</option>
+                                    <option>Grade 6-B</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Report Type</label>
+                                <select
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                    <option>Mid-term Report</option>
+                                    <option>Final Report</option>
+                                    <option>Progress Report</option>
+                                </select>
+                            </div>
+                            <button class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                                <i class="fas fa-download mr-2"></i>Generate Report
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Attendance Report -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Attendance Report</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
+                                <select
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                    <option>Grade 6-A</option>
+                                    <option>Grade 6-B</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Time Period</label>
+                                <select
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                    <option>This Month</option>
+                                    <option>Last Month</option>
+                                    <option>This Term</option>
+                                </select>
+                            </div>
+                            <button class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                                <i class="fas fa-file-excel mr-2"></i>Export to Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resources Section -->
+            <div x-show="currentView === 'resources'">
+                <div class="mb-6 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Teaching Resources</h2>
+                        <p class="text-gray-600">Upload and manage study materials</p>
+                    </div>
+                    <button @click="showUploadResource = true"
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                        <i class="fas fa-upload mr-2"></i>Upload Resource
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <template x-for="resource in resources" :key="resource.id">
+                        <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
+                            <div class="flex items-center justify-between mb-4">
+                                <div :class="{
+                                    'bg-red-100': resource.type === 'pdf',
+                                    'bg-blue-100': resource.type === 'doc',
+                                    'bg-green-100': resource.type === 'video'
+                                }" class="rounded-full p-3">
+                                    <i :class="{
+                                        'fas fa-file-pdf text-red-600': resource.type === 'pdf',
+                                        'fas fa-file-word text-blue-600': resource.type === 'doc',
+                                        'fas fa-video text-green-600': resource.type === 'video'
+                                    }" class="text-xl"></i>
+                                </div>
+                                <span class="text-xs text-gray-500" x-text="resource.size"></span>
+                            </div>
+
+                            <h3 class="font-semibold text-gray-900 mb-2" x-text="resource.title"></h3>
+                            <p class="text-sm text-gray-600 mb-4" x-text="resource.class"></p>
+
+                            <div class="flex space-x-2">
+                                <button
+                                    class="flex-1 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 text-sm">
+                                    <i class="fas fa-download mr-1"></i>Download
+                                </button>
+                                <button class="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function requireAuth() {
+            const token = localStorage.getItem('access_token');
+            const userData = localStorage.getItem('user_data');
+
+            if (!token || !userData) {
+                alert('Please login first');
+                window.location.href = '/auth/';
+                return null;
+            }
+
+            return JSON.parse(userData);
+        }
+        function teacherDashboard() {
+            return {
+                user: {},
+                currentView: 'overview',
+                currentDate: '',
+                currentTime: '',
+                pendingTasks: 7,
+                unmarkedClasses: 2,
+
+                // Stats
+                stats: {
+                    total_classes: 5,
+                    total_students: 180,
+                    pending_assignments: 12,
+                    avg_attendance: 92
+                },
+
+                // Data
+                myClasses: [],
+                students: [],
+                todaySchedule: [],
+                assignments: [],
+                resources: [],
+                timetablePeriods: [],
+
+                // Forms
+                selectedClass: '',
+                attendanceDate: new Date().toISOString().split('T')[0],
+                selectedPeriod: '1',
+                gradeClass: '',
+                examType: 'test',
+                totalMarks: 100,
+                examDate: new Date().toISOString().split('T')[0],
+
+                // Computed
+                classAverage: 0,
+                passRate: 0,
+
+                async init() {
+                    this.user = requireAuth();
+                    if (!this.user) return;
+                    // Check authentication
+                    const token = localStorage.getItem('access_token');
+                    const userData = localStorage.getItem('user_data');
+
+                    if (!token || !userData) {
+                        // window.location.href = '/auth/';
+                        // return;
+                    }
+
+                    this.user = JSON.parse(userData);
+
+                    // if (this.user.role !== 'teacher') {
+                    // alert('Access denied. Teacher access required.');
+                    // window.location.href = '/auth/';
+                    // return;
+                    //}
+
+                    this.updateDateTime();
+                    setInterval(() => this.updateDateTime(), 1000);
+
+                    await this.loadTeacherData();
+                },
+
+                updateDateTime() {
+                    const now = new Date();
+                    this.currentDate = now.toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    });
+                    this.currentTime = now.toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                },
+
+                async loadTeacherData() {
+                    // Mock data - replace with API calls
+                    this.myClasses = [
+                        { id: 1, name: 'Grade 6-A', subject: 'Mathematics', total_students: 45, avg_attendance: 95, class_average: 78 },
+                        { id: 2, name: 'Grade 6-B', subject: 'Mathematics', total_students: 42, avg_attendance: 90, class_average: 75 },
+                        { id: 3, name: 'Grade 7-A', subject: 'Mathematics', total_students: 48, avg_attendance: 92, class_average: 80 }
+                    ];
+
+                    this.todaySchedule = [
+                        { id: 1, time: '08:00 - 09:00', class: 'Grade 6-A', subject: 'Mathematics' },
+                        { id: 2, time: '09:00 - 10:00', class: 'Grade 6-B', subject: 'Mathematics' },
+                        { id: 3, time: '11:00 - 12:00', class: 'Grade 7-A', subject: 'Mathematics' }
+                    ];
+
+                    this.assignments = [
+                        {
+                            id: 1,
+                            title: 'Algebra Practice',
+                            class: 'Grade 6-A',
+                            description: 'Complete exercises 1-10 from chapter 3',
+                            due_date: '2024-10-05',
+                            submissions: 38,
+                            total_students: 45,
+                            status: 'active'
+                        },
+                        {
+                            id: 2,
+                            title: 'Geometry Homework',
+                            class: 'Grade 6-B',
+                            description: 'Draw and calculate areas of 5 shapes',
+                            due_date: '2024-10-08',
+                            submissions: 25,
+                            total_students: 42,
+                            status: 'active'
+                        }
+                    ];
+
+                    this.resources = [
+                        { id: 1, title: 'Chapter 3 Notes', class: 'Grade 6-A', type: 'pdf', size: '2.4 MB' },
+                        { id: 2, title: 'Practice Questions', class: 'Grade 6-B', type: 'doc', size: '1.2 MB' },
+                        { id: 3, title: 'Tutorial Video', class: 'Grade 7-A', type: 'video', size: '45 MB' }
+                    ];
+
+                    this.timetablePeriods = [
+                        {
+                            time: '08:00 - 09:00',
+                            monday: { class: 'Grade 6-A', subject: 'Math' },
+                            wednesday: { class: 'Grade 6-B', subject: 'Math' },
+                            friday: { class: 'Grade 7-A', subject: 'Math' }
+                        },
+                        {
+                            time: '09:00 - 10:00',
+                            tuesday: { class: 'Grade 6-A', subject: 'Math' },
+                            thursday: { class: 'Grade 6-B', subject: 'Math' }
+                        }
+                    ];
+                },
+
+                loadStudents() {
+                    if (!this.selectedClass) // return;
+
+                        // Mock student data
+                        this.students = [];
+                    for (let i = 1; i <= 45; i++) {
+                        this.students.push({
+                            id: i,
+                            name: `Student ${i}`,
+                            roll_number: i.toString().padStart(3, '0'),
+                            attendance: null,
+                            marks: 0,
+                            percentage: 0,
+                            grade: '',
+                            remarks: ''
+                        });
+                    }
+                },
+
+                loadStudentsForGrades() {
+                    this.loadStudents();
+                },
+
+                markAllPresent() {
+                    this.students.forEach(student => student.attendance = 'present');
+                },
+
+                markAllAbsent() {
+                    this.students.forEach(student => student.attendance = 'absent');
+                },
+
+                async saveAttendance() {
+                    const unmarked = this.students.filter(s => !s.attendance);
+                    if (unmarked.length > 0) {
+                        if (!confirm(`${unmarked.length} students not marked. Continue?`)) {
+                            // return;
+                        }
+                    }
+
+                    // API call to save attendance
+                    alert('Attendance saved successfully!');
+                    this.currentView = 'overview';
+                },
+
+                cancelAttendance() {
+                    if (confirm('Discard attendance changes?')) {
+                        this.currentView = 'overview';
+                    }
+                },
+
+                calculateStudentGrade(student) {
+                    if (!student.marks || !this.totalMarks) // return;
+
+                        student.percentage = (student.marks / this.totalMarks) * 100;
+
+                    if (student.percentage >= 90) student.grade = 'A+';
+                    else if (student.percentage >= 80) student.grade = 'A';
+                    else if (student.percentage >= 70) student.grade = 'B+';
+                    else if (student.percentage >= 60) student.grade = 'B';
+                    else if (student.percentage >= 50) student.grade = 'C+';
+                    else if (student.percentage >= 40) student.grade = 'C';
+                    else if (student.percentage >= 33) student.grade = 'D';
+                    else student.grade = 'F';
+
+                    this.calculateClassStats();
+                },
+
+                calculateGrades() {
+                    this.students.forEach(student => {
+                        if (student.marks) {
+                            this.calculateStudentGrade(student);
+                        }
+                    });
+                },
+
+                calculateClassStats() {
+                    const validScores = this.students.filter(s => s.marks > 0);
+                    if (validScores.length === 0) {
+                        this.classAverage = 0;
+                        this.passRate = 0;
+                        // return;
+                    }
+
+                    const totalPercentage = validScores.reduce((sum, s) => sum + (s.percentage || 0), 0);
+                    this.classAverage = totalPercentage / validScores.length;
+
+                    const passed = validScores.filter(s => s.percentage >= 33).length;
+                    this.passRate = (passed / validScores.length) * 100;
+                },
+
+                async saveGrades() {
+                    const ungradedCount = this.students.filter(s => !s.marks || s.marks === 0).length;
+                    if (ungradedCount > 0) {
+                        if (!confirm(`${ungradedCount} students have no marks entered. Continue?`)) {
+                            // return;
+                        }
+                    }
+
+                    // API call to save grades
+                    alert('Grades saved successfully!');
+                    this.currentView = 'overview';
+                },
+
+                markAttendanceQuick(period) {
+                    this.selectedClass = this.myClasses.find(c => c.name === period.class)?.id;
+                    this.currentView = 'attendance';
+                    this.loadStudents();
+                },
+
+                viewClassDetails(cls) {
+                    this.selectedClass = cls.id;
+                    this.currentView = 'classes';
+                },
+
+                logout() {
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('refresh_token');
+                    localStorage.removeItem('user_data');
+                    // window.location.href = '/auth/';
+                }
+            }
+        }
+    </script>
+
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+</body>
+
+</html>

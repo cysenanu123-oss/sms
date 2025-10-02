@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - School Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100" x-data="adminDashboard()" x-init="init()">
+    <!-- Top Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <i class="fas fa-graduation-cap text-3xl text-indigo-600 mr-3"></i>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+                        <p class="text-xs text-gray-600">School Management System</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <!-- Notifications -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open" class="relative p-2 text-gray-600 hover:text-indigo-600">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span x-show="notifications.length > 0"
+                                class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                                x-text="notifications.length"></span>
+                        </button>
+
+                        <div x-show="open" @click.away="open = false"
+                            class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200"
+                            x-transition>
+                            <div class="p-4 border-b border-gray-200">
+                                <h3 class="font-semibold text-gray-900">Notifications</h3>
+                            </div>
+                            <div class="max-h-96 overflow-y-auto">
+                                <template x-for="notif in notifications" :key="notif.id">
+                                    <div class="p-4 border-b border-gray-100 hover:bg-gray-50">
+                                        <p class="text-sm text-gray-800" x-text="notif.message"></p>
+                                        <p class="text-xs text-gray-500 mt-1" x-text="notif.time"></p>
+                                    </div>
+                                </template>
+                                <div x-show="notifications.length === 0" class="p-4 text-center text-gray-500">
+                                    No new notifications
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User Menu -->
+                    <div class="flex items-center space-x-3">
+                        <div class="text-right hidden md:block">
+                            <p class="text-sm font-medium text-gray-900"
+                                x-text="user.first_name + ' ' + user.last_name"></p>
+                            <p class="text-xs text-gray-600">Administrator</p>
+                        </div>
+                        <div class="bg-indigo-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
+                            <span x-text="user.first_name.charAt(0) + user.last_name.charAt(0)"></span>
+                        </div>
+                        <button @click="logout()" class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-white shadow-lg overflow-y-auto">
+            <nav class="mt-5 px-2">
+                <a @click="currentView = 'overview'"
+                    :class="currentView === 'overview' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-home mr-3"></i>
+                    Overview
+                </a>
+
+                <a @click="currentView = 'applications'"
+                    :class="currentView === 'applications' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-file-alt mr-3"></i>
+                    Applications
+                    <span x-show="stats.applications?.pending_review > 0"
+                        class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1"
+                        x-text="stats.applications?.pending_review"></span>
+                </a>
+
+                <a @click="currentView = 'students'"
+                    :class="currentView === 'students' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-user-graduate mr-3"></i>
+                    Students
+                </a>
+
+                <a @click="currentView = 'teachers'"
+                    :class="currentView === 'teachers' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-chalkboard-teacher mr-3"></i>
+                    Teachers
+                </a>
+
+                <a @click="currentView = 'classes'"
+                    :class="currentView === 'classes' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-school mr-3"></i>
+                    Classes
+                </a>
+
+                <a @click="currentView = 'finance'"
+                    :class="currentView === 'finance' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-money-bill-wave mr-3"></i>
+                    Finance
+                </a>
+
+                <a @click="currentView = 'reports'"
+                    :class="currentView === 'reports' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-chart-bar mr-3"></i>
+                    Reports
+                </a>
+
+                <a @click="currentView = 'settings'"
+                    :class="currentView === 'settings' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-cog mr-3"></i>
+                    Settings
+                </a>
+
+                <div class="border-t border-gray-200 my-4"></div>
+
+                <a href="/admin/" target="_blank"
+                    class="group flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-database mr-3"></i>
+                    Django Admin
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
+            <!-- Overview Section -->
+            <div x-show="currentView === 'overview'">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
+                    <p class="text-gray-600">Welcome back! Here's what's happening today.</p>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <!-- Total Students -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Total Students</p>
+                                <p class="text-3xl font-bold text-gray-900"
+                                    x-text="stats.students?.total_enrolled || 0"></p>
+                                <p class="text-sm text-green-600 mt-1">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span x-text="stats.students?.new_admissions || 0"></span> this month
+                                </p>
+                            </div>
+                            <div class="bg-blue-100 rounded-full p-4">
+                                <i class="fas fa-user-graduate text-blue-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pending Applications -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Pending Applications</p>
+                                <p class="text-3xl font-bold text-gray-900"
+                                    x-text="stats.applications?.pending_review || 0"></p>
+                                <p class="text-sm text-orange-600 mt-1">
+                                    <span x-text="stats.applications?.total_received || 0"></span> total received
+                                </p>
+                            </div>
+                            <div class="bg-orange-100 rounded-full p-4">
+                                <i class="fas fa-file-alt text-orange-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Teachers -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Total Teachers</p>
+                                <p class="text-3xl font-bold text-gray-900"
+                                    x-text="stats.user_statistics?.teachers || 0"></p>
+                                <p class="text-sm text-gray-600 mt-1">Active faculty</p>
+                            </div>
+                            <div class="bg-green-100 rounded-full p-4">
+                                <i class="fas fa-chalkboard-teacher text-green-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Fee Collection -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-600">Collection Rate</p>
+                                <p class="text-3xl font-bold text-gray-900"
+                                    x-text="(stats.financial?.collection_rate || 0) + '%'"></p>
+                                <p class="text-sm text-gray-600 mt-1">
+                                    GHS <span x-text="stats.financial?.application_fees_collected || 0"></span>
+                                    collected
+                                </p>
+                            </div>
+                            <div class="bg-purple-100 rounded-full p-4">
+                                <i class="fas fa-money-bill-wave text-purple-600 text-2xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <!-- Applications Chart -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Application Status</h3>
+                        <canvas id="applicationsChart"></canvas>
+                    </div>
+
+                    <!-- Class Capacity Chart -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Class Capacity</h3>
+                        <canvas id="classCapacityChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Quick Actions & Recent Applications -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Quick Actions -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                        <div class="space-y-3">
+                            <template x-for="action in stats.quick_actions" :key="action.title">
+                                <div
+                                    class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                    <div class="flex items-center">
+                                        <i :class="action.icon" class="text-indigo-600 mr-3"></i>
+                                        <div>
+                                            <p class="font-medium text-gray-900" x-text="action.title"></p>
+                                            <p class="text-sm text-gray-600" x-text="action.count + ' pending'"></p>
+                                        </div>
+                                    </div>
+                                    <span :class="{
+                                        'bg-red-100 text-red-800': action.priority === 'high',
+                                        'bg-yellow-100 text-yellow-800': action.priority === 'medium'
+                                    }" class="px-3 py-1 rounded-full text-xs font-medium"
+                                        x-text="action.priority.toUpperCase()"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Recent Applications -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Applications</h3>
+                        <div class="space-y-3">
+                            <template x-for="app in stats.recent_applications?.slice(0, 5)"
+                                :key="app.application_number">
+                                <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                                    <div>
+                                        <p class="font-medium text-gray-900" x-text="app.name"></p>
+                                        <p class="text-sm text-gray-600" x-text="app.applying_for"></p>
+                                    </div>
+                                    <span :class="{
+                                        'bg-green-100 text-green-800': app.status === 'accepted',
+                                        'bg-yellow-100 text-yellow-800': app.status === 'submitted',
+                                        'bg-blue-100 text-blue-800': app.status === 'under_review',
+                                        'bg-red-100 text-red-800': app.status === 'rejected'
+                                    }" class="px-3 py-1 rounded-full text-xs font-medium"
+                                        x-text="app.status.replace('_', ' ').toUpperCase()"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Applications Section -->
+            <div x-show="currentView === 'applications'">
+                <div class="mb-6 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Applications Management</h2>
+                        <p class="text-gray-600">Review and process student applications</p>
+                    </div>
+                    <button @click="refreshData()"
+                        class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                </div>
+
+                <!-- Filter Tabs -->
+                <div class="bg-white rounded-lg shadow mb-6">
+                    <div class="border-b border-gray-200">
+                        <nav class="flex space-x-8 px-6" aria-label="Tabs">
+                            <template x-for="tab in applicationTabs" :key="tab.key">
+                                <button @click="activeApplicationTab = tab.key"
+                                    :class="activeApplicationTab === tab.key ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                                    class="py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap">
+                                    <span x-text="tab.label"></span>
+                                    <span x-show="tab.count > 0"
+                                        :class="activeApplicationTab === tab.key ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-600'"
+                                        class="ml-2 py-0.5 px-2.5 rounded-full text-xs font-medium"
+                                        x-text="tab.count"></span>
+                                </button>
+                            </template>
+                        </nav>
+                    </div>
+
+                    <!-- Applications Table -->
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        Application #</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        Applicant</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        Submitted</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <template x-for="app in filteredApplications" :key="app.application_number">
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                                            x-text="app.application_number"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900" x-text="app.name"></div>
+                                            <div class="text-sm text-gray-500" x-text="app.email || ''"></div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                                            x-text="app.applying_for"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
+                                            x-text="formatDate(app.submitted_at)"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span :class="{
+                                                'bg-green-100 text-green-800': app.status === 'accepted',
+                                                'bg-yellow-100 text-yellow-800': app.status === 'submitted',
+                                                'bg-blue-100 text-blue-800': app.status === 'under_review',
+                                                'bg-purple-100 text-purple-800': app.status === 'exam_completed',
+                                                'bg-red-100 text-red-800': app.status === 'rejected'
+                                            }" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                                x-text="app.status.replace('_', ' ').toUpperCase()"></span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <button class="text-indigo-600 hover:text-indigo-900 mr-3">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button x-show="app.status === 'exam_completed'"
+                                                class="text-green-600 hover:text-green-900 mr-3">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button
+                                                x-show="['submitted', 'under_review', 'exam_completed'].includes(app.status)"
+                                                class="text-red-600 hover:text-red-900">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Other sections (Students, Teachers, etc.) will be similar structures -->
+            <div x-show="currentView === 'students'">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Students Management</h2>
+                <p class="text-gray-600">Coming soon...</p>
+            </div>
+
+            <div x-show="currentView === 'teachers'">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Teachers Management</h2>
+                <p class="text-gray-600">Coming soon...</p>
+            </div>
+
+            <div x-show="currentView === 'classes'">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Class Management</h2>
+                <p class="text-gray-600">Coming soon...</p>
+            </div>
+
+            <div x-show="currentView === 'finance'">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Finance Management</h2>
+                <p class="text-gray-600">Coming soon...</p>
+            </div>
+
+            <div x-show="currentView === 'reports'">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Reports & Analytics</h2>
+                <p class="text-gray-600">Coming soon...</p>
+            </div>
+
+            <div x-show="currentView === 'settings'">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">System Settings</h2>
+                <p class="text-gray-600">Coming soon...</p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function requireAuth() {
+            const token = localStorage.getItem('access_token');
+            const userData = localStorage.getItem('user_data');
+
+            if (!token || !userData) {
+                alert('Please login first');
+                window.location.href = '/auth/';
+                return null;
+            }
+
+            return JSON.parse(userData);
+        }
+        function adminDashboard() {
+            return {
+                user: {},
+                currentView: 'overview',
+                stats: {},
+                notifications: [],
+                activeApplicationTab: 'all',
+                applicationTabs: [
+                    { key: 'all', label: 'All', count: 0 },
+                    { key: 'submitted', label: 'Submitted', count: 0 },
+                    { key: 'under_review', label: 'Under Review', count: 0 },
+                    { key: 'exam_completed', label: 'Exam Completed', count: 0 },
+                    { key: 'accepted', label: 'Accepted', count: 0 },
+                    { key: 'rejected', label: 'Rejected', count: 0 }
+                ],
+
+                async init() {
+                    this.user = requireAuth();
+                    if (!this.user) return;
+                    // Check authentication
+                    const token = localStorage.getItem('access_token');
+                    const userData = localStorage.getItem('user_data');
+
+                    if (!token || !userData) {
+                        window.location.href = '/auth/';
+                        return;
+                    }
+
+                    this.user = JSON.parse(userData);
+
+                    // Check if user is admin
+                    ///if (!['admin', 'super_admin'].includes(this.user.role)) {
+                    //alert('Access denied. Admin privileges required.');
+                    //window.location.href = '/auth/';
+                    //return;
+                    //}
+
+                    await this.loadDashboardData();
+                    this.initCharts();
+                },
+
+                async loadDashboardData() {
+                    try {
+                        const response = await fetch('/api/v1/dashboard/admin/overview/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.stats = data.data;
+                            this.updateApplicationTabs();
+                            this.updateNotifications();
+                        }
+                    } catch (error) {
+                        console.error('Error loading dashboard:', error);
+                    }
+                },
+
+                updateApplicationTabs() {
+                    if (this.stats.applications) {
+                        this.applicationTabs[0].count = this.stats.applications.total_received;
+                        this.applicationTabs[1].count = this.stats.applications.pending_review;
+                        // Add more counts as needed
+                    }
+                },
+
+                updateNotifications() {
+                    this.notifications = [];
+
+                    if (this.stats.quick_actions) {
+                        this.stats.quick_actions.forEach(action => {
+                            this.notifications.push({
+                                id: Math.random(),
+                                message: `${action.title} (${action.count} pending)`,
+                                time: 'Just now',
+                                priority: action.priority
+                            });
+                        });
+                    }
+                },
+
+                get filteredApplications() {
+                    if (!this.stats.recent_applications) return [];
+
+                    if (this.activeApplicationTab === 'all') {
+                        return this.stats.recent_applications;
+                    }
+
+                    return this.stats.recent_applications.filter(app =>
+                        app.status === this.activeApplicationTab
+                    );
+                },
+
+                initCharts() {
+                    this.$nextTick(() => {
+                        // Applications Status Chart
+                        const ctx1 = document.getElementById('applicationsChart');
+                        if (ctx1 && this.stats.applications) {
+                            new Chart(ctx1, {
+                                type: 'doughnut',
+                                data: {
+                                    labels: ['Pending', 'Approved', 'Rejected', 'Under Review'],
+                                    datasets: [{
+                                        data: [
+                                            this.stats.applications.pending_review || 0,
+                                            this.stats.applications.approved || 0,
+                                            this.stats.applications.rejected || 0,
+                                            10 // Placeholder
+                                        ],
+                                        backgroundColor: ['#f59e0b', '#10b981', '#ef4444', '#3b82f6']
+                                    }]
+                                }
+                            });
+                        }
+
+                        // Class Capacity Chart
+                        const ctx2 = document.getElementById('classCapacityChart');
+                        if (ctx2 && this.stats.classes) {
+                            new Chart(ctx2, {
+                                type: 'bar',
+                                data: {
+                                    labels: this.stats.classes.map(c => c.class_name),
+                                    datasets: [{
+                                        label: 'Enrolled',
+                                        data: this.stats.classes.map(c => c.enrolled),
+                                        backgroundColor: '#6366f1'
+                                    }, {
+                                        label: 'Capacity',
+                                        data: this.stats.classes.map(c => c.capacity),
+                                        backgroundColor: '#e5e7eb'
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: true
+                                }
+                            });
+                        }
+                    });
+                },
+
+                async refreshData() {
+                    await this.loadDashboardData();
+                    alert('Data refreshed successfully!');
+                },
+
+                formatDate(dateString) {
+                    if (!dateString) return 'N/A';
+                    return new Date(dateString).toLocaleDateString();
+                },
+
+                logout() {
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('refresh_token');
+                    localStorage.removeItem('user_data');
+                    window.location.href = '/auth/';
+                }
+            }
+        }
+    </script>
+
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+</body>
+
+</html>
