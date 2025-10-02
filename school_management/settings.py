@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
 
     # Third-party apps
     'rest_framework',
@@ -55,6 +56,7 @@ INSTALLED_APPS = [
     'apps.accounts',
     'apps.admissions',
     'apps.dashboard',
+    'apps.academics', 
 ]
 
 
@@ -140,6 +142,10 @@ SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 LOGIN_URL = '/auth/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/auth/'
+
+# Media files for uploads
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Exempt API endpoints from CSRF
 CSRF_TRUSTED_ORIGINS = ['http://127.0.0.1:8000', 'http://localhost:8000']

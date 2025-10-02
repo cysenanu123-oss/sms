@@ -1,45 +1,527 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>School Management System</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Application - Excellence Academy</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js" defer></script>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
-    <div class="min-h-screen flex items-center justify-center p-6">
-        <div class="text-center max-w-2xl">
-            <i class="fas fa-graduation-cap text-6xl text-indigo-600 mb-6"></i>
-            <h1 class="text-5xl font-bold text-gray-900 mb-4">Excellence Academy</h1>
-            <p class="text-xl text-gray-600 mb-8">Complete School Management System</p>
-            
-            <div class="bg-white rounded-xl shadow-2xl p-8 mb-8">
-                <h2 class="text-2xl font-semibold text-gray-900 mb-6">Access Portal</h2>
-                <div class="space-y-4">
-                    <a href="/auth/" class="block p-6 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-200">
-                        <i class="fas fa-sign-in-alt mr-3 text-2xl"></i>
-                        <div class="inline-block text-left">
-                            <p class="font-semibold text-lg">Login Portal</p>
-                            <p class="text-sm opacity-90">For Students, Parents, Teachers & Staff</p>
-                        </div>
-                    </a>
-                    
-                    <a href="/admin/" class="block p-6 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition duration-200">
-                        <i class="fas fa-cog mr-3 text-2xl"></i>
-                        <div class="inline-block text-left">
-                            <p class="font-semibold text-lg">Django Admin Panel</p>
-                            <p class="text-sm opacity-90">System Administration</p>
-                        </div>
-                    </a>
+<body class="bg-gray-50" x-data="applicationForm()" x-init="init()">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <i class="fas fa-graduation-cap text-3xl text-indigo-600 mr-3"></i>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">Excellence Academy</h1>
+                        <p class="text-xs text-gray-600">Student Application Form</p>
+                    </div>
                 </div>
+                <a href="/" class="text-gray-600 hover:text-indigo-600">
+                    <i class="fas fa-home mr-2"></i>Back to Home
+                </a>
             </div>
-            
-            <div class="text-gray-600">
-                <p class="mb-2">© 2025 Excellence Academy. All rights reserved.</p>
-                <p class="text-sm">School Management System v1.0</p>
+        </div>
+    </nav>
+
+    <!-- Progress Bar -->
+    <div class="bg-white border-b">
+        <div class="max-w-4xl mx-auto px-4 py-4">
+            <div class="flex items-center justify-between text-sm">
+                <div class="flex items-center space-x-2" :class="step >= 1 ? 'text-indigo-600' : 'text-gray-400'">
+                    <i class="fas fa-user-circle"></i>
+                    <span class="hidden sm:inline">Student Info</span>
+                </div>
+                <div class="flex-1 h-1 mx-2" :class="step >= 2 ? 'bg-indigo-600' : 'bg-gray-300'"></div>
+                <div class="flex items-center space-x-2" :class="step >= 2 ? 'text-indigo-600' : 'text-gray-400'">
+                    <i class="fas fa-heartbeat"></i>
+                    <span class="hidden sm:inline">Health Info</span>
+                </div>
+                <div class="flex-1 h-1 mx-2" :class="step >= 3 ? 'bg-indigo-600' : 'bg-gray-300'"></div>
+                <div class="flex items-center space-x-2" :class="step >= 3 ? 'text-indigo-600' : 'text-gray-400'">
+                    <i class="fas fa-file-signature"></i>
+                    <span class="hidden sm:inline">Declaration</span>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Form Container -->
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        <form @submit.prevent="submitApplication()" enctype="multipart/form-data">
+            
+            <!-- Step 1: Student Information -->
+            <div x-show="step === 1" class="bg-white rounded-xl shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Student Information</h2>
+                
+                <!-- Department -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Department <span class="text-red-500">*</span>
+                    </label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <label class="border-2 rounded-lg p-3 cursor-pointer hover:bg-indigo-50 transition" :class="formData.department === 'baby_sitting' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'">
+                            <input type="radio" name="department" value="baby_sitting" x-model="formData.department" class="hidden">
+                            <i class="fas fa-baby text-2xl mb-2 block text-center"></i>
+                            <span class="text-sm text-center block">Baby Sitting</span>
+                        </label>
+                        <label class="border-2 rounded-lg p-3 cursor-pointer hover:bg-indigo-50 transition" :class="formData.department === 'pre_school' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'">
+                            <input type="radio" name="department" value="pre_school" x-model="formData.department" class="hidden">
+                            <i class="fas fa-child text-2xl mb-2 block text-center"></i>
+                            <span class="text-sm text-center block">Pre-School</span>
+                        </label>
+                        <label class="border-2 rounded-lg p-3 cursor-pointer hover:bg-indigo-50 transition" :class="formData.department === 'primary' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'">
+                            <input type="radio" name="department" value="primary" x-model="formData.department" class="hidden">
+                            <i class="fas fa-school text-2xl mb-2 block text-center"></i>
+                            <span class="text-sm text-center block">Primary</span>
+                        </label>
+                        <label class="border-2 rounded-lg p-3 cursor-pointer hover:bg-indigo-50 transition" :class="formData.department === 'jhs' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'">
+                            <input type="radio" name="department" value="jhs" x-model="formData.department" class="hidden">
+                            <i class="fas fa-graduation-cap text-2xl mb-2 block text-center"></i>
+                            <span class="text-sm text-center block">JHS</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Full Name -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Learner's Full Name <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" x-model="formData.learner_name" required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <!-- Sex -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Sex <span class="text-red-500">*</span>
+                        </label>
+                        <select x-model="formData.sex" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <option value="">-- Select --</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+
+                    <!-- Date of Birth -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Date of Birth <span class="text-red-500">*</span>
+                        </label>
+                        <input type="date" x-model="formData.date_of_birth" @change="calculateAge()" required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <!-- Age (auto-calculated) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Age</label>
+                        <input type="number" x-model="formData.age" readonly
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                    </div>
+
+                    <!-- Class -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Applying for Class <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" x-model="formData.applying_for_class" required
+                               placeholder="e.g., Grade 1"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <!-- Previous School -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Previous School (if any)
+                        </label>
+                        <input type="text" x-model="formData.previous_school"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <!-- Address -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Residential Address <span class="text-red-500">*</span>
+                        </label>
+                        <textarea x-model="formData.residential_address" required rows="2"
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+
+                    <!-- Nationality -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Nationality <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" x-model="formData.nationality" required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <!-- Region -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Region <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" x-model="formData.region" required
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <!-- Languages -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Languages Spoken <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" x-model="formData.languages_spoken" required
+                               placeholder="e.g., English, Twi"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <!-- Religion -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Religion</label>
+                        <select x-model="formData.religion"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <option value="">-- Select --</option>
+                            <option value="Christian">Christian</option>
+                            <option value="Islamic">Islamic</option>
+                            <option value="Traditional">Traditional</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-end">
+                    <button type="button" @click="nextStep()" 
+                            class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
+                        Next <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Health Information -->
+            <div x-show="step === 2" class="bg-white rounded-xl shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Health Information</h2>
+                
+                <div class="space-y-6">
+                    <!-- Health Challenge -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Does your child have any health challenges?
+                        </label>
+                        <select x-model="formData.has_health_challenge"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                        <textarea x-show="formData.has_health_challenge === 'true'" 
+                                  x-model="formData.health_challenge_details"
+                                  rows="2" placeholder="Please provide details..."
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 mt-2"></textarea>
+                    </div>
+
+                    <!-- Allergies -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Does your child have any allergies or diseases?
+                        </label>
+                        <select x-model="formData.has_allergies"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                        <textarea x-show="formData.has_allergies === 'true'" 
+                                  x-model="formData.allergies_details"
+                                  rows="2" placeholder="Please provide details..."
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 mt-2"></textarea>
+                    </div>
+
+                    <!-- Regular Medication -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Regular Medication (if any)
+                        </label>
+                        <textarea x-model="formData.medication_details" rows="2"
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+
+                    <!-- Insurance -->
+                    <div class="border-t pt-6">
+                        <h3 class="font-semibold text-gray-900 mb-4">Health Insurance (Optional)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Insurance Company</label>
+                                <input type="text" x-model="formData.insurance_company"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Insurance Card Number</label>
+                                <input type="text" x-model="formData.insurance_number"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Upload Insurance Card</label>
+                                <input type="file" @change="handleFileUpload($event, 'insurance_card')" accept="image/*,.pdf"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Parent Status -->
+                    <div class="border-t pt-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Parents Status</label>
+                        <select x-model="formData.parents_status"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <option value="">-- Select --</option>
+                            <option value="Both Parents Alive">Both Parents Alive</option>
+                            <option value="Living Together">Living Together</option>
+                            <option value="Separated">Separated</option>
+                            <option value="Divorced">Divorced</option>
+                            <option value="One or Both Deceased">One or Both Deceased</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-between">
+                    <button type="button" @click="prevStep()" 
+                            class="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50">
+                        <i class="fas fa-arrow-left mr-2"></i> Previous
+                    </button>
+                    <button type="button" @click="nextStep()" 
+                            class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
+                        Next <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Declaration -->
+            <div x-show="step === 3" class="bg-white rounded-xl shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Declaration</h2>
+                
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+                    <p class="text-sm text-yellow-800">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        I/We confirm that all information provided is true and complete. If found incomplete or untrue, the admission will be canceled.
+                    </p>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Parent/Guardian Name <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" x-model="formData.declaration_name" required
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Date <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" x-model="formData.declaration_date" required
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Signature Upload (Optional)
+                        </label>
+                        <input type="file" @change="handleFileUpload($event, 'signature')" accept="image/*,.pdf"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                    </div>
+
+                    <div class="flex items-start">
+                        <input type="checkbox" x-model="agreeToTerms" id="terms"
+                               class="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="terms" class="ml-2 text-sm text-gray-700">
+                            I agree to the declaration and terms <span class="text-red-500">*</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div x-show="submitError" class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p class="text-red-700 text-sm" x-text="submitError"></p>
+                </div>
+
+                <div class="mt-6 flex justify-between">
+                    <button type="button" @click="prevStep()" 
+                            class="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50">
+                        <i class="fas fa-arrow-left mr-2"></i> Previous
+                    </button>
+                    <button type="submit" :disabled="!agreeToTerms || submitting" 
+                            class="bg-green-600 text-white px-8 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span x-show="!submitting">
+                            <i class="fas fa-paper-plane mr-2"></i> Submit Application
+                        </span>
+                        <span x-show="submitting">
+                            <i class="fas fa-spinner fa-spin mr-2"></i> Submitting...
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Success Modal -->
+    <div x-show="showSuccessModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md mx-4">
+            <div class="text-center">
+                <i class="fas fa-check-circle text-green-600 text-6xl mb-4"></i>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Application Submitted!</h2>
+                <p class="text-gray-600 mb-4">Your application number is:</p>
+                <p class="text-3xl font-bold text-indigo-600 mb-6" x-text="applicationNumber"></p>
+                <p class="text-sm text-gray-600 mb-6">
+                    Thank you for applying to Excellence Academy. We will review your application and contact you soon.
+                </p>
+                <button @click="window.location.href='/'" 
+                        class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 w-full">
+                    Return to Home
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function applicationForm() {
+            return {
+                step: 1,
+                agreeToTerms: false,
+                submitting: false,
+                submitError: '',
+                showSuccessModal: false,
+                applicationNumber: '',
+                
+                formData: {
+                    department: '',
+                    learner_name: '',
+                    sex: '',
+                    date_of_birth: '',
+                    age: '',
+                    applying_for_class: '',
+                    previous_school: '',
+                    residential_address: '',
+                    nationality: '',
+                    region: '',
+                    languages_spoken: '',
+                    religion: '',
+                    has_health_challenge: 'false',
+                    health_challenge_details: '',
+                    has_allergies: 'false',
+                    allergies_details: '',
+                    medication_details: '',
+                    insurance_company: '',
+                    insurance_number: '',
+                    parents_status: '',
+                    declaration_name: '',
+                    declaration_date: new Date().toISOString().split('T')[0]
+                },
+                
+                files: {
+                    insurance_card: null,
+                    signature: null
+                },
+
+                init() {
+                    console.log('Application form initialized');
+                },
+
+                calculateAge() {
+                    if (this.formData.date_of_birth) {
+                        const dob = new Date(this.formData.date_of_birth);
+                        const today = new Date();
+                        let age = today.getFullYear() - dob.getFullYear();
+                        const monthDiff = today.getMonth() - dob.getMonth();
+                        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+                            age--;
+                        }
+                        this.formData.age = age;
+                    }
+                },
+
+                handleFileUpload(event, fieldName) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        this.files[fieldName] = file;
+                    }
+                },
+
+                nextStep() {
+                    if (this.validateStep()) {
+                        this.step++;
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                },
+
+                prevStep() {
+                    this.step--;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                validateStep() {
+                    if (this.step === 1) {
+                        if (!this.formData.department || !this.formData.learner_name || !this.formData.sex || 
+                            !this.formData.date_of_birth || !this.formData.applying_for_class || 
+                            !this.formData.residential_address || !this.formData.nationality || 
+                            !this.formData.region || !this.formData.languages_spoken) {
+                            alert('Please fill in all required fields');
+                            return false;
+                        }
+                    }
+                    return true;
+                },
+
+                async submitApplication() {
+                    if (!this.agreeToTerms) {
+                        this.submitError = 'Please agree to the terms and declaration';
+                        return;
+                    }
+
+                    this.submitting = true;
+                    this.submitError = '';
+
+                    try {
+                        const formDataToSend = new FormData();
+                        
+                        // Add all form fields
+                        Object.keys(this.formData).forEach(key => {
+                            formDataToSend.append(key, this.formData[key]);
+                        });
+                        
+                        // Add files
+                        if (this.files.insurance_card) {
+                            formDataToSend.append('insurance_card', this.files.insurance_card);
+                        }
+                        if (this.files.signature) {
+                            formDataToSend.append('signature', this.files.signature);
+                        }
+
+                        const response = await fetch('/api/v1/admissions/submit/', {
+                            method: 'POST',
+                            body: formDataToSend
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.applicationNumber = data.application_number;
+                            this.showSuccessModal = true;
+                        } else {
+                            this.submitError = data.error || 'Failed to submit application. Please try again.';
+                        }
+                    } catch (error) {
+                        console.error('Submission error:', error);
+                        this.submitError = 'Network error. Please check your connection and try again.';
+                    } finally {
+                        this.submitting = false;
+                    }
+                }
+            }
+        }
+    </script>
 </body>
 </html>

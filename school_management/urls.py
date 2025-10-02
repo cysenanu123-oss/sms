@@ -1,3 +1,4 @@
+# school_management/urls.py
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -9,30 +10,28 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Public pages
-    path('', TemplateView.as_view(
-        template_name='application_form.html'), name='home'),
+    path('', TemplateView.as_view(template_name='landing_page.html'), name='home'),
+    path('apply/', TemplateView.as_view(template_name='application_form.html'), name='apply'),
     path('auth/', TemplateView.as_view(template_name='auth.html'), name='auth'),
 
-    # Dashboards
-    path('dashboard/admin/', TemplateView.as_view(template_name='admin_dashboard.html'),
-         name='admin-dashboard'),
-    path('dashboard/parent/', TemplateView.as_view(template_name='parent_dashboard.html'),
-         name='parent-dashboard'),
-    path('dashboard/teacher/', TemplateView.as_view(
-        template_name='teacher_dashboard.html'), name='teacher-dashboard'),
-    path('dashboard/student/', TemplateView.as_view(
-        template_name='student_dashboard.html'), name='student-dashboard'),
+    # Dashboards (protected by JavaScript auth check)
+    path('dashboard/admin/', TemplateView.as_view(template_name='admin_dashboard.html'), name='admin-dashboard'),
+    path('dashboard/parent/', TemplateView.as_view(template_name='parent_dashboard.html'), name='parent-dashboard'),
+    path('dashboard/teacher/', TemplateView.as_view(template_name='teacher_dashboard.html'), name='teacher-dashboard'),
+    path('dashboard/student/', TemplateView.as_view(template_name='student_dashboard.html'), name='student-dashboard'),
 
     # API endpoints
     path('api/v1/auth/', include('apps.accounts.urls')),
-    path('api/v1/dashboard/', include('apps.dashboard.urls')), # NEW LINE
+    path('api/v1/dashboard/', include('apps.dashboard.urls')),
+    path('api/v1/admissions/', include('apps.admissions.public_urls')),  # Public application submission
+    path('api/v1/admin/admissions/', include('apps.admissions.urls')),  # Admin management (protected)
 ]
 
+# Media files (for uploaded documents)
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL,
-                          document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Admin customization
-admin.site.site_header = "School Management System"
+admin.site.site_header = "Excellence Academy Management"
 admin.site.site_title = "School Admin"
 admin.site.index_title = "Welcome to School Management System"
