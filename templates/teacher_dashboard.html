@@ -821,29 +821,44 @@
                 passRate: 0,
 
                 async init() {
-                    this.user = requireAuth();
-                    if (!this.user) return;
-                    // Check authentication
                     const token = localStorage.getItem('access_token');
                     const userData = localStorage.getItem('user_data');
 
                     if (!token || !userData) {
-                        // window.location.href = '/auth/';
-                        // return;
+                        alert('Please login first');
+                        window.location.href = '/auth/';
+                        return;
                     }
 
                     this.user = JSON.parse(userData);
 
-                    // if (this.user.role !== 'teacher') {
-                    // alert('Access denied. Teacher access required.');
-                    // window.location.href = '/auth/';
-                    // return;
-                    //}
+                    // Verify teacher access
+                    try {
+                        const response = await fetch('/api/v1/dashboard/verify-teacher/', {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
 
-                    this.updateDateTime();
-                    setInterval(() => this.updateDateTime(), 1000);
+                        const data = await response.json();
 
-                    await this.loadTeacherData();
+                        if (!data.success) {
+                            alert('Access Denied: Teacher privileges required');
+                            window.location.href = '/auth/';
+                            return;
+                        }
+
+                        this.updateDateTime();
+                        setInterval(() => this.updateDateTime(), 1000);
+                        await this.loadTeacherData();
+
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Error verifying access');
+                        window.location.href = '/auth/';
+                    }
                 },
 
                 updateDateTime() {
@@ -1031,12 +1046,11 @@
                     this.selectedClass = cls.id;
                     this.currentView = 'classes';
                 },
-
                 logout() {
                     localStorage.removeItem('access_token');
                     localStorage.removeItem('refresh_token');
                     localStorage.removeItem('user_data');
-                    // window.location.href = '/auth/';
+                    window.location.href = '/auth/';
                 }
             }
         }

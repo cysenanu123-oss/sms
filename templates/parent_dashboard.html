@@ -397,29 +397,44 @@
                 upcomingEvents: [],
 
                 async init() {
-                    this.user = requireAuth();
-                    if (!this.user) return;
-                    // Check authentication
                     const token = localStorage.getItem('access_token');
                     const userData = localStorage.getItem('user_data');
 
                     if (!token || !userData) {
+                        alert('Please login first');
                         window.location.href = '/auth/';
                         return;
                     }
 
                     this.user = JSON.parse(userData);
 
-                    // Check if user is parent
-                    // // if (this.user.role !== 'parent') {
-                    alert('Access denied. Parent access required.');
-                    window.location.href = '/auth/';
-                    return;
-                    //}
+                    // Verify parent access
+                    try {
+                        const response = await fetch('/api/v1/dashboard/verify-parent/', {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
 
-                    await this.loadChildren();
-                    this.loadNotifications();
-                    this.loadUpcomingEvents();
+                        const data = await response.json();
+
+                        if (!data.success) {
+                            alert('Access Denied: Parent privileges required');
+                            window.location.href = '/auth/';
+                            return;
+                        }
+
+                        await this.loadChildren();
+                        this.loadNotifications();
+                        this.loadUpcomingEvents();
+
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Error verifying access');
+                        window.location.href = '/auth/';
+                    }
                 },
 
                 async loadChildren() {

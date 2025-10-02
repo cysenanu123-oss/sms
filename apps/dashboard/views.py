@@ -1,27 +1,104 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
 
-@login_required(login_url='/auth/')
-def admin_dashboard(request):
-    if getattr(request.user, 'role', '').lower() not in ['admin', 'super_admin'] and not request.user.is_superuser:
-        return redirect('/auth/')
-    return render(request, 'admin_dashboard.html', {'user': request.user})
 
-@login_required(login_url='/auth/')
-def teacher_dashboard(request):
-    if getattr(request.user, 'role', '').lower() != 'teacher' and not request.user.is_superuser:
-        return redirect('/auth/')
-    return render(request, 'teacher_dashboard.html', {'user': request.user})
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def verify_admin_access(request):
+    """Verify user has admin access"""
+    user = request.user
+    
+    if user.role in ['admin', 'super_admin'] or user.is_superuser:
+        return Response({
+            'success': True,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'role': user.role
+            }
+        })
+    
+    return Response({
+        'success': False,
+        'error': 'Admin access required'
+    }, status=status.HTTP_403_FORBIDDEN)
 
-@login_required(login_url='/auth/')
-def student_dashboard(request):
-    if getattr(request.user, 'role', '').lower() != 'student' and not request.user.is_superuser:
-        return redirect('/auth/')
-    return render(request, 'dashboard/student_dashboard.html', {'user': request.user})
 
-@login_required(login_url='/auth/')
-def parent_dashboard(request):
-    if getattr(request.user, 'role', '').lower() != 'parent' and not request.user.is_superuser:
-        return redirect('/auth/')
-    return render(request, 'parent_dashboard.html', {'user': request.user})
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def verify_teacher_access(request):
+    """Verify user has teacher access"""
+    user = request.user
+    
+    if user.role == 'teacher' or user.is_superuser:
+        return Response({
+            'success': True,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'role': user.role
+            }
+        })
+    
+    return Response({
+        'success': False,
+        'error': 'Teacher access required'
+    }, status=status.HTTP_403_FORBIDDEN)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def verify_student_access(request):
+    """Verify user has student access"""
+    user = request.user
+    
+    if user.role == 'student' or user.is_superuser:
+        return Response({
+            'success': True,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'role': user.role
+            }
+        })
+    
+    return Response({
+        'success': False,
+        'error': 'Student access required'
+    }, status=status.HTTP_403_FORBIDDEN)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def verify_parent_access(request):
+    """Verify user has parent access"""
+    user = request.user
+    
+    if user.role == 'parent' or user.is_superuser:
+        return Response({
+            'success': True,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'role': user.role
+            }
+        })
+    
+    return Response({
+        'success': False,
+        'error': 'Parent access required'
+    }, status=status.HTTP_403_FORBIDDEN)

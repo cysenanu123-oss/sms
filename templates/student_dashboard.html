@@ -176,27 +176,55 @@
     </div>
 
     <script>
-        function studentDashboard() {
-            return {
-                user: null,
+function studentDashboard() {
+    return {
+        user: null,
 
-                init() {
-                    const userData = localStorage.getItem('user_data');
-                    if (userData) {
-                        this.user = JSON.parse(userData);
-                    } else {
-                        window.location.href = '/auth/';
-                    }
-                },
-
-                logout() {
-                    localStorage.removeItem('access_token');
-                    localStorage.removeItem('refresh_token');
-                    localStorage.removeItem('user_data');
-                    window.location.href = '/auth/';
-                }
+        async init() {
+            const token = localStorage.getItem('access_token');
+            const userData = localStorage.getItem('user_data');
+            
+            if (!token || !userData) {
+                alert('Please login first');
+                window.location.href = '/auth/';
+                return;
             }
+
+            this.user = JSON.parse(userData);
+
+            // Verify student access
+            try {
+                const response = await fetch('/api/v1/dashboard/verify-student/', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    alert('Access Denied: Student privileges required');
+                    window.location.href = '/auth/';
+                    return;
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error verifying access');
+                window.location.href = '/auth/';
+            }
+        },
+
+        logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user_data');
+            window.location.href = '/auth/';
         }
-    </script>
+    }
+}
+</script>
 </body>
 </html>

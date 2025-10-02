@@ -9,9 +9,10 @@ class User(AbstractUser):
     must_change_password = models.BooleanField(default=False)
     
     ROLE_CHOICES = (
-        ('admin', 'Admin'),
-        ('teacher', 'Teacher'),
-        ('student', 'Student'),
+    ('admin', 'Admin'),
+    ('teacher', 'Teacher'),
+    ('student', 'Student'),
+    ('parent', 'Parent'),  # ADD THIS LINE
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student')
     email_verified = models.BooleanField(default=False)  # Email verification status

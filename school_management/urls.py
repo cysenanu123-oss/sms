@@ -4,6 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
 
@@ -22,8 +23,9 @@ urlpatterns = [
     path('dashboard/student/', TemplateView.as_view(
         template_name='student_dashboard.html'), name='student-dashboard'),
 
-    # API - only include what exists
+    # API endpoints
     path('api/v1/auth/', include('apps.accounts.urls')),
+    path('api/v1/dashboard/', include('apps.dashboard.urls')), # NEW LINE
 ]
 
 if settings.DEBUG:
