@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: #4F46E5;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            background: #f9f9f9;
+            padding: 30px;
+            border: 1px solid #ddd;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #4F46E5;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Excellence Academy</h1>
+            <p>Application Received</p>
+        </div>
+        
+        <div class="content">
+            <h2>Dear {{ parent_name }},</h2>
+            
+            <p>Thank you for submitting an application to Excellence Academy for {{ student_name }}.</p>
+            
+            <p><strong>Application Details:</strong></p>
+            <ul>
+                <li>Application Number: <strong>{{ application_number }}</strong></li>
+                <li>Student Name: {{ student_name }}</li>
+                <li>Applying For: {{ applying_for_class }}</li>
+                <li>Department: {{ department }}</li>
+                <li>Submitted On: {{ submitted_date }}</li>
+            </ul>
+            
+            <p>Your application is currently under review. We will contact you within 3-5 business days regarding the next steps.</p>
+            
+            <p><strong>What happens next?</strong></p>
+            <ol>
+                <li>Our admissions team will review the application</li>
+                <li>If approved, we will schedule an entrance examination</li>
+                <li>You will receive an email with the exam date and details</li>
+                <li>After the exam, you'll be notified of the final decision</li>
+            </ol>
+            
+            <p><strong>Please keep your application number safe for future reference.</strong></p>
+            
+            <p>If you have any questions, please contact us at:</p>
+            <p>
+                Email: admissions@excellenceacademy.edu.gh<br>
+                Phone: +233 20 123 4567
+            </p>
+            
+            <p>Best regards,<br>
+            <strong>Excellence Academy Admissions Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>Excellence Academy | 123 Education Street, Accra | www.excellenceacademy.edu.gh</p>
+            <p>This is an automated email. Please do not reply to this message.</p>
+        </div>
+    </div>
+</body>
+</html>

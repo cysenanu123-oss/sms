@@ -159,3 +159,15 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
 }
+
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # or your email provider
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'cysenanu027@gmail.com'  # Change this
+EMAIL_HOST_PASSWORD = 'wonhssixebphwuwh'  # Use app password, not regular password
+DEFAULT_FROM_EMAIL = 'Excellence Academy <noreply@excellenceacademy.edu.gh>'
+
+# For development, you can use console backend to see emails in terminal:
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

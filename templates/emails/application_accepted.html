@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: #10B981;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            background: #f9f9f9;
+            padding: 30px;
+            border: 1px solid #ddd;
+        }
+        .highlight-box {
+            background: #FEF3C7;
+            border-left: 4px solid #F59E0B;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .info-box {
+            background: #DBEAFE;
+            border-left: 4px solid #3B82F6;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 Congratulations!</h1>
+            <p>Your child has been admitted to Excellence Academy</p>
+        </div>
+        
+        <div class="content">
+            <h2>Dear {{ parent_name }},</h2>
+            
+            <p>We are delighted to inform you that <strong>{{ student_name }}</strong> has been successfully admitted to Excellence Academy!</p>
+            
+            <div class="highlight-box">
+                <h3>⚠️ Important: Entrance Examination</h3>
+                <p><strong>Date:</strong> {{ exam_date }}</p>
+                <p><strong>Time:</strong> {{ exam_time }}</p>
+                <p><strong>Location:</strong> {{ exam_location }}</p>
+                <p><strong>What to Bring:</strong></p>
+                <ul>
+                    <li>This admission letter (printed)</li>
+                    <li>Birth certificate (original + photocopy)</li>
+                    <li>Two passport photographs</li>
+                    <li>Pencils, eraser, and ruler</li>
+                </ul>
+            </div>
+            
+            <div class="info-box">
+                <h3>Student Information</h3>
+                <p><strong>Student ID:</strong> {{ student_id }}</p>
+                <p><strong>Assigned Class:</strong> {{ assigned_class }}</p>
+                <p><strong>Academic Year:</strong> {{ academic_year }}</p>
+                <p><strong>Admission Date:</strong> {{ admission_date }}</p>
+            </div>
+            
+            <h3>Next Steps:</h3>
+            <ol>
+                <li><strong>Attend the Entrance Examination</strong> - This is mandatory for all new students</li>
+                <li><strong>Complete Registration</strong> - Bring required documents on exam day</li>
+                <li><strong>Pay Admission Fee</strong> - GHS {{ admission_fee }} (payable on registration day)</li>
+                <li><strong>Purchase Uniforms</strong> - Details will be provided after exam</li>
+            </ol>
+            
+            <h3>What Happens After the Exam?</h3>
+            <p>Based on the exam results, we will confirm the final class placement and provide:</p>
+            <ul>
+                <li>Student login credentials for the online portal</li>
+                <li>Parent login credentials to monitor progress</li>
+                <li>Class timetable and book list</li>
+                <li>School calendar and important dates</li>
+            </ul>
+            
+            <p><strong>Questions?</strong> Contact our admissions office:</p>
+            <p>
+                Email: admissions@excellenceacademy.edu.gh<br>
+                Phone: +233 20 123 4567<br>
+                Office Hours: Mon-Fri, 8:00 AM - 4:00 PM
+            </p>
+            
+            <p>We look forward to welcoming {{ student_name }} to the Excellence Academy family!</p>
+            
+            <p>Best regards,<br>
+            <strong>Excellence Academy Admissions Team</strong></p>
+        </div>
+        
+        <div class="footer">
+            <p>Excellence Academy | 123 Education Street, Accra | www.excellenceacademy.edu.gh</p>
+        </div>
+    </div>
+</body>
+</html>

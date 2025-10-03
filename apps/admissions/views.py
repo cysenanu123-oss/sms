@@ -5,10 +5,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import StudentApplication
 from .serializers import StudentApplicationSerializer
+from .email_utils import send_application_received_email
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])  # Public endpoint - no login required
+@permission_classes([AllowAny])
 def submit_application(request):
     """
     Handle student application form submission
@@ -19,16 +20,17 @@ def submit_application(request):
         if serializer.is_valid():
             application = serializer.save()
             
-            # TODO: Send confirmation email to parent/guardian
-            # TODO: Send notification to admin
+            # Send confirmation email
+            email_sent = send_application_received_email(application)
             
             return Response({
                 'success': True,
                 'message': 'Application submitted successfully',
                 'application_number': application.application_number,
+                'email_sent': email_sent,
                 'data': {
                     'application_number': application.application_number,
-                    'learner_name': application.learner_name,
+                    'student_name': f"{application.first_name} {application.last_name}",
                     'department': application.get_department_display(),
                     'submitted_at': application.submitted_at.isoformat()
                 }

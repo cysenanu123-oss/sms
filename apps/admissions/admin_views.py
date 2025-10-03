@@ -10,6 +10,7 @@ from apps.accounts.models import User
 import secrets
 
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_applications(request):
