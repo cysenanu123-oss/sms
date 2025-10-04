@@ -220,3 +220,83 @@ class TimetableEntry(models.Model):
     
     def __str__(self):
         return f"{self.timetable.class_obj.name} - {self.day_of_week} {self.time_slot.name}"
+
+
+
+class TeacherProfile(models.Model):
+    """Extended teacher profile information"""
+    
+    user = models.OneToOneField(
+        'accounts.User',
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'teacher'},
+        related_name='teacher_profile'
+    )
+    
+    # Professional Information
+    employee_id = models.CharField(max_length=50, unique=True)
+    hire_date = models.DateField()
+    department = models.CharField(max_length=100, blank=True)
+    
+    # Qualifications
+    qualification = models.CharField(max_length=200)
+    specialization = models.CharField(max_length=200)
+    years_of_experience = models.IntegerField(default=0)
+    
+    # Contact Information
+    emergency_contact_name = models.CharField(max_length=200)
+    emergency_contact_phone = models.CharField(max_length=20)
+    address = models.TextField()
+    
+    # Status
+    is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.user.get_full_name()} - {self.employee_id}"
+    
+    @property
+    def total_classes(self):
+        """Get total number of classes assigned"""
+        return self.user.class_assignments.filter(is_active=True).count()
+    
+    @property
+    def total_students(self):
+        """Get total number of students across all classes"""
+        from apps.admissions.models import Student
+        class_ids = self.user.class_assignments.values_list('class_obj', flat=True)
+        return Student.objects.filter(current_class_id__in=class_ids, status='active').count()
+
+
+class TeacherClassAssignment(models.Model):
+    """Tracks which classes a teacher is assigned to teach"""
+    
+    teacher = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.CASCADE,
+        limit_choices_to={'role': 'teacher'},
+        related_name='class_assignments'
+    )
+    class_obj = models.ForeignKey(
+        Class,
+        on_delete=models.CASCADE,
+        related_name='teacher_assignments'
+    )
+    
+    # Assignment details
+    assigned_date = models.DateField(auto_now_add=True)
+    academic_year = models.CharField(max_length=20)
+    is_class_teacher = models.BooleanField(default=False)
+    
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        unique_together = ['teacher', 'class_obj', 'academic_year']
+        ordering = ['class_obj__name']
+    
+    def __str__(self):
+        role = "Class Teacher" if self.is_class_teacher else "Subject Teacher"
+        return f"{self.teacher.get_full_name()} - {self.class_obj.name} ({role})"

@@ -39,6 +39,7 @@ urlpatterns = [
 
     # teacher endpoints
     path('api/v1/teachers/', include('apps.teachers.urls')),
+    path('api/v1/teachers/', include('apps.academics.urls')),
 ]
 
 
