@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
     
 
     # Third-party apps
@@ -57,6 +58,8 @@ INSTALLED_APPS = [
     'apps.admissions',
     'apps.dashboard',
     'apps.academics', 
+    'apps.parents',
+    'apps.finance',
 ]
 
 

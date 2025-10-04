@@ -30,6 +30,15 @@ urlpatterns = [
     path('api/v1/admin/admissions/',
          include('apps.admissions.admin_urls')),  # Admin endpoints
     path('api/v1/dashboard/', include('apps.dashboard.urls')),
+
+    # student endpoints
+    path('api/v1/students/', include('apps.students.urls')),
+
+    # parent endpoints
+    path('api/v1/parents/', include('apps.parents.urls')),  
+
+    # teacher endpoints
+    path('api/v1/teachers/', include('apps.teachers.urls')),
 ]
 
 

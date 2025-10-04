@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js" defer></script>
 </head>
+
 <body class="bg-gray-50" x-data="applicationForm()" x-init="init()">
     <!-- Navigation -->
     <nav class="bg-white shadow-lg">
@@ -37,11 +39,16 @@
                 </div>
                 <div class="flex-1 h-1 mx-2" :class="step >= 2 ? 'bg-indigo-600' : 'bg-gray-300'"></div>
                 <div class="flex items-center space-x-2" :class="step >= 2 ? 'text-indigo-600' : 'text-gray-400'">
-                    <i class="fas fa-heartbeat"></i>
-                    <span class="hidden sm:inline">Health Info</span>
+                    <i class="fas fa-users"></i>
+                    <span class="hidden sm:inline">Parent Info</span>
                 </div>
                 <div class="flex-1 h-1 mx-2" :class="step >= 3 ? 'bg-indigo-600' : 'bg-gray-300'"></div>
                 <div class="flex items-center space-x-2" :class="step >= 3 ? 'text-indigo-600' : 'text-gray-400'">
+                    <i class="fas fa-heartbeat"></i>
+                    <span class="hidden sm:inline">Health Info</span>
+                </div>
+                <div class="flex-1 h-1 mx-2" :class="step >= 4 ? 'bg-indigo-600' : 'bg-gray-300'"></div>
+                <div class="flex items-center space-x-2" :class="step >= 4 ? 'text-indigo-600' : 'text-gray-400'">
                     <i class="fas fa-file-signature"></i>
                     <span class="hidden sm:inline">Declaration</span>
                 </div>
@@ -52,34 +59,42 @@
     <!-- Form Container -->
     <div class="max-w-4xl mx-auto px-4 py-8">
         <form @submit.prevent="submitApplication()" enctype="multipart/form-data">
-            
+
             <!-- Step 1: Student Information -->
             <div x-show="step === 1" class="bg-white rounded-xl shadow-lg p-8">
                 <h2 class="text-2xl font-bold text-gray-900 mb-6">Student Information</h2>
-                
+
                 <!-- Department -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         Department <span class="text-red-500">*</span>
                     </label>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <label class="border-2 rounded-lg p-3 cursor-pointer hover:bg-indigo-50 transition" :class="formData.department === 'baby_sitting' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'">
-                            <input type="radio" name="department" value="baby_sitting" x-model="formData.department" class="hidden">
+                        <label class="border-2 rounded-lg p-3 cursor-pointer hover:bg-indigo-50 transition"
+                            :class="formData.department === 'baby_sitting' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'">
+                            <input type="radio" name="department" value="baby_sitting" x-model="formData.department"
+                                class="hidden">
                             <i class="fas fa-baby text-2xl mb-2 block text-center"></i>
                             <span class="text-sm text-center block">Baby Sitting</span>
                         </label>
-                        <label class="border-2 rounded-lg p-3 cursor-pointer hover:bg-indigo-50 transition" :class="formData.department === 'pre_school' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'">
-                            <input type="radio" name="department" value="pre_school" x-model="formData.department" class="hidden">
+                        <label class="border-2 rounded-lg p-3 cursor-pointer hover:bg-indigo-50 transition"
+                            :class="formData.department === 'pre_school' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'">
+                            <input type="radio" name="department" value="pre_school" x-model="formData.department"
+                                class="hidden">
                             <i class="fas fa-child text-2xl mb-2 block text-center"></i>
                             <span class="text-sm text-center block">Pre-School</span>
                         </label>
-                        <label class="border-2 rounded-lg p-3 cursor-pointer hover:bg-indigo-50 transition" :class="formData.department === 'primary' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'">
-                            <input type="radio" name="department" value="primary" x-model="formData.department" class="hidden">
+                        <label class="border-2 rounded-lg p-3 cursor-pointer hover:bg-indigo-50 transition"
+                            :class="formData.department === 'primary' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'">
+                            <input type="radio" name="department" value="primary" x-model="formData.department"
+                                class="hidden">
                             <i class="fas fa-school text-2xl mb-2 block text-center"></i>
                             <span class="text-sm text-center block">Primary</span>
                         </label>
-                        <label class="border-2 rounded-lg p-3 cursor-pointer hover:bg-indigo-50 transition" :class="formData.department === 'jhs' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'">
-                            <input type="radio" name="department" value="jhs" x-model="formData.department" class="hidden">
+                        <label class="border-2 rounded-lg p-3 cursor-pointer hover:bg-indigo-50 transition"
+                            :class="formData.department === 'jhs' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'">
+                            <input type="radio" name="department" value="jhs" x-model="formData.department"
+                                class="hidden">
                             <i class="fas fa-graduation-cap text-2xl mb-2 block text-center"></i>
                             <span class="text-sm text-center block">JHS</span>
                         </label>
@@ -87,37 +102,38 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <!-- Name Fields -->
+                    <!-- Name Fields -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             First Name <span class="text-red-500">*</span>
                         </label>
                         <input type="text" x-model="formData.first_name" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                     </div>
-                    
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Last Name <span class="text-red-500">*</span>
                         </label>
                         <input type="text" x-model="formData.last_name" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                     </div>
-                    
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Other Names
                         </label>
                         <input type="text" x-model="formData.other_names"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                     </div>
+
                     <!-- Sex -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Sex <span class="text-red-500">*</span>
                         </label>
                         <select x-model="formData.sex" required
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                             <option value="">-- Select --</option>
                             <option value="male">Male</option>
                             <option value="female">Female</option>
@@ -130,14 +146,14 @@
                             Date of Birth <span class="text-red-500">*</span>
                         </label>
                         <input type="date" x-model="formData.date_of_birth" @change="calculateAge()" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                     </div>
 
                     <!-- Age (auto-calculated) -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Age</label>
                         <input type="number" x-model="formData.age" readonly
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
                     </div>
 
                     <!-- Class -->
@@ -145,9 +161,8 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Applying for Class <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" x-model="formData.applying_for_class" required
-                               placeholder="e.g., Grade 1"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        <input type="text" x-model="formData.applying_for_class" required placeholder="e.g., Grade 1"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                     </div>
 
                     <!-- Previous School -->
@@ -156,7 +171,7 @@
                             Previous School (if any)
                         </label>
                         <input type="text" x-model="formData.previous_school"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                     </div>
 
                     <!-- Address -->
@@ -165,7 +180,7 @@
                             Residential Address <span class="text-red-500">*</span>
                         </label>
                         <textarea x-model="formData.residential_address" required rows="2"
-                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
                     </div>
 
                     <!-- Nationality -->
@@ -174,7 +189,7 @@
                             Nationality <span class="text-red-500">*</span>
                         </label>
                         <input type="text" x-model="formData.nationality" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                     </div>
 
                     <!-- Region -->
@@ -183,7 +198,7 @@
                             Region <span class="text-red-500">*</span>
                         </label>
                         <input type="text" x-model="formData.region" required
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                     </div>
 
                     <!-- Languages -->
@@ -191,16 +206,15 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Languages Spoken <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" x-model="formData.languages_spoken" required
-                               placeholder="e.g., English, Twi"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        <input type="text" x-model="formData.languages_spoken" required placeholder="e.g., English, Twi"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                     </div>
 
                     <!-- Religion -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Religion</label>
                         <select x-model="formData.religion"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                             <option value="">-- Select --</option>
                             <option value="Christian">Christian</option>
                             <option value="Islamic">Islamic</option>
@@ -211,86 +225,70 @@
                 </div>
 
                 <div class="mt-6 flex justify-end">
-                    <button type="button" @click="nextStep()" 
-                            class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
+                    <button type="button" @click="nextStep()"
+                        class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
                         Next <i class="fas fa-arrow-right ml-2"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Step 2: Health Information -->
+            <!-- Step 2: Parent/Guardian Information -->
             <div x-show="step === 2" class="bg-white rounded-xl shadow-lg p-8">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">Health Information</h2>
-                
-                <div class="space-y-6">
-                    <!-- Health Challenge -->
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Parent/Guardian Information</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Parent/Guardian Full Name <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" x-model="formData.parent_full_name" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Does your child have any health challenges?
+                            Email Address <span class="text-red-500">*</span>
                         </label>
-                        <select x-model="formData.has_health_challenge"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                            <option value="false">No</option>
-                            <option value="true">Yes</option>
+                        <input type="email" x-model="formData.parent_email" required placeholder="parent@example.com"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Phone Number <span class="text-red-500">*</span>
+                        </label>
+                        <input type="tel" x-model="formData.parent_phone" required placeholder="+233 XX XXX XXXX"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Relationship to Student <span class="text-red-500">*</span>
+                        </label>
+                        <select x-model="formData.parent_relationship" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <option value="">-- Select --</option>
+                            <option value="father">Father</option>
+                            <option value="mother">Mother</option>
+                            <option value="guardian">Guardian</option>
+                            <option value="other">Other</option>
                         </select>
-                        <textarea x-show="formData.has_health_challenge === 'true'" 
-                                  x-model="formData.health_challenge_details"
-                                  rows="2" placeholder="Please provide details..."
-                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 mt-2"></textarea>
                     </div>
 
-                    <!-- Allergies -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Does your child have any allergies or diseases?
+                            Occupation
                         </label>
-                        <select x-model="formData.has_allergies"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                            <option value="false">No</option>
-                            <option value="true">Yes</option>
-                        </select>
-                        <textarea x-show="formData.has_allergies === 'true'" 
-                                  x-model="formData.allergies_details"
-                                  rows="2" placeholder="Please provide details..."
-                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 mt-2"></textarea>
+                        <input type="text" x-model="formData.parent_occupation"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                     </div>
 
-                    <!-- Regular Medication -->
-                    <div>
+                    <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Regular Medication (if any)
+                            Parents' Status
                         </label>
-                        <textarea x-model="formData.medication_details" rows="2"
-                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
-                    </div>
-
-                    <!-- Insurance -->
-                    <div class="border-t pt-6">
-                        <h3 class="font-semibold text-gray-900 mb-4">Health Insurance (Optional)</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Insurance Company</label>
-                                <input type="text" x-model="formData.insurance_company"
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Insurance Card Number</label>
-                                <input type="text" x-model="formData.insurance_number"
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Upload Insurance Card</label>
-                                <input type="file" @change="handleFileUpload($event, 'insurance_card')" accept="image/*,.pdf"
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Parent Status -->
-                    <div class="border-t pt-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Parents Status</label>
                         <select x-model="formData.parents_status"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                             <option value="">-- Select --</option>
                             <option value="Both Parents Alive">Both Parents Alive</option>
                             <option value="Living Together">Living Together</option>
@@ -302,25 +300,107 @@
                 </div>
 
                 <div class="mt-6 flex justify-between">
-                    <button type="button" @click="prevStep()" 
-                            class="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50">
+                    <button type="button" @click="prevStep()"
+                        class="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50">
                         <i class="fas fa-arrow-left mr-2"></i> Previous
                     </button>
-                    <button type="button" @click="nextStep()" 
-                            class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
+                    <button type="button" @click="nextStep()"
+                        class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
                         Next <i class="fas fa-arrow-right ml-2"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Step 3: Declaration -->
+            <!-- Step 3: Health Information -->
             <div x-show="step === 3" class="bg-white rounded-xl shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Health Information</h2>
+
+                <div class="space-y-6">
+                    <!-- Health Challenge -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Does your child have any health challenges?
+                        </label>
+                        <select x-model="formData.has_health_challenge"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                        <textarea x-show="formData.has_health_challenge === 'true'"
+                            x-model="formData.health_challenge_details" rows="2" placeholder="Please provide details..."
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 mt-2"></textarea>
+                    </div>
+
+                    <!-- Allergies -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Does your child have any allergies or diseases?
+                        </label>
+                        <select x-model="formData.has_allergies"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <option value="false">No</option>
+                            <option value="true">Yes</option>
+                        </select>
+                        <textarea x-show="formData.has_allergies === 'true'" x-model="formData.allergies_details"
+                            rows="2" placeholder="Please provide details..."
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 mt-2"></textarea>
+                    </div>
+
+                    <!-- Regular Medication -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Regular Medication (if any)
+                        </label>
+                        <textarea x-model="formData.medication_details" rows="2"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+
+                    <!-- Insurance -->
+                    <div class="border-t pt-6">
+                        <h3 class="font-semibold text-gray-900 mb-4">Health Insurance (Optional)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Insurance Company</label>
+                                <input type="text" x-model="formData.insurance_company"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Insurance Card
+                                    Number</label>
+                                <input type="text" x-model="formData.insurance_number"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Upload Insurance
+                                    Card</label>
+                                <input type="file" @change="handleFileUpload($event, 'insurance_card')"
+                                    accept="image/*,.pdf" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-between">
+                    <button type="button" @click="prevStep()"
+                        class="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50">
+                        <i class="fas fa-arrow-left mr-2"></i> Previous
+                    </button>
+                    <button type="button" @click="nextStep()"
+                        class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
+                        Next <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 4: Declaration -->
+            <div x-show="step === 4" class="bg-white rounded-xl shadow-lg p-8">
                 <h2 class="text-2xl font-bold text-gray-900 mb-6">Declaration</h2>
-                
+
                 <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
                     <p class="text-sm text-yellow-800">
                         <i class="fas fa-exclamation-triangle mr-2"></i>
-                        I/We confirm that all information provided is true and complete. If found incomplete or untrue, the admission will be canceled.
+                        I/We confirm that all information provided is true and complete. If found incomplete or untrue,
+                        the admission will be canceled.
                     </p>
                 </div>
 
@@ -331,14 +411,14 @@
                                 Parent/Guardian Name <span class="text-red-500">*</span>
                             </label>
                             <input type="text" x-model="formData.declaration_name" required
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 Date <span class="text-red-500">*</span>
                             </label>
                             <input type="date" x-model="formData.declaration_date" required
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                         </div>
                     </div>
 
@@ -347,12 +427,12 @@
                             Signature Upload (Optional)
                         </label>
                         <input type="file" @change="handleFileUpload($event, 'signature')" accept="image/*,.pdf"
-                               class="w-full px-4 py-2 border border-gray-300 rounded-lg">
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg">
                     </div>
 
                     <div class="flex items-start">
                         <input type="checkbox" x-model="agreeToTerms" id="terms"
-                               class="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                            class="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
                         <label for="terms" class="ml-2 text-sm text-gray-700">
                             I agree to the declaration and terms <span class="text-red-500">*</span>
                         </label>
@@ -364,12 +444,12 @@
                 </div>
 
                 <div class="mt-6 flex justify-between">
-                    <button type="button" @click="prevStep()" 
-                            class="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50">
+                    <button type="button" @click="prevStep()"
+                        class="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50">
                         <i class="fas fa-arrow-left mr-2"></i> Previous
                     </button>
-                    <button type="submit" :disabled="!agreeToTerms || submitting" 
-                            class="bg-green-600 text-white px-8 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <button type="submit" :disabled="!agreeToTerms || submitting"
+                        class="bg-green-600 text-white px-8 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
                         <span x-show="!submitting">
                             <i class="fas fa-paper-plane mr-2"></i> Submit Application
                         </span>
@@ -383,7 +463,8 @@
     </div>
 
     <!-- Success Modal -->
-    <div x-show="showSuccessModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+    <div x-show="showSuccessModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        style="display: none;">
         <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md mx-4">
             <div class="text-center">
                 <i class="fas fa-check-circle text-green-600 text-6xl mb-4"></i>
@@ -391,10 +472,11 @@
                 <p class="text-gray-600 mb-4">Your application number is:</p>
                 <p class="text-3xl font-bold text-indigo-600 mb-6" x-text="applicationNumber"></p>
                 <p class="text-sm text-gray-600 mb-6">
-                    Thank you for applying to Excellence Academy. We will review your application and contact you soon.
+                    Thank you for applying to Excellence Academy. We will review your application and contact you soon
+                    via email.
                 </p>
-                <button @click="window.location.href='/'" 
-                        class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 w-full">
+                <button @click="window.location.href='/'"
+                    class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 w-full">
                     Return to Home
                 </button>
             </div>
@@ -410,10 +492,13 @@
                 submitError: '',
                 showSuccessModal: false,
                 applicationNumber: '',
-                
+
                 formData: {
+                    // Student Info
                     department: '',
-                    learner_name: '',
+                    first_name: '',
+                    last_name: '',
+                    other_names: '',
                     sex: '',
                     date_of_birth: '',
                     age: '',
@@ -424,6 +509,16 @@
                     region: '',
                     languages_spoken: '',
                     religion: '',
+
+                    // Parent Info
+                    parent_full_name: '',
+                    parent_email: '',
+                    parent_phone: '',
+                    parent_relationship: '',
+                    parent_occupation: '',
+                    parents_status: '',
+
+                    // Health Info
                     has_health_challenge: 'false',
                     health_challenge_details: '',
                     has_allergies: 'false',
@@ -431,11 +526,12 @@
                     medication_details: '',
                     insurance_company: '',
                     insurance_number: '',
-                    parents_status: '',
+
+                    // Declaration
                     declaration_name: '',
                     declaration_date: new Date().toISOString().split('T')[0]
                 },
-                
+
                 files: {
                     insurance_card: null,
                     signature: null
@@ -478,16 +574,50 @@
                 },
 
                 validateStep() {
+
                     if (this.step === 1) {
-                        if (!this.formData.department || !this.formData.learner_name || !this.formData.sex || 
-                            !this.formData.date_of_birth || !this.formData.applying_for_class || 
-                            !this.formData.residential_address || !this.formData.nationality || 
-                            !this.formData.region || !this.formData.languages_spoken) {
-                            alert('Please fill in all required fields');
+                        // CORRECTED VALIDATION LOGIC: Checking first_name and last_name instead of learner_name
+                        if (!this.formData.department || !this.formData.first_name || !this.formData.last_name ||
+                            !this.formData.sex || !this.formData.date_of_birth ||
+                            !this.formData.applying_for_class || !this.formData.residential_address ||
+                            !this.formData.nationality || !this.formData.region ||
+                            !this.formData.languages_spoken) {
+
+                            // Completed the alert message
+                            this.submitError = "Please fill in all required fields (marked with *).";
+                            alert(this.submitError);
                             return false;
                         }
+                        this.submitError = ''; // Clear error if validation passes
+                        return true;
+                    } else if (this.step === 2) {
+                        if (!this.formData.parent_full_name || !this.formData.parent_email ||
+                            !this.formData.parent_phone || !this.formData.parent_relationship) {
+
+                            this.submitError = "Please fill in all required Parent/Guardian fields (marked with *).";
+                            alert(this.submitError);
+                            return false;
+                        }
+                        this.submitError = '';
+                        return true;
+                    } else if (this.step === 3) {
+                        // Step 3 has no mandatory fields other than those shown/hidden, which is fine as-is.
+                        // If 'Yes' is selected for health issues, you may want to ensure the details are filled.
+                        if (this.formData.has_health_challenge === 'true' && !this.formData.health_challenge_details) {
+                            this.submitError = "Please provide details for the health challenge.";
+                            alert(this.submitError);
+                            return false;
+                        }
+                        if (this.formData.has_allergies === 'true' && !this.formData.allergies_details) {
+                            this.submitError = "Please provide details for the allergies/diseases.";
+                            alert(this.submitError);
+                            return false;
+                        }
+                        this.submitError = '';
+                        return true;
                     }
                     return true;
+
                 },
 
                 async submitApplication() {
@@ -501,12 +631,12 @@
 
                     try {
                         const formDataToSend = new FormData();
-                        
+
                         // Add all form fields
                         Object.keys(this.formData).forEach(key => {
                             formDataToSend.append(key, this.formData[key]);
                         });
-                        
+
                         // Add files
                         if (this.files.insurance_card) {
                             formDataToSend.append('insurance_card', this.files.insurance_card);
@@ -539,4 +669,5 @@
         }
     </script>
 </body>
+
 </html>

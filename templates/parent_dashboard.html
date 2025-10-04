@@ -359,21 +359,11 @@
     </div>
 
     <script>
-        function requireAuth() {
-            const token = localStorage.getItem('access_token');
-            const userData = localStorage.getItem('user_data');
 
-            if (!token || !userData) {
-                alert('Please login first');
-                window.location.href = '/auth/';
-                return null;
-            }
-
-            return JSON.parse(userData);
-        }
         function parentDashboard() {
             return {
                 user: {},
+                parentInfo: {},
                 children: [],
                 selectedChild: null,
                 childData: {
@@ -426,7 +416,7 @@
                             return;
                         }
 
-                        await this.loadChildren();
+                        await this.loadParentDashboard();
                         this.loadNotifications();
                         this.loadUpcomingEvents();
 
@@ -437,53 +427,80 @@
                     }
                 },
 
-                async loadChildren() {
-                    // Mock data - replace with API call
-                    this.children = [
-                        { id: 1, name: 'John Doe', class: 'Grade 6-A' },
-                        { id: 2, name: 'Jane Doe', class: 'Grade 4-B' }
-                    ];
+                async loadParentDashboard() {
+                    try {
+                        const response = await fetch('/api/v1/parents/dashboard/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
 
-                    if (this.children.length > 0) {
-                        this.selectedChild = this.children[0].id;
-                        await this.loadChildData();
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.parentInfo = data.data.parent_info;
+                            this.children = data.data.children;
+
+                            if (this.children.length > 0) {
+                                this.selectedChild = this.children[0].id;
+                                await this.loadChildData();
+                            }
+                        } else {
+                            console.error('Error loading parent dashboard:', data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error loading parent dashboard:', error);
                     }
                 },
 
                 async loadChildData() {
-                    // Mock data - replace with API call
-                    this.childData = {
-                        name: 'John Doe',
-                        class: 'Grade 6-A',
-                        student_id: '2024001',
-                        roll_number: '15',
-                        class_teacher: 'Mrs. Sarah Johnson',
-                        blood_group: 'O+',
-                        attendance_rate: 95.5,
-                        overall_grade: 'A',
-                        average_percentage: 87.3,
-                        pending_fees: 250,
-                        class_rank: 3,
-                        total_students: 45,
-                        recent_results: [
-                            { id: 1, subject: 'Mathematics', test_name: 'Mid-term', score: 88, total: 100, grade: 'A', date: '2024-09-15' },
-                            { id: 2, subject: 'English', test_name: 'Mid-term', score: 92, total: 100, grade: 'A+', date: '2024-09-16' },
-                            { id: 3, subject: 'Science', test_name: 'Mid-term', score: 85, total: 100, grade: 'A', date: '2024-09-17' },
-                            { id: 4, subject: 'History', test_name: 'Mid-term', score: 78, total: 100, grade: 'B+', date: '2024-09-18' },
-                            { id: 5, subject: 'Geography', test_name: 'Mid-term', score: 90, total: 100, grade: 'A+', date: '2024-09-19' }
-                        ],
-                        attendance_calendar: this.generateAttendanceCalendar(),
-                        teachers: [
-                            { id: 1, name: 'Mrs. Sarah Johnson', subject: 'Class Teacher' },
-                            { id: 2, name: 'Mr. David Brown', subject: 'Mathematics' },
-                            { id: 3, name: 'Ms. Emily Wilson', subject: 'English' },
-                            { id: 4, name: 'Dr. Michael Chen', subject: 'Science' }
-                        ]
-                    };
+                    if (!this.selectedChild) return;
 
-                    this.$nextTick(() => {
-                        this.initCharts();
-                    });
+                    try {
+                        const response = await fetch(`/api/v1/parents/children/${this.selectedChild}/`, {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            // Find the selected child from children array
+                            const child = this.children.find(c => c.id === this.selectedChild);
+
+                            if (child) {
+                                this.childData = {
+                                    name: child.name,
+                                    class: child.class,
+                                    student_id: child.student_id,
+                                    roll_number: '15', // TODO: Get from API
+                                    class_teacher: 'Mrs. Sarah Johnson', // TODO: Get from API
+                                    blood_group: 'O+', // TODO: Get from API
+                                    attendance_rate: child.attendance_rate,
+                                    overall_grade: child.overall_grade,
+                                    average_percentage: child.average_percentage,
+                                    pending_fees: child.pending_fees,
+                                    class_rank: child.class_rank,
+                                    total_students: child.total_students,
+                                    recent_results: [], // TODO: Get from API
+                                    attendance_calendar: this.generateAttendanceCalendar(),
+                                    teachers: data.data.courses.map(course => ({
+                                        name: course.teacher,
+                                        subject: course.subject
+                                    }))
+                                };
+
+                                this.$nextTick(() => {
+                                    this.initCharts();
+                                });
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error loading child data:', error);
+                    }
                 },
 
                 generateAttendanceCalendar() {
@@ -579,12 +596,6 @@
             }
         }
     </script>
-
-    <style>
-        [x-cloak] {
-            display: none !important;
-        }
-    </style>
 </body>
 
 </html>

@@ -126,81 +126,63 @@ def update_application_status(request, application_number):
         }, status=status.HTTP_404_NOT_FOUND)
 
 
+# UPDATE the accept_and_enroll function
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def accept_and_enroll(request, application_number):
-    """
-    Accept application and create student account
-    This creates:
-    1. User account for student
-    2. Student profile with unique student ID
-    3. Links to original application
+    """Accept application and create student + parent accounts"""
     
-    Admin only endpoint
-    """
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
-        return Response({
-            'success': False,
-            'error': 'Admin access required'
-        }, status=status.HTTP_403_FORBIDDEN)
+        return Response({'success': False, 'error': 'Admin access required'}, 
+                       status=status.HTTP_403_FORBIDDEN)
     
     try:
         application = StudentApplication.objects.get(application_number=application_number)
         
         if application.status == 'accepted':
-            return Response({
-                'success': False,
-                'error': 'Application already accepted and student enrolled'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'success': False, 'error': 'Already enrolled'}, 
+                           status=status.HTTP_400_BAD_REQUEST)
         
-        # Get class assignment from request
         assigned_class_id = request.data.get('class_id')
         if not assigned_class_id:
-            return Response({
-                'success': False,
-                'error': 'Please assign a class for the student'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'success': False, 'error': 'Class required'}, 
+                           status=status.HTTP_400_BAD_REQUEST)
         
         from apps.academics.models import Class
-        try:
-            assigned_class = Class.objects.get(id=assigned_class_id)
-        except Class.DoesNotExist:
-            return Response({
-                'success': False,
-                'error': 'Invalid class ID'
-            }, status=status.HTTP_400_BAD_REQUEST)
+        assigned_class = Class.objects.get(id=assigned_class_id)
         
-        # Create username from learner name
-        name_parts = application.learner_name.lower().split()
-        base_username = ''.join(name_parts[:2])  # First two names
+        # Create student username
+        name_parts = [application.first_name.lower(), application.last_name.lower()]
+        base_username = ''.join(name_parts[:2])
         username = base_username
         counter = 1
-        
-        # Ensure username is unique
         while User.objects.filter(username=username).exists():
             username = f"{base_username}{counter}"
             counter += 1
         
-        # Generate temporary password
-        temp_password = secrets.token_urlsafe(12)
+        # Generate passwords
+        import secrets
+        student_temp_password = secrets.token_urlsafe(12)
+        parent_temp_password = secrets.token_urlsafe(12)
         
-        # Create user account
-        user = User.objects.create_user(
+        # Create STUDENT account
+        student_user = User.objects.create_user(
             username=username,
-            email=f"{username}@student.excellenceacademy.edu.gh",  # Temporary email
-            password=temp_password,
-            first_name=name_parts[0].capitalize(),
-            last_name=' '.join(name_parts[1:]).capitalize() if len(name_parts) > 1 else '',
+            email=f"{username}@student.excellenceacademy.edu.gh",
+            password=student_temp_password,
+            first_name=application.first_name.capitalize(),
+            last_name=application.last_name.capitalize(),
             role='student',
             must_change_password=True
         )
         
         # Create student profile
         student = Student.objects.create(
-            user=user,
+            user=student_user,
             application=application,
-            first_name=user.first_name,
-            last_name=user.last_name,
+            first_name=student_user.first_name,
+            last_name=student_user.last_name,
             date_of_birth=application.date_of_birth,
             sex=application.sex,
             current_class=assigned_class,
@@ -214,32 +196,69 @@ def accept_and_enroll(request, application_number):
             admission_date=timezone.now().date()
         )
         
-        # Update application status
+        # Create PARENT account if email provided
+        parent = None
+        parent_username = None
+        if application.parent_email:
+            parent_username = f"parent_{username}"
+            
+            parent_user = User.objects.create_user(
+                username=parent_username,
+                email=application.parent_email,
+                password=parent_temp_password,
+                first_name=application.parent_full_name.split()[0] if application.parent_full_name else 'Parent',
+                last_name=' '.join(application.parent_full_name.split()[1:]) if application.parent_full_name else '',
+                role='parent',
+                phone=application.parent_phone,
+                must_change_password=True
+            )
+            
+            # Create parent profile
+            parent = Parent.objects.create(
+                user=parent_user,
+                full_name=application.parent_full_name or 'Parent/Guardian',
+                relationship='guardian',
+                phone=application.parent_phone or '',
+                email=application.parent_email,
+                residential_address=application.residential_address,
+            )
+            
+            # Link parent to student
+            parent.children.add(student)
+        
+        # Update application
         application.status = 'accepted'
         application.reviewed_by = request.user
         application.reviewed_at = timezone.now()
         application.save()
         
-        # TODO: Send email to parent with login credentials
-        # TODO: Send welcome email to student
+        # Send emails
+        from .email_utils import send_student_credentials_email, send_parent_credentials_email
+        
+        if application.parent_email:
+            send_student_credentials_email(
+                student, username, student_temp_password, application.parent_email
+            )
+            if parent:
+                send_parent_credentials_email(
+                    parent, parent_username, parent_temp_password, 
+                    f"{student.first_name} {student.last_name}"
+                )
         
         return Response({
             'success': True,
             'message': 'Student enrolled successfully',
             'data': {
                 'student_id': student.student_id,
-                'username': username,
-                'temporary_password': temp_password,  # Send this to parent via email
+                'student_username': username,
+                'student_password': student_temp_password,
+                'parent_username': parent_username,
+                'parent_password': parent_temp_password if parent else None,
                 'class': assigned_class.name,
                 'admission_date': student.admission_date.isoformat()
             }
         })
         
-    except StudentApplication.DoesNotExist:
-        return Response({
-            'success': False,
-            'error': 'Application not found'
-        }, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({
             'success': False,

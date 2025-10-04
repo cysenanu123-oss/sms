@@ -114,3 +114,35 @@ def send_student_credentials_email(student, username, temporary_password, parent
     except Exception as e:
         print(f"Error sending email: {e}")
         return False
+
+# apps/admissions/email_utils.py - ADD THIS FUNCTION
+def send_parent_credentials_email(parent, username, temporary_password, student_name):
+    """
+    Send login credentials to parent
+    """
+    subject = f'Parent Portal Access - Excellence Academy'
+    
+    context = {
+        'parent_name': parent.full_name,
+        'student_name': student_name,
+        'username': username,
+        'temporary_password': temporary_password,
+        'portal_url': f"{settings.FRONTEND_URL}/auth/",
+    }
+    
+    html_message = render_to_string('emails/parent_credentials.html', context)
+    plain_message = strip_tags(html_message)
+    
+    try:
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[parent.email],
+        )
+        email.attach_alternative(html_message, "text/html")
+        email.send()
+        return True
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False

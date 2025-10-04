@@ -469,7 +469,7 @@
                 </div>
             </div>
 
-            <!-- Teachers Management Section -->
+             <!-- Teachers Management Section -->
             <div x-show="currentView === 'teachers'">
                 <div class="mb-6 flex justify-between items-center">
                     <div>
@@ -482,44 +482,106 @@
                     </button>
                 </div>
 
-                <!-- Teachers Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <div class="flex items-center mb-4">
-                            <div class="bg-indigo-100 rounded-full w-16 h-16 flex items-center justify-center mr-4">
-                                <i class="fas fa-user text-indigo-600 text-2xl"></i>
-                            </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-900">Mrs. Sarah Johnson</h3>
-                                <p class="text-sm text-gray-600">Mathematics</p>
-                            </div>
-                        </div>
-                        <div class="space-y-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Classes:</span>
-                                <span class="font-medium">5</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Students:</span>
-                                <span class="font-medium">180</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Experience:</span>
-                                <span class="font-medium">12 years</span>
-                            </div>
-                        </div>
-                        <div class="mt-4 flex space-x-2">
-                            <button
-                                class="flex-1 px-3 py-2 bg-indigo-50 text-indigo-600 rounded hover:bg-indigo-100 text-sm">
-                                <i class="fas fa-eye mr-1"></i>View
-                            </button>
-                            <button class="px-3 py-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100">
-                                <i class="fas fa-edit"></i>
+                <!-- Add Teacher Modal -->
+                <div x-show="showAddTeacher" x-cloak
+                    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                    @click.self="showAddTeacher = false">
+                    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                        <div class="p-6 border-b flex justify-between items-center">
+                            <h3 class="text-xl font-bold text-gray-900">Add New Teacher</h3>
+                            <button @click="showAddTeacher = false" class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times text-xl"></i>
                             </button>
                         </div>
+
+                        <form @submit.prevent="saveTeacher()" class="p-6">
+                            <div class="space-y-4">
+                                <!-- Personal Info -->
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+                                        <input type="text" x-model="newTeacher.first_name" required
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                                        <input type="text" x-model="newTeacher.last_name" required
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                                        <input type="email" x-model="newTeacher.email" required
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                                        <input type="tel" x-model="newTeacher.phone"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                    </div>
+                                </div>
+
+                                <!-- Subject Assignment -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Subjects to Teach
+                                        *</label>
+                                    <div class="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto">
+                                        <template x-for="subject in availableSubjects" :key="subject.id">
+                                            <label
+                                                class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                                <input type="checkbox" :value="subject.id" x-model="newTeacher.subjects"
+                                                    class="mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                                <span class="text-sm"
+                                                    x-text="subject.name + ' (' + subject.code + ')'"></span>
+                                            </label>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Class Assignment -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Classes to Teach
+                                        *</label>
+                                    <div class="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto">
+                                        <template x-for="cls in availableClasses" :key="cls.id">
+                                            <label
+                                                class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                                <input type="checkbox" :value="cls.id" x-model="newTeacher.classes"
+                                                    class="mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                                <span class="text-sm" x-text="cls.name"></span>
+                                            </label>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                                    <p class="text-sm text-yellow-800">
+                                        <i class="fas fa-info-circle mr-2"></i>
+                                        A temporary password will be generated and sent to the teacher's email.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 flex justify-end space-x-3">
+                                <button type="button" @click="showAddTeacher = false"
+                                    class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                                    Cancel
+                                </button>
+                                <button type="submit" :disabled="savingTeacher"
+                                    class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                                    <span x-show="!savingTeacher">Add Teacher</span>
+                                    <span x-show="savingTeacher">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Adding...
+                                    </span>
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
+
 
             <!-- Classes Management Section -->
             <div x-show="currentView === 'classes'">
@@ -874,6 +936,10 @@
                     // Check if user is logged in
                     const token = localStorage.getItem('access_token');
                     const userData = localStorage.getItem('user_data');
+                    await this.loadDashboardData();
+                    await this.loadTeachers();
+                    await this.loadAvailableData();
+                    this.initCharts();
 
                     if (!token || !userData) {
                         alert('Please login first');
@@ -912,6 +978,121 @@
                     }
                 },
 
+
+                // Add these properties
+                showAddTeacher: false,
+                savingTeacher: false,
+                availableSubjects: [],
+                availableClasses: [],
+                teachers: [],
+                newTeacher: {
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                    phone: '',
+                    subjects: [],
+                    classes: []
+                },
+
+                // Add these methods
+                async loadTeachers() {
+                    try {
+                        const response = await fetch('/api/v1/teachers/manage/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.teachers = data.data;
+                        }
+                    } catch (error) {
+                        console.error('Error loading teachers:', error);
+                    }
+                },
+
+                async loadAvailableData() {
+                    try {
+                        // Load subjects
+                        const subjectsResp = await fetch('/api/v1/teachers/subjects/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+                        const subjectsData = await subjectsResp.json();
+                        if (subjectsData.success) {
+                            this.availableSubjects = subjectsData.data;
+                        }
+
+                        // Load classes
+                        const classesResp = await fetch('/api/v1/teachers/classes/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+                        const classesData = await classesResp.json();
+                        if (classesData.success) {
+                            this.availableClasses = classesData.data;
+                        }
+                    } catch (error) {
+                        console.error('Error loading available data:', error);
+                    }
+                },
+
+                async saveTeacher() {
+                    if (this.newTeacher.subjects.length === 0) {
+                        alert('Please select at least one subject');
+                        return;
+                    }
+                    if (this.newTeacher.classes.length === 0) {
+                        alert('Please select at least one class');
+                        return;
+                    }
+
+                    this.savingTeacher = true;
+
+                    try {
+                        const response = await fetch('/api/v1/teachers/manage/', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.newTeacher)
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            alert(`Teacher added successfully!\n\nUsername: ${data.data.username}\nTemporary Password: ${data.data.temporary_password}\n\nPlease save these credentials and share with the teacher.`);
+
+                            this.showAddTeacher = false;
+                            this.resetTeacherForm();
+                            await this.loadTeachers();
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error saving teacher:', error);
+                        alert('Error saving teacher');
+                    } finally {
+                        this.savingTeacher = false;
+                    }
+                },
+
+                resetTeacherForm() {
+                    this.newTeacher = {
+                        first_name: '',
+                        last_name: '',
+                        email: '',
+                        phone: '',
+                        subjects: [],
+                        classes: []
+                    };
+                },
                 async loadDashboardData() {
                     try {
                         const response = await fetch('/api/v1/dashboard/admin/overview/', {
@@ -932,6 +1113,27 @@
                         console.error('Error loading dashboard:', error);
                     }
                 },
+
+                // Add this to admin dashboard loadDashboardData() function
+                async loadFinanceData() {
+                    try {
+                        const response = await fetch('/api/v1/finance/overview/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.stats.financial = data.data;
+                        }
+                    } catch (error) {
+                        console.error('Error loading finance data:', error);
+                    }
+                },
+
 
                 updateApplicationTabs() {
                     if (this.stats.applications) {

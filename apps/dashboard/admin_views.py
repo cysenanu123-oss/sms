@@ -6,8 +6,8 @@ from rest_framework import status
 from django.db.models import Count, Q, Avg
 from django.utils import timezone
 from datetime import timedelta
-from apps.admissions.models import StudentApplication, Student
-from apps.academics.models import Class
+from apps.admissions.models import StudentApplication, Student, Parent
+from apps.academics.models import Class, Subject, SchoolSettings
 from apps.accounts.models import User
 
 
@@ -16,19 +16,15 @@ from apps.accounts.models import User
 def admin_overview(request):
     """
     Get comprehensive admin dashboard overview
-    Admin only endpoint
     """
-    # Verify admin access
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
         return Response({
             'success': False,
             'error': 'Admin access required'
         }, status=status.HTTP_403_FORBIDDEN)
     
-    # Calculate date ranges
     today = timezone.now().date()
     this_month_start = today.replace(day=1)
-    last_month_start = (this_month_start - timedelta(days=1)).replace(day=1)
     
     # Student Statistics
     total_students = Student.objects.filter(status='active').count()
@@ -54,10 +50,10 @@ def admin_overview(request):
         'admins': User.objects.filter(Q(role='admin') | Q(role='super_admin'), is_active=True).count(),
     }
     
-    # Financial Statistics (placeholder - you'll implement this later)
+    # Financial Statistics
     financial_stats = {
-        'application_fees_collected': 0,  # Calculate from payments
-        'collection_rate': 0,  # Calculate percentage
+        'application_fees_collected': 0,
+        'collection_rate': 0,
         'pending_fees': 0,
     }
     
@@ -73,21 +69,21 @@ def admin_overview(request):
             'available': cls.capacity - enrolled
         })
     
-    # Recent Applications (last 10)
+    # Recent Applications
     recent_applications = StudentApplication.objects.order_by('-submitted_at')[:10]
     recent_apps_data = []
     for app in recent_applications:
         recent_apps_data.append({
             'application_number': app.application_number,
             'name': f"{app.first_name} {app.last_name}",
+            'email': app.parent_email,
             'applying_for': app.applying_for_class,
             'status': app.status,
             'submitted_at': app.submitted_at.isoformat()
         })
     
-    # Quick Actions (tasks that need attention)
+    # Quick Actions
     quick_actions = []
-    
     pending_apps = application_stats['pending_review']
     if pending_apps > 0:
         quick_actions.append({
@@ -106,7 +102,6 @@ def admin_overview(request):
             'icon': 'fas fa-user-check'
         })
     
-    # Combine all statistics
     dashboard_data = {
         'students': {
             'total_enrolled': total_students,
