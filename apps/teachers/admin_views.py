@@ -234,3 +234,28 @@ def get_available_classes(request):
         'success': True,
         'data': classes_data
     })
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_teacher(request, teacher_id):
+    """Delete a teacher"""
+    if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Admin access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        teacher = User.objects.get(id=teacher_id, role='teacher')
+        teacher.is_active = False  # Soft delete
+        teacher.save()
+        
+        return Response({
+            'success': True,
+            'message': 'Teacher removed successfully'
+        })
+    except User.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Teacher not found'
+        }, status=status.HTTP_404_NOT_FOUND)

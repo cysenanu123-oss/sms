@@ -300,3 +300,98 @@ class TeacherClassAssignment(models.Model):
     def __str__(self):
         role = "Class Teacher" if self.is_class_teacher else "Subject Teacher"
         return f"{self.teacher.get_full_name()} - {self.class_obj.name} ({role})"
+
+
+# Add this to apps/academics/models.py
+
+class TeachingResource(models.Model):
+    """
+    Resources uploaded by teachers for students
+    Can be PDFs, videos, or external links
+    """
+    RESOURCE_TYPE_CHOICES = (
+        ('pdf', 'PDF Document'),
+        ('video', 'Video File'),
+        ('link', 'External Link'),
+        ('document', 'Document'),
+    )
+    
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    
+    class_obj = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='resources')
+    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, blank=True, related_name='resources')
+    teacher = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True, related_name='uploaded_resources')
+    
+    resource_type = models.CharField(max_length=20, choices=RESOURCE_TYPE_CHOICES)
+    file = models.FileField(upload_to='teaching_resources/', null=True, blank=True)
+    external_link = models.URLField(max_length=500, blank=True)
+    
+    # File metadata
+    file_size = models.BigIntegerField(null=True, blank=True)  # in bytes
+    
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.class_obj.name}"
+    
+    @property
+    def file_size_formatted(self):
+        """Return formatted file size"""
+        if not self.file_size:
+            return 'Unknown'
+        
+        size = self.file_size
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"
+    
+    def save(self, *args, **kwargs):
+        # Calculate file size if file is uploaded
+        if self.file:
+            self.file_size = self.file.size
+        super().save(*args, **kwargs)
+
+
+class TeachingResource(models.Model):
+    """Resources uploaded by teachers for students"""
+    RESOURCE_TYPE_CHOICES = (
+        ('pdf', 'PDF Document'),
+        ('video', 'Video File'),
+        ('link', 'External Link'),
+        ('document', 'Document'),
+    )
+    
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    
+    class_obj = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='resources')
+    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, blank=True, related_name='resources')
+    teacher = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True, related_name='uploaded_resources')
+    
+    resource_type = models.CharField(max_length=20, choices=RESOURCE_TYPE_CHOICES)
+    file = models.FileField(upload_to='teaching_resources/', null=True, blank=True)
+    external_link = models.URLField(max_length=500, blank=True)
+    file_size = models.BigIntegerField(null=True, blank=True)
+    
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.class_obj.name}"
+    
+    def save(self, *args, **kwargs):
+        if self.file:
+            self.file_size = self.file.size
+        super().save(*args, **kwargs)

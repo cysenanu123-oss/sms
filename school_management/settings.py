@@ -60,6 +60,10 @@ INSTALLED_APPS = [
     'apps.academics', 
     'apps.parents',
     'apps.finance',
+    'apps.attendance',     
+    'apps.grades',         
+    'apps.students',        
+    'apps.teachers',        
 ]
 
 
