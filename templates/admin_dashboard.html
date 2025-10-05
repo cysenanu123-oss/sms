@@ -1,17 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - School Management System</title>
+    <title>Admin Dashboard - Excellence Academy</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
 
-<body class="bg-gray-100" x-data="adminDashboard()" x-init="init()">
+<body class="bg-gray-50" x-data="adminDashboard()" x-init="init()">
     <!-- Top Navigation -->
     <nav class="bg-white shadow-lg sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -20,54 +19,21 @@
                     <i class="fas fa-graduation-cap text-3xl text-indigo-600 mr-3"></i>
                     <div>
                         <h1 class="text-xl font-bold text-gray-900">Admin Dashboard</h1>
-                        <p class="text-xs text-gray-600">School Management System</p>
+                        <p class="text-xs text-gray-600" x-text="settings.school_name"></p>
                     </div>
                 </div>
 
                 <div class="flex items-center space-x-4">
-                    <!-- Notifications -->
-                    <div class="relative" x-data="{ open: false }">
-                        <button @click="open = !open" class="relative p-2 text-gray-600 hover:text-indigo-600">
-                            <i class="fas fa-bell text-xl"></i>
-                            <span x-show="notifications.length > 0"
-                                class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
-                                x-text="notifications.length"></span>
-                        </button>
-
-                        <div x-show="open" @click.away="open = false"
-                            class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200"
-                            x-transition>
-                            <div class="p-4 border-b border-gray-200">
-                                <h3 class="font-semibold text-gray-900">Notifications</h3>
-                            </div>
-                            <div class="max-h-96 overflow-y-auto">
-                                <template x-for="notif in notifications" :key="notif.id">
-                                    <div class="p-4 border-b border-gray-100 hover:bg-gray-50">
-                                        <p class="text-sm text-gray-800" x-text="notif.message"></p>
-                                        <p class="text-xs text-gray-500 mt-1" x-text="notif.time"></p>
-                                    </div>
-                                </template>
-                                <div x-show="notifications.length === 0" class="p-4 text-center text-gray-500">
-                                    No new notifications
-                                </div>
-                            </div>
-                        </div>
+                    <div class="text-right hidden md:block">
+                        <p class="text-sm font-medium text-gray-900" x-text="user.first_name + ' ' + user.last_name"></p>
+                        <p class="text-xs text-gray-600">Administrator</p>
                     </div>
-
-                    <!-- User Menu -->
-                    <div class="flex items-center space-x-3">
-                        <div class="text-right hidden md:block">
-                            <p class="text-sm font-medium text-gray-900"
-                                x-text="user.first_name + ' ' + user.last_name"></p>
-                            <p class="text-xs text-gray-600">Administrator</p>
-                        </div>
-                        <div class="bg-indigo-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
-                            <span x-text="user.first_name.charAt(0) + user.last_name.charAt(0)"></span>
-                        </div>
-                        <button @click="logout()" class="text-red-600 hover:text-red-800">
-                            <i class="fas fa-sign-out-alt"></i>
-                        </button>
+                    <div class="bg-indigo-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
+                        <span x-text="user.first_name ? user.first_name.charAt(0) + user.last_name.charAt(0) : 'A'"></span>
                     </div>
+                    <button @click="logout()" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -80,15 +46,13 @@
                 <a @click="currentView = 'overview'"
                     :class="currentView === 'overview' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
                     class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
-                    <i class="fas fa-home mr-3"></i>
-                    Overview
+                    <i class="fas fa-home mr-3"></i> Overview
                 </a>
 
                 <a @click="currentView = 'applications'"
                     :class="currentView === 'applications' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
                     class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
-                    <i class="fas fa-file-alt mr-3"></i>
-                    Applications
+                    <i class="fas fa-file-alt mr-3"></i> Applications
                     <span x-show="stats.applications?.pending_review > 0"
                         class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1"
                         x-text="stats.applications?.pending_review"></span>
@@ -97,59 +61,60 @@
                 <a @click="currentView = 'students'"
                     :class="currentView === 'students' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
                     class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
-                    <i class="fas fa-user-graduate mr-3"></i>
-                    Students
+                    <i class="fas fa-user-graduate mr-3"></i> Students
                 </a>
 
                 <a @click="currentView = 'teachers'"
                     :class="currentView === 'teachers' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
                     class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
-                    <i class="fas fa-chalkboard-teacher mr-3"></i>
-                    Teachers
+                    <i class="fas fa-chalkboard-teacher mr-3"></i> Teachers
                 </a>
 
                 <a @click="currentView = 'classes'"
                     :class="currentView === 'classes' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
                     class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
-                    <i class="fas fa-school mr-3"></i>
-                    Classes
+                    <i class="fas fa-school mr-3"></i> Classes
                 </a>
 
                 <a @click="currentView = 'finance'"
                     :class="currentView === 'finance' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
                     class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
-                    <i class="fas fa-money-bill-wave mr-3"></i>
-                    Finance
+                    <i class="fas fa-money-bill-wave mr-3"></i> Finance
                 </a>
 
                 <a @click="currentView = 'reports'"
                     :class="currentView === 'reports' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
                     class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
-                    <i class="fas fa-chart-bar mr-3"></i>
-                    Reports
+                    <i class="fas fa-chart-bar mr-3"></i> Reports
                 </a>
 
                 <a @click="currentView = 'settings'"
                     :class="currentView === 'settings' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
                     class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
-                    <i class="fas fa-cog mr-3"></i>
-                    Settings
+                    <i class="fas fa-cog mr-3"></i> Settings
                 </a>
 
                 <div class="border-t border-gray-200 my-4"></div>
 
                 <a href="/admin/" target="_blank"
                     class="group flex items-center px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg cursor-pointer mb-1">
-                    <i class="fas fa-database mr-3"></i>
-                    Django Admin
+                    <i class="fas fa-database mr-3"></i> Django Admin
                 </a>
             </nav>
         </aside>
 
         <!-- Main Content -->
         <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
+            <!-- Loading State -->
+            <div x-show="loading" class="flex items-center justify-center h-64">
+                <div class="text-center">
+                    <i class="fas fa-spinner fa-spin text-4xl text-indigo-600 mb-4"></i>
+                    <p class="text-gray-600">Loading dashboard...</p>
+                </div>
+            </div>
+
             <!-- Overview Section -->
-            <div x-show="currentView === 'overview'">
+            <div x-show="currentView === 'overview' && !loading">
                 <div class="mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
                     <p class="text-gray-600">Welcome back! Here's what's happening today.</p>
@@ -157,13 +122,11 @@
 
                 <!-- Stats Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                    <!-- Total Students -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-600">Total Students</p>
-                                <p class="text-3xl font-bold text-gray-900"
-                                    x-text="stats.students?.total_enrolled || 0"></p>
+                                <p class="text-3xl font-bold text-gray-900" x-text="stats.students?.total_enrolled || 0"></p>
                                 <p class="text-sm text-green-600 mt-1">
                                     <i class="fas fa-arrow-up"></i>
                                     <span x-text="stats.students?.new_admissions || 0"></span> this month
@@ -175,13 +138,11 @@
                         </div>
                     </div>
 
-                    <!-- Pending Applications -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-600">Pending Applications</p>
-                                <p class="text-3xl font-bold text-gray-900"
-                                    x-text="stats.applications?.pending_review || 0"></p>
+                                <p class="text-3xl font-bold text-gray-900" x-text="stats.applications?.pending_review || 0"></p>
                                 <p class="text-sm text-orange-600 mt-1">
                                     <span x-text="stats.applications?.total_received || 0"></span> total received
                                 </p>
@@ -192,13 +153,11 @@
                         </div>
                     </div>
 
-                    <!-- Total Teachers -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-600">Total Teachers</p>
-                                <p class="text-3xl font-bold text-gray-900"
-                                    x-text="stats.user_statistics?.teachers || 0"></p>
+                                <p class="text-3xl font-bold text-gray-900" x-text="stats.user_statistics?.teachers || 0"></p>
                                 <p class="text-sm text-gray-600 mt-1">Active faculty</p>
                             </div>
                             <div class="bg-green-100 rounded-full p-4">
@@ -207,16 +166,13 @@
                         </div>
                     </div>
 
-                    <!-- Fee Collection -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-600">Collection Rate</p>
-                                <p class="text-3xl font-bold text-gray-900"
-                                    x-text="(stats.financial?.collection_rate || 0) + '%'"></p>
+                                <p class="text-3xl font-bold text-gray-900" x-text="(stats.financial?.collection_rate || 0) + '%'"></p>
                                 <p class="text-sm text-gray-600 mt-1">
-                                    GHS <span x-text="stats.financial?.application_fees_collected || 0"></span>
-                                    collected
+                                    GHS <span x-text="(stats.financial?.application_fees_collected || 0).toFixed(2)"></span>
                                 </p>
                             </div>
                             <div class="bg-purple-100 rounded-full p-4">
@@ -228,13 +184,11 @@
 
                 <!-- Charts Row -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                    <!-- Applications Chart -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Application Status</h3>
                         <canvas id="applicationsChart"></canvas>
                     </div>
 
-                    <!-- Class Capacity Chart -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Class Capacity</h3>
                         <canvas id="classCapacityChart"></canvas>
@@ -243,12 +197,11 @@
 
                 <!-- Quick Actions & Recent Applications -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Quick Actions -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
                         <div class="space-y-3">
                             <template x-for="action in stats.quick_actions" :key="action.title">
-                                <div
+                                <div @click="handleQuickAction(action)"
                                     class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
                                     <div class="flex items-center">
                                         <i :class="action.icon" class="text-indigo-600 mr-3"></i>
@@ -267,12 +220,10 @@
                         </div>
                     </div>
 
-                    <!-- Recent Applications -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Applications</h3>
                         <div class="space-y-3">
-                            <template x-for="app in stats.recent_applications?.slice(0, 5)"
-                                :key="app.application_number">
+                            <template x-for="app in stats.recent_applications?.slice(0, 5)" :key="app.application_number">
                                 <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                                     <div>
                                         <p class="font-medium text-gray-900" x-text="app.name"></p>
@@ -280,7 +231,7 @@
                                     </div>
                                     <span :class="{
                                         'bg-green-100 text-green-800': app.status === 'accepted',
-                                        'bg-yellow-100 text-yellow-800': app.status === 'submitted',
+                                        'bg-yellow-100 text-yellow-800': app.status === 'submitted' || app.status === 'pending',
                                         'bg-blue-100 text-blue-800': app.status === 'under_review',
                                         'bg-red-100 text-red-800': app.status === 'rejected'
                                     }" class="px-3 py-1 rounded-full text-xs font-medium"
@@ -293,13 +244,13 @@
             </div>
 
             <!-- Applications Section -->
-            <div x-show="currentView === 'applications'">
+            <div x-show="currentView === 'applications' && !loading">
                 <div class="mb-6 flex justify-between items-center">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-900">Applications Management</h2>
                         <p class="text-gray-600">Review and process student applications</p>
                     </div>
-                    <button @click="refreshData()"
+                    <button @click="loadApplications()"
                         class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
                         <i class="fas fa-sync-alt mr-2"></i>Refresh
                     </button>
@@ -328,18 +279,12 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Application #</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Applicant</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Submitted</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions
-                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Application #</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Applicant</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submitted</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -348,17 +293,17 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
                                             x-text="app.application_number"></td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900" x-text="app.name"></div>
-                                            <div class="text-sm text-gray-500" x-text="app.email || ''"></div>
+                                            <div class="text-sm font-medium text-gray-900" x-text="app.learner_name"></div>
+                                            <div class="text-sm text-gray-500" x-text="app.parent_email || ''"></div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
-                                            x-text="app.applying_for"></td>
+                                            x-text="app.applying_for_class"></td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
                                             x-text="formatDate(app.submitted_at)"></td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span :class="{
                                                 'bg-green-100 text-green-800': app.status === 'accepted',
-                                                'bg-yellow-100 text-yellow-800': app.status === 'submitted',
+                                                'bg-yellow-100 text-yellow-800': app.status === 'pending',
                                                 'bg-blue-100 text-blue-800': app.status === 'under_review',
                                                 'bg-purple-100 text-purple-800': app.status === 'exam_completed',
                                                 'bg-red-100 text-red-800': app.status === 'rejected'
@@ -366,15 +311,15 @@
                                                 x-text="app.status.replace('_', ' ').toUpperCase()"></span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <button class="text-indigo-600 hover:text-indigo-900 mr-3">
+                                            <button @click="viewApplication(app)" class="text-indigo-600 hover:text-indigo-900 mr-3">
                                                 <i class="fas fa-eye"></i>
                                             </button>
-                                            <button x-show="app.status === 'exam_completed'"
+                                            <button x-show="app.status === 'exam_completed'" @click="acceptApplication(app)"
                                                 class="text-green-600 hover:text-green-900 mr-3">
                                                 <i class="fas fa-check"></i>
                                             </button>
-                                            <button
-                                                x-show="['submitted', 'under_review', 'exam_completed'].includes(app.status)"
+                                            <button x-show="['pending', 'under_review', 'exam_completed'].includes(app.status)"
+                                                @click="rejectApplication(app)"
                                                 class="text-red-600 hover:text-red-900">
                                                 <i class="fas fa-times"></i>
                                             </button>
@@ -388,11 +333,11 @@
             </div>
 
             <!-- Students Management Section -->
-            <div x-show="currentView === 'students'">
+            <div x-show="currentView === 'students' && !loading">
                 <div class="mb-6 flex justify-between items-center">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-900">Students Management</h2>
-                        <p class="text-gray-600">Add, view, and manage student records</p>
+                        <p class="text-gray-600">View and manage student records</p>
                     </div>
                     <button @click="showAddStudent = true"
                         class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
@@ -403,19 +348,22 @@
                 <!-- Students Filter -->
                 <div class="bg-white rounded-lg shadow p-4 mb-6">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <input type="text" placeholder="Search students..."
+                        <input type="text" x-model="studentSearch" @input="filterStudents()" placeholder="Search students..."
                             class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                        <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                            <option>All Classes</option>
-                            <option>Grade 1</option>
-                            <option>Grade 2</option>
+                        <select x-model="studentClassFilter" @change="filterStudents()"
+                            class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <option value="">All Classes</option>
+                            <template x-for="cls in availableClasses" :key="cls.id">
+                                <option :value="cls.id" x-text="cls.name"></option>
+                            </template>
                         </select>
-                        <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                            <option>All Status</option>
-                            <option>Active</option>
-                            <option>Inactive</option>
+                        <select x-model="studentStatusFilter" @change="filterStudents()"
+                            class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <option value="active">Active</option>
+                            <option value="">All Status</option>
+                            <option value="inactive">Inactive</option>
                         </select>
-                        <button class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
+                        <button @click="loadStudents()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
                             <i class="fas fa-filter mr-2"></i>Apply Filters
                         </button>
                     </div>
@@ -430,47 +378,43 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parent</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Attendance
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Average</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Attendance</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">#2024001</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900">John Doe</div>
-                                    <div class="text-sm text-gray-500">john.doe@email.com</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">Grade 6-A</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">Mr. David Doe</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm font-medium text-green-600">95.5%</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span
-                                        class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">87.3%</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <button class="text-indigo-600 hover:text-indigo-900 mr-3" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="text-blue-600 hover:text-blue-900 mr-3" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="text-red-600 hover:text-red-900" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
+                            <template x-for="student in filteredStudents" :key="student.id">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="student.student_id"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900" x-text="student.name"></div>
+                                        <div class="text-sm text-gray-500" x-text="student.email"></div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="student.class"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <div x-text="student.parent_name"></div>
+                                        <div class="text-gray-500" x-text="student.parent_contact"></div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="text-sm font-medium text-green-600" x-text="student.attendance_rate + '%'"></span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button @click="viewStudent(student)" class="text-indigo-600 hover:text-indigo-900 mr-3" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button @click="editStudent(student)" class="text-blue-600 hover:text-blue-900 mr-3" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-             <!-- Teachers Management Section -->
-            <div x-show="currentView === 'teachers'">
+            <!-- Teachers Management Section (keeping your existing working code) -->
+            <div x-show="currentView === 'teachers' && !loading">
                 <div class="mb-6 flex justify-between items-center">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-900">Teachers Management</h2>
@@ -482,21 +426,75 @@
                     </button>
                 </div>
 
-                <!-- Add Teacher Modal -->
+                <div x-show="teachers.length === 0" class="bg-white rounded-lg shadow p-12 text-center">
+                    <i class="fas fa-chalkboard-teacher text-gray-300 text-6xl mb-4"></i>
+                    <p class="text-gray-500 text-lg">No teachers added yet</p>
+                    <button @click="showAddTeacher = true" class="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                        Add Your First Teacher
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <template x-for="teacher in teachers" :key="teacher.id">
+                        <div class="bg-white rounded-lg shadow hover:shadow-lg transition p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="bg-indigo-100 rounded-full w-16 h-16 flex items-center justify-center">
+                                    <span class="text-2xl font-bold text-indigo-600" x-text="teacher.first_name.charAt(0) + teacher.last_name.charAt(0)"></span>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button @click="editTeacher(teacher)" class="text-blue-600 hover:text-blue-800" title="Edit">
+                                        <i class="fas fa-edit text-lg"></i>
+                                    </button>
+                                    <button @click="deleteTeacher(teacher.id)" class="text-red-600 hover:text-red-800" title="Delete">
+                                        <i class="fas fa-trash text-lg"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <h3 class="text-lg font-bold text-gray-900 mb-1" x-text="teacher.full_name"></h3>
+                            <p class="text-sm text-gray-600 mb-3" x-text="teacher.email"></p>
+                            
+                            <div class="space-y-2 text-sm mb-4">
+                                <div class="flex items-center">
+                                    <i class="fas fa-phone text-gray-400 w-5"></i>
+                                    <span class="text-gray-700" x-text="teacher.phone || 'No phone'"></span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-school text-gray-400 w-5"></i>
+                                    <span class="text-gray-700" x-text="teacher.total_classes + ' classes'"></span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-user-graduate text-gray-400 w-5"></i>
+                                    <span class="text-gray-700" x-text="teacher.total_students + ' students'"></span>
+                                </div>
+                            </div>
+
+                            <div class="border-t pt-3">
+                                <p class="text-xs text-gray-500 mb-2">Subjects:</p>
+                                <div class="flex flex-wrap gap-1">
+                                    <template x-for="subject in teacher.subjects" :key="subject">
+                                        <span class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs" x-text="subject"></span>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Add/Edit Teacher Modal -->
                 <div x-show="showAddTeacher" x-cloak
                     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
                     @click.self="showAddTeacher = false">
                     <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                         <div class="p-6 border-b flex justify-between items-center">
                             <h3 class="text-xl font-bold text-gray-900">Add New Teacher</h3>
-                            <button @click="showAddTeacher = false" class="text-gray-400 hover:text-gray-600">
+                            <button @click="showAddTeacher = false; resetTeacherForm()" class="text-gray-400 hover:text-gray-600">
                                 <i class="fas fa-times text-xl"></i>
                             </button>
                         </div>
 
                         <form @submit.prevent="saveTeacher()" class="p-6">
                             <div class="space-y-4">
-                                <!-- Personal Info -->
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
@@ -523,31 +521,24 @@
                                     </div>
                                 </div>
 
-                                <!-- Subject Assignment -->
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Subjects to Teach
-                                        *</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Subjects to Teach *</label>
                                     <div class="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto">
                                         <template x-for="subject in availableSubjects" :key="subject.id">
-                                            <label
-                                                class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                            <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
                                                 <input type="checkbox" :value="subject.id" x-model="newTeacher.subjects"
                                                     class="mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                                <span class="text-sm"
-                                                    x-text="subject.name + ' (' + subject.code + ')'"></span>
+                                                <span class="text-sm" x-text="subject.name + ' (' + subject.code + ')'"></span>
                                             </label>
                                         </template>
                                     </div>
                                 </div>
 
-                                <!-- Class Assignment -->
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Classes to Teach
-                                        *</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Classes to Teach *</label>
                                     <div class="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto">
                                         <template x-for="cls in availableClasses" :key="cls.id">
-                                            <label
-                                                class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                            <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
                                                 <input type="checkbox" :value="cls.id" x-model="newTeacher.classes"
                                                     class="mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
                                                 <span class="text-sm" x-text="cls.name"></span>
@@ -559,13 +550,13 @@
                                 <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
                                     <p class="text-sm text-yellow-800">
                                         <i class="fas fa-info-circle mr-2"></i>
-                                        A temporary password will be generated and sent to the teacher's email.
+                                        A temporary password will be generated and displayed after creation.
                                     </p>
                                 </div>
                             </div>
 
                             <div class="mt-6 flex justify-end space-x-3">
-                                <button type="button" @click="showAddTeacher = false"
+                                <button type="button" @click="showAddTeacher = false; resetTeacherForm()"
                                     class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
                                     Cancel
                                 </button>
@@ -582,60 +573,113 @@
                 </div>
             </div>
 
-
             <!-- Classes Management Section -->
-            <div x-show="currentView === 'classes'">
+            <div x-show="currentView === 'classes' && !loading">
                 <div class="mb-6 flex justify-between items-center">
                     <div>
                         <h2 class="text-2xl font-bold text-gray-900">Class Management</h2>
                         <p class="text-gray-600">Manage classes, capacity, and assignments</p>
                     </div>
-                    <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                    <button @click="showCreateClass = true" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
                         <i class="fas fa-plus mr-2"></i>Create New Class
                     </button>
                 </div>
 
                 <!-- Classes Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <div class="flex justify-between items-start mb-4">
-                            <div>
-                                <h3 class="text-xl font-bold text-gray-900">Grade 6-A</h3>
-                                <p class="text-sm text-gray-600">Mrs. Sarah Johnson</p>
-                            </div>
-                            <span
-                                class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Active</span>
-                        </div>
-                        <div class="space-y-3">
-                            <div>
-                                <div class="flex justify-between text-sm mb-1">
-                                    <span class="text-gray-600">Capacity</span>
-                                    <span class="font-medium">45/50</span>
-                                </div>
-                                <div class="bg-gray-200 rounded-full h-2">
-                                    <div class="bg-indigo-600 h-2 rounded-full" style="width: 90%"></div>
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-4 text-sm">
+                    <template x-for="cls in classes" :key="cls.id">
+                        <div class="bg-white rounded-lg shadow p-6">
+                            <div class="flex justify-between items-start mb-4">
                                 <div>
-                                    <p class="text-gray-600">Avg Attendance</p>
-                                    <p class="font-semibold text-green-600">95%</p>
+                                    <h3 class="text-xl font-bold text-gray-900" x-text="cls.name"></h3>
+                                    <p class="text-sm text-gray-600" x-text="cls.class_teacher || 'No Class Teacher'"></p>
                                 </div>
+                                <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                                    <span x-text="cls.is_active ? 'Active' : 'Inactive'"></span>
+                                </span>
+                            </div>
+                            <div class="space-y-3">
                                 <div>
-                                    <p class="text-gray-600">Class Average</p>
-                                    <p class="font-semibold text-blue-600">78%</p>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-600">Capacity</span>
+                                        <span class="font-medium" x-text="cls.enrolled + '/' + cls.capacity"></span>
+                                    </div>
+                                    <div class="bg-gray-200 rounded-full h-2">
+                                        <div class="bg-indigo-600 h-2 rounded-full" 
+                                            :style="'width: ' + (cls.enrolled/cls.capacity*100) + '%'"></div>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <p class="text-gray-600">Avg Attendance</p>
+                                        <p class="font-semibold text-green-600" x-text="cls.avg_attendance + '%'"></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-gray-600">Available</p>
+                                        <p class="font-semibold text-blue-600" x-text="cls.available"></p>
+                                    </div>
                                 </div>
                             </div>
+                            <button @click="viewClassStudents(cls)" class="w-full mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                                <i class="fas fa-users mr-2"></i>View Students
+                            </button>
                         </div>
-                        <button class="w-full mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-                            <i class="fas fa-users mr-2"></i>View Students
-                        </button>
+                    </template>
+                </div>
+
+                <!-- Create Class Modal -->
+                <div x-show="showCreateClass" x-cloak
+                    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                    @click.self="showCreateClass = false">
+                    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+                        <div class="p-6 border-b flex justify-between items-center">
+                            <h3 class="text-xl font-bold text-gray-900">Create New Class</h3>
+                            <button @click="showCreateClass = false" class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+
+                        <form @submit.prevent="createClass()" class="p-6">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Class Name *</label>
+                                    <input type="text" x-model="newClass.name" required placeholder="e.g., Grade 6-A"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Capacity *</label>
+                                    <input type="number" x-model="newClass.capacity" required min="1" value="50"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Academic Year *</label>
+                                    <input type="text" x-model="newClass.academic_year" required placeholder="2024-2025"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                            </div>
+
+                            <div class="mt-6 flex justify-end space-x-3">
+                                <button type="button" @click="showCreateClass = false"
+                                    class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                                    Cancel
+                                </button>
+                                <button type="submit" :disabled="savingClass"
+                                    class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                                    <span x-show="!savingClass">Create Class</span>
+                                    <span x-show="savingClass">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Creating...
+                                    </span>
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
 
             <!-- Finance Management Section -->
-            <div x-show="currentView === 'finance'">
+            <div x-show="currentView === 'finance' && !loading">
                 <div class="mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Finance Management</h2>
                     <p class="text-gray-600">Track fees, payments, and financial reports</p>
@@ -645,68 +689,111 @@
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                     <div class="bg-white rounded-lg shadow p-6">
                         <p class="text-sm text-gray-600">Total Revenue</p>
-                        <p class="text-2xl font-bold text-gray-900">GHS 125,450</p>
+                        <p class="text-2xl font-bold text-gray-900">GHS <span x-text="(financeData.total_revenue || 0).toFixed(2)"></span></p>
                         <p class="text-sm text-green-600 mt-1">
-                            <i class="fas fa-arrow-up"></i> 12% from last month
+                            <i class="fas fa-arrow-up"></i> From collected fees
                         </p>
                     </div>
                     <div class="bg-white rounded-lg shadow p-6">
                         <p class="text-sm text-gray-600">Pending Fees</p>
-                        <p class="text-2xl font-bold text-orange-600">GHS 23,400</p>
-                        <p class="text-sm text-gray-600 mt-1">45 students</p>
+                        <p class="text-2xl font-bold text-orange-600">GHS <span x-text="(financeData.pending_fees || 0).toFixed(2)"></span></p>
+                        <p class="text-sm text-gray-600 mt-1" x-text="financeData.students_with_pending + ' students'"></p>
                     </div>
                     <div class="bg-white rounded-lg shadow p-6">
-                        <p class="text-sm text-gray-600">Collected This Month</p>
-                        <p class="text-2xl font-bold text-green-600">GHS 98,200</p>
-                        <p class="text-sm text-gray-600 mt-1">89% collection rate</p>
+                        <p class="text-sm text-gray-600">This Month Collection</p>
+                        <p class="text-2xl font-bold text-green-600">GHS <span x-text="(financeData.monthly_collection || 0).toFixed(2)"></span></p>
+                        <p class="text-sm text-gray-600 mt-1" x-text="financeData.collection_rate + '% rate'"></p>
                     </div>
                     <div class="bg-white rounded-lg shadow p-6">
-                        <p class="text-sm text-gray-600">Outstanding</p>
-                        <p class="text-2xl font-bold text-red-600">GHS 15,800</p>
+                        <p class="text-sm text-gray-600">Overdue Amount</p>
+                        <p class="text-2xl font-bold text-red-600">GHS <span x-text="(financeData.overdue_amount || 0).toFixed(2)"></span></p>
                         <p class="text-sm text-gray-600 mt-1">Overdue payments</p>
                     </div>
                 </div>
 
-                <!-- Payment Tracking Table -->
-                <div class="bg-white rounded-lg shadow">
-                    <div class="p-6 border-b">
-                        <h3 class="text-lg font-semibold text-gray-900">Recent Transactions</h3>
+                <!-- Record Payment & View Pending -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <!-- Record Payment Form -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Record Payment</h3>
+                        <form @submit.prevent="recordPayment()">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Student ID *</label>
+                                    <input type="text" x-model="payment.student_id" required placeholder="STU-2024-0001"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Amount (GHS) *</label>
+                                    <input type="number" x-model="payment.amount" required step="0.01" min="0"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method *</label>
+                                    <select x-model="payment.payment_method" required
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                        <option value="cash">Cash</option>
+                                        <option value="bank_transfer">Bank Transfer</option>
+                                        <option value="mobile_money">Mobile Money</option>
+                                        <option value="cheque">Cheque</option>
+                                        <option value="card">Card</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Reference Number</label>
+                                    <input type="text" x-model="payment.reference" placeholder="Optional"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                </div>
+
+                                <button type="submit" :disabled="processingPayment"
+                                    class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                                    <span x-show="!processingPayment">Record Payment</span>
+                                    <span x-show="processingPayment">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Processing...
+                                    </span>
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">Oct 1, 2024</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">John Doe</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">GHS 2,500</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">Term Fee</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span
-                                            class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Paid</span>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+
+                    <!-- Pending Fees Students -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">Students with Pending Fees</h3>
+                            <button @click="loadPendingFees()" class="text-indigo-600 hover:text-indigo-800">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="space-y-3 max-h-96 overflow-y-auto">
+                            <template x-for="student in pendingFeeStudents" :key="student.student_id">
+                                <div class="border border-gray-200 rounded-lg p-3">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <p class="font-medium text-gray-900" x-text="student.name"></p>
+                                            <p class="text-sm text-gray-600" x-text="student.student_id + ' - ' + student.class"></p>
+                                        </div>
+                                        <span :class="{
+                                            'bg-red-100 text-red-800': student.is_overdue,
+                                            'bg-orange-100 text-orange-800': !student.is_overdue
+                                        }" class="px-2 py-1 rounded-full text-xs font-medium"
+                                            x-text="student.is_overdue ? 'OVERDUE' : 'PENDING'"></span>
+                                    </div>
+                                    <div class="mt-2 text-sm">
+                                        <p class="text-gray-600">Balance: <span class="font-bold text-red-600">GHS <span x-text="student.balance.toFixed(2)"></span></span></p>
+                                        <p class="text-gray-500">Due: <span x-text="formatDate(student.due_date)"></span></p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Reports Section -->
-            <div x-show="currentView === 'reports'">
+            <div x-show="currentView === 'reports' && !loading">
                 <div class="mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Reports & Analytics</h2>
                     <p class="text-gray-600">Comprehensive school performance reports</p>
@@ -720,27 +807,29 @@
                         </div>
                         <h3 class="font-semibold text-gray-900 mb-2">Academic Performance</h3>
                         <p class="text-sm text-gray-600 mb-4">Class-wise and student performance analysis</p>
-                        <button class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        <button @click="generateReport('academic')" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                             <i class="fas fa-download mr-2"></i>Generate Report
                         </button>
                     </div>
+
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="bg-green-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
                             <i class="fas fa-calendar-check text-green-600 text-xl"></i>
                         </div>
                         <h3 class="font-semibold text-gray-900 mb-2">Attendance Reports</h3>
                         <p class="text-sm text-gray-600 mb-4">Daily, weekly, and monthly attendance data</p>
-                        <button class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        <button @click="generateReport('attendance')" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                             <i class="fas fa-download mr-2"></i>Generate Report
                         </button>
                     </div>
+
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="bg-purple-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
                             <i class="fas fa-money-bill text-purple-600 text-xl"></i>
                         </div>
                         <h3 class="font-semibold text-gray-900 mb-2">Financial Reports</h3>
                         <p class="text-sm text-gray-600 mb-4">Revenue, expenses, and fee collection</p>
-                        <button class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                        <button @click="generateReport('financial')" class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
                             <i class="fas fa-download mr-2"></i>Generate Report
                         </button>
                     </div>
@@ -753,42 +842,31 @@
                         <table class="min-w-full">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teacher
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Classes
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Avg
-                                        Class Score</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Attendance Rate</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rating
-                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teacher</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Classes</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Attendances Marked</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Performance</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">Mrs. Sarah Johnson</div>
-                                        <div class="text-sm text-gray-500">Mathematics</div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">5</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="text-sm font-medium text-green-600">82.5%</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="text-sm font-medium text-green-600">94%</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <i class="fas fa-star text-yellow-400"></i>
-                                            <i class="fas fa-star text-yellow-400"></i>
-                                            <i class="fas fa-star text-yellow-400"></i>
-                                            <i class="fas fa-star text-yellow-400"></i>
-                                            <i class="fas fa-star-half-alt text-yellow-400"></i>
-                                            <span class="ml-2 text-sm text-gray-600">4.5</span>
-                                        </div>
-                                    </td>
-                                </tr>
+                                <template x-for="teacher in teacherPerformance" :key="teacher.id">
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm font-medium text-gray-900" x-text="teacher.name"></div>
+                                            <div class="text-sm text-gray-500" x-text="teacher.email"></div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="teacher.classes_assigned"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="teacher.attendances_marked"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <template x-for="i in 5" :key="i">
+                                                    <i :class="i <= teacher.performance_score ? 'fas fa-star text-yellow-400' : 'far fa-star text-gray-300'"></i>
+                                                </template>
+                                                <span class="ml-2 text-sm text-gray-600" x-text="teacher.performance_score.toFixed(1)"></span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
                             </tbody>
                         </table>
                     </div>
@@ -796,7 +874,7 @@
             </div>
 
             <!-- Settings Section -->
-            <div x-show="currentView === 'settings'">
+            <div x-show="currentView === 'settings' && !loading">
                 <div class="mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">System Settings</h2>
                     <p class="text-gray-600">Configure school information and system preferences</p>
@@ -806,66 +884,75 @@
                     <!-- School Information -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">School Information</h3>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">School Name</label>
-                                <input type="text" value="Excellence Academy"
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        <form @submit.prevent="saveSchoolSettings()">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">School Name</label>
+                                    <input type="text" x-model="settings.school_name"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">School Email</label>
+                                    <input type="email" x-model="settings.school_email"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
+                                    <input type="tel" x-model="settings.school_phone"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                                    <textarea rows="3" x-model="settings.school_address"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
+                                </div>
+                                <button type="submit" :disabled="savingSettings"
+                                    class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                                    <span x-show="!savingSettings"><i class="fas fa-save mr-2"></i>Save Changes</span>
+                                    <span x-show="savingSettings"><i class="fas fa-spinner fa-spin mr-2"></i>Saving...</span>
+                                </button>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                                <textarea rows="3"
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">123 Education Street, City</textarea>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
-                                <input type="tel" value="+233 20 123 4567"
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                            </div>
-                            <button class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-                                <i class="fas fa-save mr-2"></i>Save Changes
-                            </button>
-                        </div>
+                        </form>
                     </div>
 
                     <!-- Academic Settings -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Academic Settings</h3>
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Current Academic
-                                    Year</label>
-                                <select
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                                    <option>2024-2025</option>
-                                    <option>2025-2026</option>
-                                </select>
+                        <form @submit.prevent="saveAcademicSettings()">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Current Academic Year</label>
+                                    <input type="text" x-model="settings.current_academic_year" placeholder="2024-2025"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Current Term</label>
+                                    <select x-model="settings.current_term"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                        <option value="first">First Term</option>
+                                        <option value="second">Second Term</option>
+                                        <option value="third">Third Term</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Grading System</label>
+                                    <select x-model="settings.grading_system"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                        <option value="percentage">Percentage (0-100)</option>
+                                        <option value="letter">Letter Grade (A-F)</option>
+                                        <option value="gpa">GPA (0-4.0)</option>
+                                    </select>
+                                </div>
+                                <button type="submit" :disabled="savingSettings"
+                                    class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                                    <span x-show="!savingSettings"><i class="fas fa-save mr-2"></i>Save Changes</span>
+                                    <span x-show="savingSettings"><i class="fas fa-spinner fa-spin mr-2"></i>Saving...</span>
+                                </button>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Current Term</label>
-                                <select
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                                    <option>First Term</option>
-                                    <option>Second Term</option>
-                                    <option>Third Term</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Grading System</label>
-                                <select
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                                    <option>Percentage (0-100)</option>
-                                    <option>Letter Grade (A-F)</option>
-                                    <option>GPA (0-4.0)</option>
-                                </select>
-                            </div>
-                            <button class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-                                <i class="fas fa-save mr-2"></i>Save Changes
-                            </button>
-                        </div>
+                        </form>
                     </div>
 
-                    <!-- User Management -->
+                    <!-- User Roles & Permissions -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">User Roles & Permissions</h3>
                         <div class="space-y-3">
@@ -874,8 +961,16 @@
                                     <p class="font-medium text-gray-900">Super Admin</p>
                                     <p class="text-sm text-gray-600">Full system access</p>
                                 </div>
-                                <span
-                                    class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Critical</span>
+                                <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Critical</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                                <div>
+                                    <p class="font-medium text-gray-900">Admin</p>
+                                    <p class="text-sm text-gray-600">Most management functions</p>
+                                </div>
+                                <button class="text-indigo-600 hover:text-indigo-800 text-sm">
+                                    <i class="fas fa-edit mr-1"></i>Configure
+                                </button>
                             </div>
                             <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                                 <div>
@@ -902,44 +997,153 @@
         </main>
     </div>
 
+    <!-- Student Details Modal -->
+    <div x-show="showStudentModal" x-cloak
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        @click.self="showStudentModal = false">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-900">Student Details</h3>
+                <button @click="showStudentModal = false" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div class="p-6" x-show="selectedStudent">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-3">Personal Information</h4>
+                        <div class="space-y-2">
+                            <p class="text-sm"><span class="font-medium">Student ID:</span> <span x-text="selectedStudent?.student_id"></span></p>
+                            <p class="text-sm"><span class="font-medium">Name:</span> <span x-text="selectedStudent?.name"></span></p>
+                            <p class="text-sm"><span class="font-medium">Email:</span> <span x-text="selectedStudent?.email"></span></p>
+                            <p class="text-sm"><span class="font-medium">Class:</span> <span x-text="selectedStudent?.class"></span></p>
+                            <p class="text-sm"><span class="font-medium">Roll Number:</span> <span x-text="selectedStudent?.roll_number"></span></p>
+                            <p class="text-sm"><span class="font-medium">Date of Birth:</span> <span x-text="selectedStudent?.date_of_birth"></span></p>
+                            <p class="text-sm"><span class="font-medium">Blood Group:</span> <span x-text="selectedStudent?.blood_group"></span></p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold text-gray-900 mb-3">Parent/Guardian Information</h4>
+                        <div class="space-y-2">
+                            <p class="text-sm"><span class="font-medium">Name:</span> <span x-text="selectedStudent?.parent_name"></span></p>
+                            <p class="text-sm"><span class="font-medium">Contact:</span> <span x-text="selectedStudent?.parent_contact"></span></p>
+                        </div>
+
+                        <h4 class="font-semibold text-gray-900 mb-3 mt-6">Health Information</h4>
+                        <div class="space-y-2">
+                            <p class="text-sm"><span class="font-medium">Allergies:</span> <span x-text="selectedStudent?.allergies"></span></p>
+                            <p class="text-sm"><span class="font-medium">Address:</span> <span x-text="selectedStudent?.address"></span></p>
+                        </div>
+                    </div>
+
+                    <div class="col-span-2">
+                        <h4 class="font-semibold text-gray-900 mb-3">Academic Performance</h4>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="bg-blue-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-600">Attendance Rate</p>
+                                <p class="text-2xl font-bold text-blue-600" x-text="selectedStudent?.attendance_rate + '%'"></p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-600">Average Grade</p>
+                                <p class="text-2xl font-bold text-green-600" x-text="selectedStudent?.average_grade + '%'"></p>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded-lg">
+                                <p class="text-sm text-gray-600">Status</p>
+                                <p class="text-2xl font-bold text-purple-600" x-text="selectedStudent?.status"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
-        function requireAuth() {
-            const token = localStorage.getItem('access_token');
-            const userData = localStorage.getItem('user_data');
-
-            if (!token || !userData) {
-                alert('Please login first');
-                window.location.href = '/auth/';
-                return null;
-            }
-
-            return JSON.parse(userData);
-        }
         function adminDashboard() {
             return {
                 user: {},
                 currentView: 'overview',
+                loading: true,
                 stats: {},
-                notifications: [],
+                
+                // Applications
+                applications: [],
                 activeApplicationTab: 'all',
                 applicationTabs: [
                     { key: 'all', label: 'All', count: 0 },
-                    { key: 'submitted', label: 'Submitted', count: 0 },
+                    { key: 'pending', label: 'Pending', count: 0 },
                     { key: 'under_review', label: 'Under Review', count: 0 },
                     { key: 'exam_completed', label: 'Exam Completed', count: 0 },
                     { key: 'accepted', label: 'Accepted', count: 0 },
                     { key: 'rejected', label: 'Rejected', count: 0 }
                 ],
 
+                // Students
+                students: [],
+                filteredStudents: [],
+                studentSearch: '',
+                studentClassFilter: '',
+                studentStatusFilter: 'active',
+                showStudentModal: false,
+                selectedStudent: null,
+                showAddStudent: false,
+
+                // Teachers
+                teachers: [],
+                showAddTeacher: false,
+                savingTeacher: false,
+                availableSubjects: [],
+                availableClasses: [],
+                newTeacher: {
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                    phone: '',
+                    subjects: [],
+                    classes: []
+                },
+
+                // Classes
+                classes: [],
+                showCreateClass: false,
+                savingClass: false,
+                newClass: {
+                    name: '',
+                    capacity: 50,
+                    academic_year: '2024-2025'
+                },
+
+                // Finance
+                financeData: {},
+                pendingFeeStudents: [],
+                payment: {
+                    student_id: '',
+                    amount: '',
+                    payment_method: 'cash',
+                    reference: ''
+                },
+                processingPayment: false,
+
+                // Reports
+                teacherPerformance: [],
+
+                // Settings
+                settings: {
+                    school_name: 'Excellence Academy',
+                    school_email: '',
+                    school_phone: '',
+                    school_address: '',
+                    current_academic_year: '2024-2025',
+                    current_term: 'first',
+                    grading_system: 'percentage'
+                },
+                savingSettings: false,
+
                 async init() {
-                    // Check if user is logged in
                     const token = localStorage.getItem('access_token');
                     const userData = localStorage.getItem('user_data');
-                    await this.loadDashboardData();
-                    await this.loadTeachers();
-                    await this.loadAvailableData();
-                    this.initCharts();
 
                     if (!token || !userData) {
                         alert('Please login first');
@@ -949,10 +1153,8 @@
 
                     this.user = JSON.parse(userData);
 
-                    // CRITICAL: Verify admin access via API
                     try {
                         const response = await fetch('/api/v1/dashboard/verify-admin/', {
-                            method: 'GET',
                             headers: {
                                 'Authorization': `Bearer ${token}`,
                                 'Content-Type': 'application/json'
@@ -967,45 +1169,143 @@
                             return;
                         }
 
-                        // User is verified admin - continue loading
-                        await this.loadDashboardData();
-                        this.initCharts();
+                        await Promise.all([
+                            this.loadDashboardData(),
+                            this.loadApplications(),
+                            this.loadStudents(),
+                            this.loadTeachers(),
+                            this.loadClasses(),
+                            this.loadFinanceData(),
+                            this.loadTeacherPerformance(),
+                            this.loadSettings(),
+                            this.loadAvailableData()
+                        ]);
+
+                        this.$nextTick(() => this.initCharts());
 
                     } catch (error) {
-                        console.error('Error verifying access:', error);
-                        alert('Error verifying access. Please login again.');
-                        window.location.href = '/auth/';
+                        console.error('Error:', error);
+                        alert('Error loading dashboard');
+                    } finally {
+                        this.loading = false;
                     }
                 },
 
-
-                // Add these properties
-                showAddTeacher: false,
-                savingTeacher: false,
-                availableSubjects: [],
-                availableClasses: [],
-                teachers: [],
-                newTeacher: {
-                    first_name: '',
-                    last_name: '',
-                    email: '',
-                    phone: '',
-                    subjects: [],
-                    classes: []
+                async loadDashboardData() {
+                    try {
+                        const response = await fetch('/api/v1/dashboard/admin/overview/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.stats = data.data;
+                        }
+                    } catch (error) {
+                        console.error('Error loading dashboard:', error);
+                    }
                 },
 
-                // Add these methods
+                async loadApplications() {
+                    try {
+                        const response = await fetch('/api/v1/admin/admissions/applications/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.applications = data.data.applications;
+                            this.updateApplicationTabs();
+                        }
+                    } catch (error) {
+                        console.error('Error loading applications:', error);
+                    }
+                },
+
+                updateApplicationTabs() {
+                    this.applicationTabs[0].count = this.applications.length;
+                    this.applicationTabs[1].count = this.applications.filter(a => a.status === 'pending').length;
+                    this.applicationTabs[2].count = this.applications.filter(a => a.status === 'under_review').length;
+                    this.applicationTabs[3].count = this.applications.filter(a => a.status === 'exam_completed').length;
+                    this.applicationTabs[4].count = this.applications.filter(a => a.status === 'accepted').length;
+                    this.applicationTabs[5].count = this.applications.filter(a => a.status === 'rejected').length;
+                },
+
+                get filteredApplications() {
+                    if (this.activeApplicationTab === 'all') {
+                        return this.applications;
+                    }
+                    return this.applications.filter(app => app.status === this.activeApplicationTab);
+                },
+
+                async loadStudents() {
+                    try {
+                        const params = new URLSearchParams({
+                            status: this.studentStatusFilter,
+                            search: this.studentSearch
+                        });
+                        if (this.studentClassFilter) {
+                            params.append('class_id', this.studentClassFilter);
+                        }
+
+                        const response = await fetch(`/api/v1/admin/students/?${params}`, {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.students = data.data;
+                            this.filteredStudents = data.data;
+                        }
+                    } catch (error) {
+                        console.error('Error loading students:', error);
+                    }
+                },
+
+                filterStudents() {
+                    this.filteredStudents = this.students.filter(student => {
+                        const matchesSearch = !this.studentSearch || 
+                            student.name.toLowerCase().includes(this.studentSearch.toLowerCase()) ||
+                            student.student_id.toLowerCase().includes(this.studentSearch.toLowerCase());
+                        
+                        const matchesClass = !this.studentClassFilter || 
+                            student.class_id == this.studentClassFilter;
+                        
+                        const matchesStatus = !this.studentStatusFilter || 
+                            student.status === this.studentStatusFilter;
+
+                        return matchesSearch && matchesClass && matchesStatus;
+                    });
+                },
+
+                async viewStudent(student) {
+                    try {
+                        const response = await fetch(`/api/v1/admin/students/${student.id}/`, {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.selectedStudent = data.data;
+                            this.showStudentModal = true;
+                        }
+                    } catch (error) {
+                        console.error('Error loading student details:', error);
+                    }
+                },
+
                 async loadTeachers() {
                     try {
                         const response = await fetch('/api/v1/teachers/manage/', {
                             headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-                                'Content-Type': 'application/json'
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
                             }
                         });
-
                         const data = await response.json();
-
                         if (data.success) {
                             this.teachers = data.data;
                         }
@@ -1016,29 +1316,23 @@
 
                 async loadAvailableData() {
                     try {
-                        // Load subjects
-                        const subjectsResp = await fetch('/api/v1/teachers/subjects/', {
-                            headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-                            }
-                        });
-                        const subjectsData = await subjectsResp.json();
-                        if (subjectsData.success) {
-                            this.availableSubjects = subjectsData.data;
-                        }
+                        const [subjectsResp, classesResp] = await Promise.all([
+                            fetch('/api/v1/teachers/subjects/', {
+                                headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+                            }),
+                            fetch('/api/v1/teachers/classes/', {
+                                headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+                            })
+                        ]);
 
-                        // Load classes
-                        const classesResp = await fetch('/api/v1/teachers/classes/', {
-                            headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-                            }
-                        });
+                        const subjectsData = await subjectsResp.json();
                         const classesData = await classesResp.json();
-                        if (classesData.success) {
-                            this.availableClasses = classesData.data;
-                        }
+
+                        if (subjectsData.success) this.availableSubjects = subjectsData.data;
+                        if (classesData.success) this.availableClasses = classesData.data;
+
                     } catch (error) {
-                        console.error('Error loading available data:', error);
+                        console.error('Error loading data:', error);
                     }
                 },
 
@@ -1068,7 +1362,6 @@
 
                         if (data.success) {
                             alert(`Teacher added successfully!\n\nUsername: ${data.data.username}\nTemporary Password: ${data.data.temporary_password}\n\nPlease save these credentials and share with the teacher.`);
-
                             this.showAddTeacher = false;
                             this.resetTeacherForm();
                             await this.loadTeachers();
@@ -1093,108 +1386,243 @@
                         classes: []
                     };
                 },
-                async loadDashboardData() {
+
+                async deleteTeacher(teacherId) {
+                    if (!confirm('Are you sure you want to remove this teacher?')) {
+                        return;
+                    }
+
                     try {
-                        const response = await fetch('/api/v1/dashboard/admin/overview/', {
+                        const response = await fetch(`/api/v1/teachers/manage/${teacherId}/`, {
+                            method: 'DELETE',
                             headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-                                'Content-Type': 'application/json'
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
                             }
                         });
 
                         const data = await response.json();
 
                         if (data.success) {
-                            this.stats = data.data;
-                            this.updateApplicationTabs();
-                            this.updateNotifications();
+                            alert('Teacher removed successfully!');
+                            await this.loadTeachers();
+                        } else {
+                            alert('Error: ' + data.error);
                         }
                     } catch (error) {
-                        console.error('Error loading dashboard:', error);
+                        console.error('Error deleting teacher:', error);
+                        alert('Error deleting teacher');
                     }
                 },
 
-                // Add this to admin dashboard loadDashboardData() function
-                async loadFinanceData() {
+                async loadClasses() {
                     try {
-                        const response = await fetch('/api/v1/finance/overview/', {
+                        const response = await fetch('/api/v1/admin/classes/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.classes = data.data;
+                        }
+                    } catch (error) {
+                        console.error('Error loading classes:', error);
+                    }
+                },
+
+                async createClass() {
+                    this.savingClass = true;
+
+                    try {
+                        const response = await fetch('/api/v1/admin/classes/', {
+                            method: 'POST',
                             headers: {
                                 'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
                                 'Content-Type': 'application/json'
-                            }
+                            },
+                            body: JSON.stringify(this.newClass)
                         });
 
                         const data = await response.json();
 
                         if (data.success) {
-                            this.stats.financial = data.data;
+                            alert('Class created successfully!');
+                            this.showCreateClass = false;
+                            this.newClass = { name: '', capacity: 50, academic_year: '2024-2025' };
+                            await this.loadClasses();
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error creating class:', error);
+                        alert('Error creating class');
+                    } finally {
+                        this.savingClass = false;
+                    }
+                },
+
+                async loadFinanceData() {
+                    try {
+                        const response = await fetch('/api/v1/admin/finance/overview/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.financeData = data.data;
                         }
                     } catch (error) {
                         console.error('Error loading finance data:', error);
                     }
                 },
 
-
-                updateApplicationTabs() {
-                    if (this.stats.applications) {
-                        this.applicationTabs[0].count = this.stats.applications.total_received;
-                        this.applicationTabs[1].count = this.stats.applications.pending_review;
-                        // Add more counts as needed
-                    }
-                },
-
-                updateNotifications() {
-                    this.notifications = [];
-
-                    if (this.stats.quick_actions) {
-                        this.stats.quick_actions.forEach(action => {
-                            this.notifications.push({
-                                id: Math.random(),
-                                message: `${action.title} (${action.count} pending)`,
-                                time: 'Just now',
-                                priority: action.priority
-                            });
+                async loadPendingFees() {
+                    try {
+                        const response = await fetch('/api/v1/admin/finance/pending-fees/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
                         });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.pendingFeeStudents = data.data;
+                        }
+                    } catch (error) {
+                        console.error('Error loading pending fees:', error);
                     }
                 },
 
-                get filteredApplications() {
-                    if (!this.stats.recent_applications) return [];
-
-                    if (this.activeApplicationTab === 'all') {
-                        return this.stats.recent_applications;
+                async recordPayment() {
+                    if (!this.payment.student_id || !this.payment.amount) {
+                        alert('Please fill in all required fields');
+                        return;
                     }
 
-                    return this.stats.recent_applications.filter(app =>
-                        app.status === this.activeApplicationTab
-                    );
+                    this.processingPayment = true;
+
+                    try {
+                        const response = await fetch('/api/v1/admin/finance/record-payment/', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.payment)
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            alert(`Payment recorded successfully!\n\nReceipt Number: ${data.data.receipt_number}\nAmount: GHS ${data.data.amount}\nBalance: GHS ${data.data.balance}`);
+                            this.payment = { student_id: '', amount: '', payment_method: 'cash', reference: '' };
+                            await this.loadFinanceData();
+                            await this.loadPendingFees();
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error recording payment:', error);
+                        alert('Error recording payment');
+                    } finally {
+                        this.processingPayment = false;
+                    }
+                },
+
+                async loadTeacherPerformance() {
+                    try {
+                        const response = await fetch('/api/v1/admin/reports/teacher-performance/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.teacherPerformance = data.data;
+                        }
+                    } catch (error) {
+                        console.error('Error loading teacher performance:', error);
+                    }
+                },
+
+                async loadSettings() {
+                    try {
+                        const response = await fetch('/api/v1/admin/settings/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.settings = { ...this.settings, ...data.data };
+                        }
+                    } catch (error) {
+                        console.error('Error loading settings:', error);
+                    }
+                },
+
+                async saveSchoolSettings() {
+                    this.savingSettings = true;
+
+                    try {
+                        const response = await fetch('/api/v1/admin/settings/', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.settings)
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            alert('Settings saved successfully!');
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error saving settings:', error);
+                        alert('Error saving settings');
+                    } finally {
+                        this.savingSettings = false;
+                    }
+                },
+
+                saveAcademicSettings() {
+                    return this.saveSchoolSettings();
                 },
 
                 initCharts() {
-                    this.$nextTick(() => {
-                        // Applications Status Chart
+                    if (this.stats.applications) {
                         const ctx1 = document.getElementById('applicationsChart');
-                        if (ctx1 && this.stats.applications) {
+                        if (ctx1) {
                             new Chart(ctx1, {
                                 type: 'doughnut',
                                 data: {
-                                    labels: ['Pending', 'Approved', 'Rejected', 'Under Review'],
+                                    labels: ['Pending', 'Under Review', 'Exam Completed', 'Accepted', 'Rejected'],
                                     datasets: [{
                                         data: [
                                             this.stats.applications.pending_review || 0,
-                                            this.stats.applications.approved || 0,
-                                            this.stats.applications.rejected || 0,
-                                            10 // Placeholder
+                                            this.stats.applications.under_review || 0,
+                                            this.stats.applications.exam_completed || 0,
+                                            this.stats.applications.accepted || 0,
+                                            this.stats.applications.rejected || 0
                                         ],
-                                        backgroundColor: ['#f59e0b', '#10b981', '#ef4444', '#3b82f6']
+                                        backgroundColor: ['#f59e0b', '#3b82f6', '#8b5cf6', '#10b981', '#ef4444']
                                     }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: true
                                 }
                             });
                         }
+                    }
 
-                        // Class Capacity Chart
+                    if (this.stats.classes && this.stats.classes.length > 0) {
                         const ctx2 = document.getElementById('classCapacityChart');
-                        if (ctx2 && this.stats.classes) {
+                        if (ctx2) {
                             new Chart(ctx2, {
                                 type: 'bar',
                                 data: {
@@ -1215,62 +1643,146 @@
                                 }
                             });
                         }
-                    });
+                    }
                 },
 
-                async refreshData() {
-                    await this.loadDashboardData();
-                    alert('Data refreshed successfully!');
+                handleQuickAction(action) {
+                    if (action.title.includes('Applications')) {
+                        this.currentView = 'applications';
+                        this.activeApplicationTab = 'pending';
+                    } else if (action.title.includes('Admissions')) {
+                        this.currentView = 'applications';
+                        this.activeApplicationTab = 'exam_completed';
+                    }
+                },
+
+                async acceptApplication(app) {
+                    const classId = prompt('Enter Class ID to assign student:');
+                    if (!classId) return;
+
+                    try {
+                        const response = await fetch(`/api/v1/admin/admissions/applications/${app.application_number}/enroll/`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ class_id: classId })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            alert(`Student enrolled!\n\nStudent ID: ${data.data.student_id}\nUsername: ${data.data.student_username}\nPassword: ${data.data.student_password}\n\nParent Username: ${data.data.parent_username}\nParent Password: ${data.data.parent_password}`);
+                            await this.loadApplications();
+                            await this.loadStudents();
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error accepting application:', error);
+                        alert('Error enrolling student');
+                    }
+                },
+
+                async rejectApplication(app) {
+                    const reason = prompt('Enter rejection reason:');
+                    if (!reason) return;
+
+                    try {
+                        const response = await fetch(`/api/v1/admin/admissions/applications/${app.application_number}/status/`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                status: 'rejected',
+                                admin_notes: reason
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            alert('Application rejected');
+                            await this.loadApplications();
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error rejecting application:', error);
+                        alert('Error rejecting application');
+                    }
+                },
+
+                viewApplication(app) {
+                    alert(`Application Details:\n\nApplication #: ${app.application_number}\nName: ${app.learner_name}\nClass: ${app.applying_for_class}\nStatus: ${app.status}\n\nView full details in Django Admin for now.`);
+                },
+
+                viewClassStudents(cls) {
+                    this.currentView = 'students';
+                    this.studentClassFilter = cls.id;
+                    this.filterStudents();
+                },
+
+                editStudent(student) {
+                    alert('Edit student functionality - coming soon');
+                },
+
+                editTeacher(teacher) {
+                    alert('Edit teacher functionality - coming soon');
+                },
+
+                generateReport(type) {
+                    alert(`Generating ${type} report... This feature will download a comprehensive ${type} report.`);
                 },
 
                 formatDate(dateString) {
                     if (!dateString) return 'N/A';
-                    return new Date(dateString).toLocaleDateString();
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                    });
                 },
 
                 logout() {
-                    localStorage.removeItem('access_token');
-                    localStorage.removeItem('refresh_token');
-                    localStorage.removeItem('user_data');
-                    window.location.href = '/auth/';
-                },
-
-                async loadApplications() {
-                    const response = await fetch('/api/v1/admin/admissions/applications/', {
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-                        }
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        this.applications = data.data.applications;
-                        this.stats.applications = data.data.statistics;
-                    }
-                },
-                async acceptApplication(applicationNumber, classId) {
-                    const response = await fetch(`/api/v1/admin/admissions/applications/${applicationNumber}/enroll/`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ class_id: classId })
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        alert(`Student enrolled! ID: ${data.data.student_id}\nUsername: ${data.data.username}\nPassword: ${data.data.temporary_password}`);
+                    if (confirm('Are you sure you want to logout?')) {
+                        localStorage.removeItem('access_token');
+                        localStorage.removeItem('refresh_token');
+                        localStorage.removeItem('user_data');
+                        window.location.href = '/auth/';
                     }
                 }
-
             }
         }
     </script>
 
     <style>
-        [x-cloak] {
-            display: none !important;
+        [x-cloak] { 
+            display: none !important; 
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
         }
     </style>
 </body>
-
 </html>

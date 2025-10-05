@@ -64,8 +64,8 @@ def get_students_list(request):
             'status': student.status,
             'date_of_birth': student.date_of_birth.isoformat() if student.date_of_birth else '',
             'blood_group': student.blood_group or 'Not specified',
-            'allergies': student.medical_info or 'None',
-            'address': student.address or '',
+            'allergies': student.health_notes or 'None',
+            'address': student.residential_address or '',
         })
     
     return Response({
@@ -96,22 +96,22 @@ def get_student_details(request, student_id):
             'student_id': student.student_id,
             'first_name': student.first_name,
             'last_name': student.last_name,
+            'name': f"{student.first_name} {student.last_name}",
             'email': student.user.email if student.user else '',
             'date_of_birth': student.date_of_birth.isoformat() if student.date_of_birth else '',
-            'gender': student.gender,
+            'gender': student.sex,
             'blood_group': student.blood_group or '',
-            'address': student.address or '',
-            'medical_info': student.medical_info or '',
-            'current_class': student.current_class.name if student.current_class else '',
+            'address': student.residential_address or '',
+            'allergies': student.health_notes or '',
+            'class': student.current_class.name if student.current_class else '',
             'roll_number': student.roll_number or '',
             'admission_date': student.admission_date.isoformat(),
             'academic_year': student.academic_year,
-            'parent_info': {
-                'name': parent.full_name if parent else '',
-                'email': parent.email if parent else '',
-                'phone': parent.phone if parent else '',
-                'relationship': parent.relationship if parent else ''
-            },
+            'status': student.status,
+            'parent_name': parent.full_name if parent else '',
+            'parent_contact': parent.phone if parent else '',
+            'attendance_rate': 95.5,  # Calculate actual
+            'average_grade': 87.3,  # Calculate actual
             'financial': {
                 'total_fees': float(total_fees),
                 'amount_paid': float(paid),
@@ -128,7 +128,7 @@ def get_student_details(request, student_id):
         return Response({'success': False, 'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
-@api_view(['GET'])
+@api_view(['GET','POST'])
 @permission_classes([IsAuthenticated])
 def get_classes_list(request):
     """Get all classes with details"""
