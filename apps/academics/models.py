@@ -395,3 +395,5 @@ class TeachingResource(models.Model):
         if self.file:
             self.file_size = self.file.size
         super().save(*args, **kwargs)
+
+

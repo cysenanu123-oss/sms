@@ -86,6 +86,12 @@
                     :class="currentView === 'reports' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
                     class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
                     <i class="fas fa-chart-bar mr-3"></i> Reports
+                </a> 
+
+                <a @click="currentView = 'timetable'"
+                    :class="currentView === 'timetable' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-calendar-alt mr-3"></i> Timetable
                 </a>
 
                 <a @click="currentView = 'settings'"
@@ -1593,6 +1599,310 @@
                     return this.saveSchoolSettings();
                 },
 
+                  async loadTimeSlots() {
+                    try {
+                        const response = await fetch('/api/v1/admin/timetable/time-slots/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.timeSlots = data.data;
+                        }
+                    } catch (error) {
+                        console.error('Error loading time slots:', error);
+                    }
+                },
+
+                async loadClassTimetable() {
+                    if (!this.selectedTimetableClass) return;
+
+                    try {
+                        const response = await fetch(`/api/v1/admin/timetable/class/${this.selectedTimetableClass}/`, {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.classTimetable = data.data;
+                        }
+                    } catch (error) {
+                        console.error('Error loading class timetable:', error);
+                    }
+                },
+
+                async createTimetable() {
+                    if (!this.newTimetable.class_id) {
+                        alert('Please select a class');
+                        return;
+                    }
+
+                    this.savingTimetable = true;
+
+                    try {
+                        const response = await fetch('/api/v1/admin/timetable/create/', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.newTimetable)
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            alert('Timetable created successfully!');
+                            this.showCreateTimetable = false;
+                            this.newTimetable = { class_id: '', academic_year: '2024-2025', term: 'first' };
+                            this.selectedTimetableClass = data.data.class_id;
+                            await this.loadClassTimetable();
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error creating timetable:', error);
+                        alert('Error creating timetable');
+                    } finally {
+                        this.savingTimetable = false;
+                    }
+                },
+
+                addTimetableEntry(timeSlot, day) {
+                    this.timetableEntry = {
+                        id: null,
+                        time_slot_id: timeSlot,
+                        day_of_week: day,
+                        subject_id: '',
+                        teacher_id: '',
+                        room_number: ''
+                    };
+                    this.showTimetableEntryModal = true;
+                },
+
+                editTimetableEntry(entry) {
+                    if (entry) {
+                        this.timetableEntry = { ...entry };
+                    } else {
+                        this.timetableEntry = {
+                            id: null,
+                            time_slot_id: '',
+                            day_of_week: '',
+                            subject_id: '',
+                            teacher_id: '',
+                            room_number: ''
+                        };
+                    }
+                    this.showTimetableEntryModal = true;
+                },
+
+               
+                async loadTimeSlots() {
+                    try {
+                        const response = await fetch('/api/v1/admin/timetable/time-slots/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.timeSlots = data.data;
+                        }
+                    } catch (error) {
+                        console.error('Error loading time slots:', error);
+                    }
+                },
+
+                async loadClassTimetable() {
+                    if (!this.selectedTimetableClass) return;
+
+                    try {
+                        const response = await fetch(`/api/v1/admin/timetable/class/${this.selectedTimetableClass}/`, {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.classTimetable = data.data;
+                        }
+                    } catch (error) {
+                        console.error('Error loading class timetable:', error);
+                    }
+                },
+
+                async loadTimeSlots() {
+                    try {
+                        const response = await fetch('/api/v1/admin/timetable/time-slots/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.timeSlots = data.data;
+                        }
+                    } catch (error) {
+                        console.error('Error loading time slots:', error);
+                    }
+                },
+
+                async loadClassTimetable() {
+                    if (!this.selectedTimetableClass) return;
+
+                    try {
+                        const response = await fetch(`/api/v1/admin/timetable/class/${this.selectedTimetableClass}/`, {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            this.classTimetable = data.data;
+                        }
+                    } catch (error) {
+                        console.error('Error loading class timetable:', error);
+                    }
+                },
+
+                async createTimetable() {
+                    if (!this.newTimetable.class_id) {
+                        alert('Please select a class');
+                        return;
+                    }
+
+                    this.savingTimetable = true;
+
+                    try {
+                        const response = await fetch('/api/v1/admin/timetable/create/', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.newTimetable)
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            alert('Timetable created successfully!');
+                            this.showCreateTimetable = false;
+                            this.newTimetable = { class_id: '', academic_year: '2024-2025', term: 'first' };
+                            this.selectedTimetableClass = data.data.class_id;
+                            await this.loadClassTimetable();
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error creating timetable:', error);
+                        alert('Error creating timetable');
+                    } finally {
+                        this.savingTimetable = false;
+                    }
+                },
+
+                addTimetableEntry(timeSlot, day) {
+                    this.timetableEntry = {
+                        id: null,
+                        time_slot_id: timeSlot,
+                        day_of_week: day,
+                        subject_id: '',
+                        teacher_id: '',
+                        room_number: ''
+                    };
+                    this.showTimetableEntryModal = true;
+                },
+
+                editTimetableEntry(entry) {
+                    if (entry) {
+                        this.timetableEntry = { ...entry };
+                    } else {
+                        this.timetableEntry = {
+                            id: null,
+                            time_slot_id: '',
+                            day_of_week: '',
+                            subject_id: '',
+                            teacher_id: '',
+                            room_number: ''
+                        };
+                    }
+                    this.showTimetableEntryModal = true;
+                },
+
+                async saveTimetableEntry() {
+                    if (!this.timetableEntry.time_slot_id || !this.timetableEntry.day_of_week || 
+                        !this.timetableEntry.subject_id || !this.timetableEntry.teacher_id) {
+                        alert('Please fill in all required fields');
+                        return;
+                    }
+
+                    this.savingTimetable = true;
+
+                    try {
+                        const url = this.timetableEntry.id 
+                            ? `/api/v1/admin/timetable/entry/${this.timetableEntry.id}/update/`
+                            : '/api/v1/admin/timetable/entry/create/';
+
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                ...this.timetableEntry,
+                                class_id: this.selectedTimetableClass
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            alert('Timetable entry saved successfully!');
+                            this.showTimetableEntryModal = false;
+                            await this.loadClassTimetable();
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error saving timetable entry:', error);
+                        alert('Error saving timetable entry');
+                    } finally {
+                        this.savingTimetable = false;
+                    }
+                },
+
+                async deleteTimetableEntry() {
+                    if (!confirm('Are you sure you want to delete this entry?')) {
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/api/v1/admin/timetable/entry/${this.timetableEntry.id}/delete/`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            alert('Entry deleted successfully!');
+                            this.showTimetableEntryModal = false;
+                            await this.loadClassTimetable();
+                        } else {
+                            alert('Error: ' + data.error);
+                        }
+                    } catch (error) {
+                        console.error('Error deleting entry:', error);
+                        alert('Error deleting entry');
+                    }
+                },
+                
                 initCharts() {
                     if (this.stats.applications) {
                         const ctx1 = document.getElementById('applicationsChart');

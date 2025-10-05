@@ -21,11 +21,11 @@ def manage_teachers(request):
             'success': False,
             'error': 'Admin access required'
         }, status=status.HTTP_403_FORBIDDEN)
-    
+
     if request.method == 'GET':
         # FIX: Remove the invalid prefetch_related
         teachers = User.objects.filter(role='teacher', is_active=True)
-        
+
         teachers_data = []
         for teacher in teachers:
             # Get assigned classes through TeacherClassAssignment
@@ -33,26 +33,27 @@ def manage_teachers(request):
                 teacher=teacher,
                 is_active=True
             ).select_related('class_obj')
-            
+
             # Get subjects taught through ClassSubject
             class_subjects = ClassSubject.objects.filter(
                 teacher=teacher
             ).select_related('class_obj', 'subject')
-            
+
             classes_teaching = []
             subjects_set = set()
-            
+
             for assignment in class_assignments:
                 classes_teaching.append({
                     'class_id': assignment.class_obj.id,
                     'class_name': assignment.class_obj.name,
                 })
-            
+
             for cs in class_subjects:
                 subjects_set.add(cs.subject.name)
-            
+
             # Count total students
-            unique_class_ids = set([assignment.class_obj.id for assignment in class_assignments])
+            unique_class_ids = set(
+                [assignment.class_obj.id for assignment in class_assignments])
             total_students = 0
             for class_id in unique_class_ids:
                 from apps.admissions.models import Student
@@ -60,7 +61,7 @@ def manage_teachers(request):
                     current_class_id=class_id,
                     status='active'
                 ).count()
-            
+
             teachers_data.append({
                 'id': teacher.id,
                 'username': teacher.username,
@@ -75,12 +76,12 @@ def manage_teachers(request):
                 'classes': classes_teaching,
                 'date_joined': teacher.date_joined.isoformat(),
             })
-        
+
         return Response({
             'success': True,
             'data': teachers_data
         })
-    
+
     elif request.method == 'POST':
         # Add new teacher
         first_name = request.data.get('first_name')
@@ -89,19 +90,19 @@ def manage_teachers(request):
         phone = request.data.get('phone', '')
         subjects = request.data.get('subjects', [])
         classes = request.data.get('classes', [])
-        
+
         if not all([first_name, last_name, email]):
             return Response({
                 'success': False,
                 'error': 'First name, last name, and email are required'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
+
         if User.objects.filter(email=email).exists():
             return Response({
                 'success': False,
                 'error': 'Email already exists'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
+
         # Generate username
         base_username = f"{first_name.lower()}.{last_name.lower()}"
         username = base_username
@@ -109,10 +110,10 @@ def manage_teachers(request):
         while User.objects.filter(username=username).exists():
             username = f"{base_username}{counter}"
             counter += 1
-        
+
         # Generate temporary password
         temp_password = secrets.token_urlsafe(12)
-        
+
         try:
             with transaction.atomic():
                 # Create teacher user account
@@ -128,7 +129,7 @@ def manage_teachers(request):
                     must_change_password=True,
                     is_active=True
                 )
-                
+
                 # Get academic year
                 from apps.academics.models import SchoolSettings
                 try:
@@ -136,7 +137,7 @@ def manage_teachers(request):
                     academic_year = settings_obj.current_academic_year if settings_obj else "2024-2025"
                 except:
                     academic_year = "2024-2025"
-                
+
                 # Create class assignments
                 for class_id in classes:
                     try:
@@ -149,14 +150,14 @@ def manage_teachers(request):
                         )
                     except Class.DoesNotExist:
                         pass
-                
+
                 # Assign subjects to classes
                 for class_id in classes:
                     for subject_id in subjects:
                         try:
                             class_obj = Class.objects.get(id=class_id)
                             subject_obj = Subject.objects.get(id=subject_id)
-                            
+
                             ClassSubject.objects.update_or_create(
                                 class_obj=class_obj,
                                 subject=subject_obj,
@@ -164,7 +165,7 @@ def manage_teachers(request):
                             )
                         except (Class.DoesNotExist, Subject.DoesNotExist):
                             pass
-                
+
                 return Response({
                     'success': True,
                     'message': 'Teacher created successfully',
@@ -176,7 +177,7 @@ def manage_teachers(request):
                         'full_name': teacher.get_full_name(),
                     }
                 }, status=status.HTTP_201_CREATED)
-                
+
         except Exception as e:
             return Response({
                 'success': False,
@@ -187,26 +188,36 @@ def manage_teachers(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_available_subjects(request):
-    """Get all available subjects for assignment"""
+    user = request.user
     
-    if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
+    # Admin sees all subjects
+    if user.role == 'admin' or user.is_superuser:
+        subjects = Subject.objects.all()
+    
+    # Teachers only see their assigned subjects
+    elif user.role == 'teacher':
+        # Get subjects from teacher's class assignments
+        assigned_subjects = ClassSubject.objects.filter(
+            teacher=user
+        ).values_list('subject_id', flat=True).distinct()
+        
+        subjects = Subject.objects.filter(id__in=assigned_subjects)
+    
+    else:
         return Response({
             'success': False,
-            'error': 'Admin access required'
+            'error': 'Access denied'
         }, status=status.HTTP_403_FORBIDDEN)
     
-    subjects = Subject.objects.all().order_by('code')
-    
-    subjects_data = [{
+    data = [{
         'id': s.id,
         'name': s.name,
-        'code': s.code,
-        'description': s.description or ''
+        'code': s.code
     } for s in subjects]
     
     return Response({
         'success': True,
-        'data': subjects_data
+        'data': data
     })
 
 
@@ -214,26 +225,27 @@ def get_available_subjects(request):
 @permission_classes([IsAuthenticated])
 def get_available_classes(request):
     """Get all available classes for assignment"""
-    
+
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
         return Response({
             'success': False,
             'error': 'Admin access required'
         }, status=status.HTTP_403_FORBIDDEN)
-    
+
     classes = Class.objects.filter(is_active=True).order_by('name')
-    
+
     classes_data = [{
         'id': c.id,
         'name': c.name,
         'capacity': c.capacity,
         'academic_year': c.academic_year
     } for c in classes]
-    
+
     return Response({
         'success': True,
         'data': classes_data
     })
+
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
@@ -244,12 +256,12 @@ def delete_teacher(request, teacher_id):
             'success': False,
             'error': 'Admin access required'
         }, status=status.HTTP_403_FORBIDDEN)
-    
+
     try:
         teacher = User.objects.get(id=teacher_id, role='teacher')
         teacher.is_active = False  # Soft delete
         teacher.save()
-        
+
         return Response({
             'success': True,
             'message': 'Teacher removed successfully'

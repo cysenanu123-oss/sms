@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,11 +31,13 @@
 
                     <div class="flex items-center space-x-3">
                         <div class="text-right hidden md:block">
-                            <p class="text-sm font-medium text-gray-900" x-text="user.first_name + ' ' + user.last_name"></p>
+                            <p class="text-sm font-medium text-gray-900"
+                                x-text="user.first_name + ' ' + user.last_name"></p>
                             <p class="text-xs text-gray-600">Teacher</p>
                         </div>
                         <div class="bg-indigo-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
-                            <span x-text="user.first_name ? user.first_name.charAt(0) + user.last_name.charAt(0) : 'T'"></span>
+                            <span
+                                x-text="user.first_name ? user.first_name.charAt(0) + user.last_name.charAt(0) : 'T'"></span>
                         </div>
                         <button @click="logout()" class="text-red-600 hover:text-red-800">
                             <i class="fas fa-sign-out-alt"></i>
@@ -84,6 +87,13 @@
                     Resources
                 </a>
 
+                <a @click="currentView = 'grades'"
+                    :class="currentView === 'Grades' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
+                    class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
+                    <i class="fas fa-chart-bar mr-3"></i>
+                    Grades
+                </a>
+
                 <a @click="currentView = 'reports'"
                     :class="currentView === 'reports' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
                     class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
@@ -113,7 +123,8 @@
             <!-- Overview Section -->
             <div x-show="currentView === 'overview' && !loading">
                 <div class="mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900">Welcome back, <span x-text="user.first_name"></span>!</h2>
+                    <h2 class="text-2xl font-bold text-gray-900">Welcome back, <span x-text="user.first_name"></span>!
+                    </h2>
                     <p class="text-gray-600">Here's what's happening in your classes today.</p>
                 </div>
 
@@ -177,14 +188,16 @@
                         </div>
                         <div class="space-y-3">
                             <template x-for="period in todaySchedule" :key="period.id">
-                                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                                <div
+                                    class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                                     <div class="flex items-center">
                                         <div class="bg-indigo-100 rounded p-2 mr-3">
                                             <i class="fas fa-clock text-indigo-600"></i>
                                         </div>
                                         <div>
                                             <p class="font-medium text-gray-900" x-text="period.time"></p>
-                                            <p class="text-sm text-gray-600" x-text="period.class + ' - ' + period.subject"></p>
+                                            <p class="text-sm text-gray-600"
+                                                x-text="period.class + ' - ' + period.subject"></p>
                                         </div>
                                     </div>
                                     <button @click="markAttendanceQuick(period)"
@@ -336,14 +349,17 @@
                     <div class="p-6">
                         <div class="space-y-3">
                             <template x-for="(student, index) in students" :key="student.id">
-                                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                                <div
+                                    class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
                                     <div class="flex items-center flex-1">
-                                        <div class="bg-gray-200 rounded-full w-10 h-10 flex items-center justify-center mr-4">
+                                        <div
+                                            class="bg-gray-200 rounded-full w-10 h-10 flex items-center justify-center mr-4">
                                             <span class="font-medium text-gray-700" x-text="index + 1"></span>
                                         </div>
                                         <div>
                                             <p class="font-medium text-gray-900" x-text="student.name"></p>
-                                            <p class="text-sm text-gray-600">Roll No: <span x-text="student.roll_number"></span></p>
+                                            <p class="text-sm text-gray-600">Roll No: <span
+                                                    x-text="student.roll_number"></span></p>
                                         </div>
                                     </div>
 
@@ -401,10 +417,12 @@
                     </button>
                 </div>
 
-                <div x-show="assignments.length === 0 && !showCreateAssignment" class="bg-white rounded-lg shadow p-12 text-center">
+                <div x-show="assignments.length === 0 && !showCreateAssignment"
+                    class="bg-white rounded-lg shadow p-12 text-center">
                     <i class="fas fa-tasks text-gray-300 text-6xl mb-4"></i>
                     <p class="text-gray-500 text-lg">No assignments yet</p>
-                    <button @click="showCreateAssignment = true" class="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                    <button @click="showCreateAssignment = true"
+                        class="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                         Create Your First Assignment
                     </button>
                 </div>
@@ -465,14 +483,16 @@
                             </div>
 
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Instructions (Optional)</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Instructions
+                                    (Optional)</label>
                                 <textarea x-model="newAssignment.instructions" rows="2"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                     placeholder="Additional instructions..."></textarea>
                             </div>
 
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Attachment (Optional)</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Attachment
+                                    (Optional)</label>
                                 <input type="file" @change="handleAssignmentFile($event)"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                             </div>
@@ -517,7 +537,8 @@
                                 </div>
                                 <div>
                                     <i class="fas fa-users text-gray-400 mr-2"></i>
-                                    <span class="text-gray-600"><span x-text="assignment.submissions"></span>/<span x-text="assignment.total_students"></span></span>
+                                    <span class="text-gray-600"><span x-text="assignment.submissions"></span>/<span
+                                            x-text="assignment.total_students"></span></span>
                                 </div>
                             </div>
                         </div>
@@ -574,7 +595,8 @@
 
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Resource Type</label>
-                                <select x-model="newResource.resource_type" @change="newResource.file = null; newResource.link = ''" required
+                                <select x-model="newResource.resource_type"
+                                    @change="newResource.file = null; newResource.link = ''" required
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                                     <option value="">Select type</option>
                                     <option value="pdf">PDF Document</option>
@@ -584,14 +606,16 @@
                                 </select>
                             </div>
 
-                            <div x-show="newResource.resource_type && newResource.resource_type !== 'link'" class="md:col-span-2">
+                            <div x-show="newResource.resource_type && newResource.resource_type !== 'link'"
+                                class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Upload File</label>
                                 <input type="file" @change="handleResourceFile($event)" required
                                     :accept="newResource.resource_type === 'pdf' ? '.pdf' : newResource.resource_type === 'video' ? 'video/*' : '*'"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                                 <p class="text-xs text-gray-500 mt-1">
                                     <span x-show="newResource.resource_type === 'pdf'">PDF files only</span>
-                                    <span x-show="newResource.resource_type === 'video'">Video files (MP4, AVI, MOV, etc.)</span>
+                                    <span x-show="newResource.resource_type === 'video'">Video files (MP4, AVI, MOV,
+                                        etc.)</span>
                                     <span x-show="newResource.resource_type === 'document'">Any document file</span>
                                 </p>
                             </div>
@@ -605,7 +629,8 @@
                             </div>
 
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Description
+                                    (Optional)</label>
                                 <textarea x-model="newResource.description" rows="2"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                     placeholder="Brief description of the resource..."></textarea>
@@ -627,10 +652,12 @@
                 </div>
 
                 <!-- Resources List -->
-                <div x-show="resources.length === 0 && !showUploadResource" class="bg-white rounded-lg shadow p-12 text-center">
+                <div x-show="resources.length === 0 && !showUploadResource"
+                    class="bg-white rounded-lg shadow p-12 text-center">
                     <i class="fas fa-folder-open text-gray-300 text-6xl mb-4"></i>
                     <p class="text-gray-500 text-lg">No resources uploaded yet</p>
-                    <button @click="showUploadResource = true" class="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                    <button @click="showUploadResource = true"
+                        class="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                         Upload Your First Resource
                     </button>
                 </div>
@@ -655,17 +682,20 @@
                             </div>
 
                             <h3 class="font-semibold text-gray-900 mb-2" x-text="resource.title"></h3>
-                            <p class="text-sm text-gray-600 mb-2" x-text="resource.class + ' - ' + resource.subject"></p>
+                            <p class="text-sm text-gray-600 mb-2" x-text="resource.class + ' - ' + resource.subject">
+                            </p>
                             <p class="text-xs text-gray-500 mb-4" x-text="resource.description || 'No description'"></p>
 
                             <div class="flex space-x-2">
-                                <a :href="resource.resource_type === 'link' ? resource.external_link : resource.file_url" 
-                                   target="_blank"
-                                   class="flex-1 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 text-sm text-center">
-                                    <i :class="resource.resource_type === 'link' ? 'fas fa-external-link-alt' : 'fas fa-download'" class="mr-1"></i>
+                                <a :href="resource.resource_type === 'link' ? resource.external_link : resource.file_url"
+                                    target="_blank"
+                                    class="flex-1 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 text-sm text-center">
+                                    <i :class="resource.resource_type === 'link' ? 'fas fa-external-link-alt' : 'fas fa-download'"
+                                        class="mr-1"></i>
                                     <span x-text="resource.resource_type === 'link' ? 'Open' : 'Download'"></span>
                                 </a>
-                                <button @click="deleteResource(resource.id)" class="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100">
+                                <button @click="deleteResource(resource.id)"
+                                    class="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -673,6 +703,140 @@
                     </template>
                 </div>
             </div>
+
+            <!-- Grades Section -->
+            <div x-show="currentView === 'grades' && !loading">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Input Grades</h2>
+                    <p class="text-gray-600">Record exam and test scores for your students</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
+                            <select x-model="gradeInput.class_id" @change="loadStudentsForGrades()"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                <option value="">Choose a class</option>
+                                <template x-for="cls in myClasses" :key="cls.id">
+                                    <option :value="cls.id" x-text="cls.name"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Exam Type</label>
+                            <select x-model="gradeInput.exam_type"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                <option value="quiz">Quiz</option>
+                                <option value="test">Class Test</option>
+                                <option value="midterm">Mid-term Exam</option>
+                                <option value="final">Final Exam</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                            <select x-model="gradeInput.subject_id"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                <option value="">Select subject</option>
+                                <template
+                                    x-for="subject in availableSubjects.filter(s => myClasses.find(c => c.id == gradeInput.class_id)?.subject.includes(s.name))"
+                                    :key="subject.id">
+                                    <option :value="subject.id" x-text="subject.name"></option>
+                                </template>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Exam Name</label>
+                            <input type="text" x-model="gradeInput.exam_name" placeholder="e.g., Chapter 5 Quiz"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Exam Date</label>
+                            <input type="date" x-model="gradeInput.exam_date"
+                                :max="new Date().toISOString().split('T')[0]"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Total Marks</label>
+                            <input type="number" x-model="gradeInput.total_marks" value="100" min="1"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Students Grades List -->
+                <div x-show="gradeInput.class_id && !loadingStudents" class="bg-white rounded-lg shadow">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-lg font-semibold text-gray-900">Enter Scores</h3>
+                        <p class="text-sm text-gray-600">Total Students: <span x-text="gradesStudents.length"></span>
+                        </p>
+                    </div>
+
+                    <div x-show="gradesStudents.length === 0" class="p-12 text-center text-gray-500">
+                        No students enrolled in this class
+                    </div>
+
+                    <div class="p-6">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Roll
+                                            No</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Student Name</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Score (out of <span x-text="gradeInput.total_marks"></span>)</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Grade</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <template x-for="student in gradesStudents" :key="student.id">
+                                        <tr>
+                                            <td class="px-4 py-3 text-sm" x-text="student.roll_number"></td>
+                                            <td class="px-4 py-3 text-sm font-medium" x-text="student.name"></td>
+                                            <td class="px-4 py-3">
+                                                <input type="number" x-model="student.score"
+                                                    :max="gradeInput.total_marks" min="0" step="0.5"
+                                                    @input="calculateGrade(student)"
+                                                    class="w-24 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500">
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <span :class="{
+                                                    'bg-green-100 text-green-800': student.grade === 'A+' || student.grade === 'A',
+                                                    'bg-blue-100 text-blue-800': student.grade === 'B+' || student.grade === 'B',
+                                                    'bg-yellow-100 text-yellow-800': student.grade === 'C+' || student.grade === 'C',
+                                                    'bg-red-100 text-red-800': student.grade === 'D' || student.grade === 'F'
+                                                }" class="px-3 py-1 rounded-full text-sm font-semibold"
+                                                    x-text="student.grade || '-'"></span>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div x-show="gradesStudents.length > 0" class="mt-6 flex justify-end space-x-3">
+                            <button @click="currentView = 'overview'"
+                                class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                                Cancel
+                            </button>
+                            <button @click="saveGrades()" :disabled="savingGrades"
+                                class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                                <i class="fas fa-save mr-2"></i>
+                                <span x-text="savingGrades ? 'Saving...' : 'Save Grades'"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
 
             <!-- Reports Section -->
             <div x-show="currentView === 'reports' && !loading">
@@ -803,19 +967,24 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monday</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tuesday</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Wednesday</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thursday</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Wednesday
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thursday
+                                </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Friday</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <template x-for="period in timetablePeriods" :key="period.time">
                                 <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="period.time"></td>
-                                    <template x-for="day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']" :key="day">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
+                                        x-text="period.time"></td>
+                                    <template x-for="day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']"
+                                        :key="day">
                                         <td class="px-6 py-4">
                                             <div x-show="period[day]" class="bg-indigo-50 rounded p-2">
-                                                <p class="text-sm font-medium text-indigo-900" x-text="period[day]?.class"></p>
+                                                <p class="text-sm font-medium text-indigo-900"
+                                                    x-text="period[day]?.class"></p>
                                                 <p class="text-xs text-indigo-600" x-text="period[day]?.subject"></p>
                                             </div>
                                         </td>
@@ -898,7 +1067,21 @@
                         report_type: 'midterm',
                         format: 'pdf'
                     }
+                },// Grade Input State
+                gradeInput: {
+                    class_id: '',
+                    exam_type: 'quiz',
+                    subject_id: '',
+                    exam_name: '',
+                    exam_date: new Date().toISOString().split('T')[0],
+                    total_marks: 100
                 },
+                gradesStudents: [],
+                loadingStudents: false,
+                savingGrades: false,
+
+
+
 
                 async init() {
                     const token = localStorage.getItem('access_token');
@@ -957,7 +1140,7 @@
 
                 async loadTeacherData() {
                     const token = localStorage.getItem('access_token');
-                    
+
                     try {
                         const response = await fetch('/api/v1/teachers/dashboard/', {
                             headers: {
@@ -989,7 +1172,7 @@
 
                 async loadAvailableSubjects() {
                     const token = localStorage.getItem('access_token');
-                    
+
                     try {
                         const response = await fetch('/api/v1/teachers/subjects/', {
                             headers: {
@@ -1233,7 +1416,7 @@
                     formData.append('class_id', this.newResource.class_id);
                     if (this.newResource.subject_id) formData.append('subject_id', this.newResource.subject_id);
                     formData.append('resource_type', this.newResource.resource_type);
-                    
+
                     if (this.newResource.resource_type === 'link') {
                         formData.append('link', this.newResource.link);
                     } else {
@@ -1270,7 +1453,7 @@
 
                 async downloadAttendanceReport() {
                     const filters = this.reportFilters.attendance;
-                    
+
                     if (!filters.class_id || !filters.start_date || !filters.end_date) {
                         alert('Please fill in all fields');
                         return;
@@ -1316,10 +1499,165 @@
                         this.downloadingReport = false;
                     }
                 },
+                // Grade Input State
+                gradeInput: {
+                    class_id: '',
+                    exam_type: 'quiz',
+                    subject_id: '',
+                    exam_name: '',
+                    exam_date: new Date().toISOString().split('T')[0],
+                    total_marks: 100
+                },
+                gradesStudents: [],
+                loadingStudents: false,
+                savingGrades: false,
+
+                // Load students for grade entry
+                async loadStudentsForGrades() {
+                    if (!this.gradeInput.class_id) {
+                        this.gradesStudents = [];
+                        return;
+                    }
+
+                    this.loadingStudents = true;
+                    try {
+                        const response = await fetch(`/api/v1/teachers/class/${this.gradeInput.class_id}/students/`, {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+
+                        if (response.ok) {
+                            const result = await response.json();
+                            if (result.success) {
+                                // Initialize each student with empty score and grade
+                                this.gradesStudents = result.data.students.map(student => ({
+                                    ...student,
+                                    score: '',
+                                    grade: ''
+                                }));
+                            }
+                        } else {
+                            this.showNotification('Failed to load students', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error loading students:', error);
+                        this.showNotification('Error loading students', 'error');
+                    } finally {
+                        this.loadingStudents = false;
+                    }
+                },
+
+                // Calculate grade based on percentage
+                calculateGrade(student) {
+                    if (!student.score || !this.gradeInput.total_marks) {
+                        student.grade = '';
+                        return;
+                    }
+
+                    const percentage = (parseFloat(student.score) / parseFloat(this.gradeInput.total_marks)) * 100;
+
+                    if (percentage >= 90) student.grade = 'A+';
+                    else if (percentage >= 80) student.grade = 'A';
+                    else if (percentage >= 75) student.grade = 'B+';
+                    else if (percentage >= 70) student.grade = 'B';
+                    else if (percentage >= 65) student.grade = 'C+';
+                    else if (percentage >= 60) student.grade = 'C';
+                    else if (percentage >= 50) student.grade = 'D';
+                    else student.grade = 'F';
+                },
+
+                // Save all grades
+                async saveGrades() {
+                    // Validation
+                    if (!this.gradeInput.class_id || !this.gradeInput.subject_id) {
+                        this.showNotification('Please select class and subject', 'error');
+                        return;
+                    }
+
+                    if (!this.gradeInput.exam_name || !this.gradeInput.exam_date) {
+                        this.showNotification('Please enter exam name and date', 'error');
+                        return;
+                    }
+
+                    // Check if at least one student has a score
+                    const hasScores = this.gradesStudents.some(s => s.score !== '' && s.score !== null);
+                    if (!hasScores) {
+                        this.showNotification('Please enter at least one score', 'error');
+                        return;
+                    }
+
+                    // Prepare grades data
+                    const gradesData = this.gradesStudents
+                        .filter(student => student.score !== '' && student.score !== null)
+                        .map(student => ({
+                            student_id: student.id,
+                            score: parseFloat(student.score),
+                            grade: student.grade
+                        }));
+
+                    const payload = {
+                        class_id: parseInt(this.gradeInput.class_id),
+                        subject_id: parseInt(this.gradeInput.subject_id),
+                        exam_type: this.gradeInput.exam_type,
+                        exam_name: this.gradeInput.exam_name,
+                        exam_date: this.gradeInput.exam_date,
+                        total_marks: parseFloat(this.gradeInput.total_marks),
+                        grades: gradesData
+                    };
+
+                    this.savingGrades = true;
+                    try {
+                        const response = await fetch('/api/v1/teachers/grades/save/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (response.ok) {
+                            this.showNotification('Grades saved successfully!', 'success');
+
+                            // Reset form
+                            this.gradeInput = {
+                                class_id: '',
+                                exam_type: 'quiz',
+                                subject_id: '',
+                                exam_name: '',
+                                exam_date: new Date().toISOString().split('T')[0],
+                                total_marks: 100
+                            };
+                            this.gradesStudents = [];
+
+                            // Return to overview
+                            this.currentView = 'overview';
+                        } else {
+                            const errorData = await response.json();
+                            this.showNotification(errorData.message || 'Failed to save grades', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error saving grades:', error);
+                        this.showNotification('Error saving grades', 'error');
+                    } finally {
+                        this.savingGrades = false;
+                    }
+                },
+
+                // Helper function for notifications (if not already present)
+                showNotification(message, type = 'info') {
+                    // Simple notification - you can enhance this
+                    alert(message);
+
+                    // Or if you have a notification system:
+                    // this.notification = { message, type, show: true };
+                    // setTimeout(() => this.notification.show = false, 3000);
+                },
 
                 async downloadPerformanceReport() {
                     const filters = this.reportFilters.performance;
-                    
+
                     if (!filters.class_id) {
                         alert('Please select a class');
                         return;
@@ -1460,4 +1798,5 @@
         }
     </script>
 </body>
+
 </html>

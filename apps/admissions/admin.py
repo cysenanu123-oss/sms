@@ -2,6 +2,7 @@
 from django.contrib import admin
 from .models import StudentApplication, Student, AcademicYear, StudentPromotion, Parent
 
+
 @admin.register(StudentApplication)
 class StudentApplicationAdmin(admin.ModelAdmin):
     list_display = ['application_number', 'first_name', 'last_name', 'department', 'status', 'submitted_at']

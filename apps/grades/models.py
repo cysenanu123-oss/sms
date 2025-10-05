@@ -6,6 +6,41 @@ from apps.admissions.models import Student
 from apps.academics.models import Class, Subject
 
 
+class Grade(models.Model):
+    """Individual student grades for exams/tests"""
+    EXAM_TYPE_CHOICES = (
+        ('quiz', 'Quiz'),
+        ('test', 'Class Test'),
+        ('midterm', 'Mid-term Exam'),
+        ('final', 'Final Exam'),
+    )
+    
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='grades')
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    class_obj = models.ForeignKey(Class, on_delete=models.CASCADE)
+    teacher = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    
+    exam_type = models.CharField(max_length=20, choices=EXAM_TYPE_CHOICES)
+    exam_name = models.CharField(max_length=200)
+    exam_date = models.DateField()
+    
+    score = models.DecimalField(max_digits=5, decimal_places=2)
+    total_marks = models.DecimalField(max_digits=5, decimal_places=2)
+    grade = models.CharField(max_length=3)  # A+, A, B+, etc.
+    
+    academic_year = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'grades'
+        ordering = ['-exam_date', '-created_at']
+        unique_together = ['student', 'subject', 'exam_type', 'exam_name', 'exam_date']
+    
+    def __str__(self):
+        return f"{self.student.first_name} - {self.subject.name} - {self.grade}"
+
+
 class Exam(models.Model):
     """Exam/Test definition"""
     EXAM_TYPE_CHOICES = (

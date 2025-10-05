@@ -643,3 +643,95 @@ def get_teacher_resources(request):
             'success': False,
             'error': f'Error fetching resources: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def save_grades(request):
+    """
+    Save exam/test grades for students
+    """
+    user = request.user
+    
+    if user.role != 'teacher' and not user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Teacher access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        class_id = request.data.get('class_id')
+        subject_id = request.data.get('subject_id')
+        exam_type = request.data.get('exam_type')
+        exam_name = request.data.get('exam_name')
+        exam_date = request.data.get('exam_date')
+        total_marks = request.data.get('total_marks', 100)
+        grades_data = request.data.get('grades', [])
+        
+        if not all([class_id, subject_id, exam_name, exam_date, grades_data]):
+            return Response({
+                'success': False,
+                'error': 'Missing required fields'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        class_obj = Class.objects.get(id=class_id)
+        subject_obj = Subject.objects.get(id=subject_id)
+        
+        # Verify teacher has access
+        has_access = ClassSubject.objects.filter(
+            class_obj=class_obj,
+            subject=subject_obj,
+            teacher=user
+        ).exists()
+        
+        if not has_access and not user.is_superuser:
+            return Response({
+                'success': False,
+                'error': 'You do not have permission to grade this class/subject'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Create or get exam
+        exam, created = Exam.objects.get_or_create(
+            name=exam_name,
+            class_obj=class_obj,
+            subject=subject_obj,
+            date=exam_date,
+            defaults={
+                'exam_type': exam_type,
+                'total_marks': total_marks,
+                'created_by': user
+            }
+        )
+        
+        # Save individual student grades
+        for grade in grades_data:
+            student_id = grade.get('student_id')
+            score = grade.get('score')
+            
+            if student_id and score is not None:
+                student = Student.objects.get(id=student_id)
+                
+                ExamResult.objects.update_or_create(
+                    exam=exam,
+                    student=student,
+                    defaults={
+                        'score': score,
+                        'entered_by': user
+                    }
+                )
+        
+        return Response({
+            'success': True,
+            'message': f'Grades saved successfully for {len(grades_data)} students'
+        })
+        
+    except (Class.DoesNotExist, Subject.DoesNotExist):
+        return Response({
+            'success': False,
+            'error': 'Class or Subject not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': f'Error saving grades: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

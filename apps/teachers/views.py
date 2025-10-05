@@ -12,7 +12,7 @@ from apps.academics.models import Class, Subject, ClassSubject, TeacherClassAssi
 from apps.admissions.models import Student
 from apps.attendance.models import Attendance, AttendanceRecord
 from apps.grades.models import Assignment
-
+from apps.grades.models import Grade
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -202,7 +202,6 @@ def get_class_students(request, class_id):
 
 
 @api_view(['POST'])
-@antml:parameter>
 @permission_classes([IsAuthenticated])
 def save_attendance(request):
     """
@@ -371,3 +370,140 @@ def get_teacher_timetable(request):
         'success': True,
         'data': timetable_periods
     })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def save_grades(request):
+    """
+    Save grades for multiple students in a class
+    """
+    user = request.user
+    
+    if user.role != 'teacher' and not user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Teacher access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        class_id = request.data.get('class_id')
+        subject_id = request.data.get('subject_id')
+        exam_type = request.data.get('exam_type')
+        exam_name = request.data.get('exam_name')
+        exam_date_str = request.data.get('exam_date')
+        total_marks = request.data.get('total_marks')
+        grades_data = request.data.get('grades', [])
+        
+        # Validate required fields
+        if not all([class_id, subject_id, exam_type, exam_name, exam_date_str, total_marks]):
+            return Response({
+                'success': False,
+                'error': 'Missing required fields'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not grades_data:
+            return Response({
+                'success': False,
+                'error': 'No grades provided'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get class and verify access
+        class_obj = Class.objects.get(id=class_id)
+        has_access = TeacherClassAssignment.objects.filter(
+            teacher=user,
+            class_obj=class_obj,
+            is_active=True
+        ).exists()
+        
+        if not has_access and not user.is_superuser:
+            return Response({
+                'success': False,
+                'error': 'You do not have access to this class'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get subject
+        subject = Subject.objects.get(id=subject_id)
+        
+        # Parse exam date
+        exam_date = datetime.strptime(exam_date_str, '%Y-%m-%d').date()
+        
+        # Import Grade model (add this at the top of your file)
+        from apps.grades.models import Grade
+        
+        # Save grades for each student
+        saved_count = 0
+        errors = []
+        
+        for grade_entry in grades_data:
+            try:
+                student_id = grade_entry.get('student_id')
+                score = grade_entry.get('score')
+                grade_letter = grade_entry.get('grade')
+                
+                if not all([student_id, score is not None, grade_letter]):
+                    continue
+                
+                student = Student.objects.get(id=student_id)
+                
+                # Verify student is in the class
+                if student.current_class != class_obj:
+                    errors.append(f"Student {student.first_name} is not in this class")
+                    continue
+                
+                # Create or update grade
+                grade, created = Grade.objects.update_or_create(
+                    student=student,
+                    subject=subject,
+                    class_obj=class_obj,
+                    exam_type=exam_type,
+                    exam_name=exam_name,
+                    exam_date=exam_date,
+                    defaults={
+                        'score': float(score),
+                        'total_marks': float(total_marks),
+                        'grade': grade_letter,
+                        'teacher': user,
+                        'academic_year': timezone.now().year  # Adjust as needed
+                    }
+                )
+                saved_count += 1
+                
+            except Student.DoesNotExist:
+                errors.append(f"Student with ID {student_id} not found")
+            except Exception as e:
+                errors.append(f"Error saving grade for student {student_id}: {str(e)}")
+        
+        response_data = {
+            'success': True,
+            'message': f'Successfully saved {saved_count} grade(s)',
+            'saved_count': saved_count
+        }
+        
+        if errors:
+            response_data['warnings'] = errors
+        
+        return Response(response_data, status=status.HTTP_201_CREATED)
+        
+    except Class.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Class not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Subject.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Subject not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except ValueError as e:
+        return Response({
+            'success': False,
+            'error': f'Invalid data format: {str(e)}'
+        }, status=status.HTTP_400_BAD_REQUEST)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': f'Error saving grades: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
