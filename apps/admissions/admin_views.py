@@ -4,31 +4,25 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
-from .models import StudentApplication, Student
+from django.db import transaction
+from .models import StudentApplication, Student, Parent
 from .serializers import StudentApplicationSerializer
 from apps.accounts.models import User
 import secrets
-
+from .email_utils import send_student_credentials_email, send_parent_credentials_email
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_applications(request):
-    """
-    Get all applications for admin review
-    Admin only endpoint
-    """
-    # Check if user is admin
+    """Get all applications for admin review"""
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
         return Response({
             'success': False,
             'error': 'Admin access required'
         }, status=status.HTTP_403_FORBIDDEN)
     
-    # Get filter parameters
     status_filter = request.GET.get('status', None)
-    
-    # Query applications
     applications = StudentApplication.objects.all()
     
     if status_filter:
@@ -36,7 +30,6 @@ def get_applications(request):
     
     serializer = StudentApplicationSerializer(applications, many=True)
     
-    # Calculate statistics
     stats = {
         'total_received': StudentApplication.objects.count(),
         'pending_review': StudentApplication.objects.filter(status='pending').count(),
@@ -58,10 +51,7 @@ def get_applications(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_application_detail(request, application_number):
-    """
-    Get detailed view of a single application
-    Admin only endpoint
-    """
+    """Get detailed view of a single application"""
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
         return Response({
             'success': False,
@@ -86,10 +76,7 @@ def get_application_detail(request, application_number):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def update_application_status(request, application_number):
-    """
-    Update application status (accept, reject, etc.)
-    Admin only endpoint
-    """
+    """Update application status"""
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
         return Response({
             'success': False,
@@ -126,8 +113,6 @@ def update_application_status(request, application_number):
         }, status=status.HTTP_404_NOT_FOUND)
 
 
-# UPDATE the accept_and_enroll function
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def accept_and_enroll(request, application_number):
@@ -152,113 +137,113 @@ def accept_and_enroll(request, application_number):
         from apps.academics.models import Class
         assigned_class = Class.objects.get(id=assigned_class_id)
         
-        # Create student username
-        name_parts = [application.first_name.lower(), application.last_name.lower()]
-        base_username = ''.join(name_parts[:2])
-        username = base_username
-        counter = 1
-        while User.objects.filter(username=username).exists():
-            username = f"{base_username}{counter}"
-            counter += 1
-        
-        # Generate passwords
-        import secrets
-        student_temp_password = secrets.token_urlsafe(12)
-        parent_temp_password = secrets.token_urlsafe(12)
-        
-        # Create STUDENT account
-        student_user = User.objects.create_user(
-            username=username,
-            email=f"{username}@student.excellenceacademy.edu.gh",
-            password=student_temp_password,
-            first_name=application.first_name.capitalize(),
-            last_name=application.last_name.capitalize(),
-            role='student',
-            must_change_password=True
-        )
-        
-        # Create student profile
-        student = Student.objects.create(
-            user=student_user,
-            application=application,
-            first_name=student_user.first_name,
-            last_name=student_user.last_name,
-            date_of_birth=application.date_of_birth,
-            sex=application.sex,
-            current_class=assigned_class,
-            academic_year=assigned_class.academic_year,
-            residential_address=application.residential_address,
-            nationality=application.nationality,
-            region=application.region,
-            has_health_challenge=application.has_health_challenge,
-            health_notes=application.health_challenge_details or application.allergies_details,
-            status='active',
-            admission_date=timezone.now().date()
-        )
-        
-        # Create PARENT account if email provided
-        parent = None
-        parent_username = None
-        if application.parent_email:
-            parent_username = f"parent_{username}"
+        with transaction.atomic():
+            # Create student username
+            base_username = f"{application.first_name.lower()}_{application.last_name.lower()}"
+            username = base_username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
             
-            parent_user = User.objects.create_user(
-                username=parent_username,
-                email=application.parent_email,
-                password=parent_temp_password,
-                first_name=application.parent_full_name.split()[0] if application.parent_full_name else 'Parent',
-                last_name=' '.join(application.parent_full_name.split()[1:]) if application.parent_full_name else '',
-                role='parent',
-                phone=application.parent_phone,
+            # Generate passwords
+            student_temp_password = secrets.token_urlsafe(12)
+            parent_temp_password = secrets.token_urlsafe(12)
+            
+            # Create STUDENT account
+            student_user = User.objects.create_user(
+                username=username,
+                email=f"{username}@student.excellenceacademy.edu.gh",
+                password=student_temp_password,
+                first_name=application.first_name.capitalize(),
+                last_name=application.last_name.capitalize(),
+                role='student',
                 must_change_password=True
             )
             
-            # Create parent profile
-            parent = Parent.objects.create(
-                user=parent_user,
-                full_name=application.parent_full_name or 'Parent/Guardian',
-                relationship='guardian',
-                phone=application.parent_phone or '',
-                email=application.parent_email,
+            # Create student profile
+            student = Student.objects.create(
+                user=student_user,
+                application=application,
+                first_name=student_user.first_name,
+                last_name=student_user.last_name,
+                date_of_birth=application.date_of_birth,
+                sex=application.sex,
+                current_class=assigned_class,
+                academic_year=assigned_class.academic_year,
                 residential_address=application.residential_address,
+                nationality=application.nationality,
+                region=application.region,
+                has_health_challenge=application.has_health_challenge,
+                health_notes=application.health_challenge_details or application.allergies_details,
+                status='active',
+                admission_date=timezone.now().date()
             )
             
-            # Link parent to student
-            parent.children.add(student)
-        
-        # Update application
-        application.status = 'accepted'
-        application.reviewed_by = request.user
-        application.reviewed_at = timezone.now()
-        application.save()
-        
-        # Send emails
-        from .email_utils import send_student_credentials_email, send_parent_credentials_email
-        
-        if application.parent_email:
-            send_student_credentials_email(
-                student, username, student_temp_password, application.parent_email
-            )
-            if parent:
-                send_parent_credentials_email(
-                    parent, parent_username, parent_temp_password, 
-                    f"{student.first_name} {student.last_name}"
+            # Create PARENT account if email provided
+            parent = None
+            parent_username = None
+            if application.parent_email:
+                parent_username = f"parent_{username}"
+                
+                parent_user = User.objects.create_user(
+                    username=parent_username,
+                    email=application.parent_email,
+                    password=parent_temp_password,
+                    first_name=application.parent_full_name.split()[0] if application.parent_full_name else 'Parent',
+                    last_name=' '.join(application.parent_full_name.split()[1:]) if application.parent_full_name else '',
+                    role='parent',
+                    phone=application.parent_phone,
+                    must_change_password=True
                 )
+                
+                # Create parent profile
+                parent = Parent.objects.create(
+                    user=parent_user,
+                    full_name=application.parent_full_name or 'Parent/Guardian',
+                    relationship='guardian',
+                    phone=application.parent_phone or '',
+                    email=application.parent_email,
+                    residential_address=application.residential_address,
+                )
+                
+                # Link parent to student
+                parent.children.add(student)
+            
+            # Update application
+            application.status = 'accepted'
+            application.reviewed_by = request.user
+            application.reviewed_at = timezone.now()
+            application.save()
+            
+            # Send emails
+            if application.parent_email:
+                send_student_credentials_email(
+                    student, username, student_temp_password, application.parent_email
+                )
+                if parent:
+                    send_parent_credentials_email(
+                        parent, parent_username, parent_temp_password, 
+                        f"{student.first_name} {student.last_name}"
+                    )
+            
+            return Response({
+                'success': True,
+                'message': 'Student enrolled successfully',
+                'data': {
+                    'student_id': student.student_id,
+                    'student_username': username,
+                    'student_password': student_temp_password,
+                    'parent_username': parent_username,
+                    'parent_password': parent_temp_password if parent else None,
+                    'class': assigned_class.name,
+                    'admission_date': student.admission_date.isoformat()
+                }
+            })
         
-        return Response({
-            'success': True,
-            'message': 'Student enrolled successfully',
-            'data': {
-                'student_id': student.student_id,
-                'student_username': username,
-                'student_password': student_temp_password,
-                'parent_username': parent_username,
-                'parent_password': parent_temp_password if parent else None,
-                'class': assigned_class.name,
-                'admission_date': student.admission_date.isoformat()
-            }
-        })
-        
+    except StudentApplication.DoesNotExist:
+        return Response({'success': False, 'error': 'Application not found'}, 
+                       status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({
             'success': False,

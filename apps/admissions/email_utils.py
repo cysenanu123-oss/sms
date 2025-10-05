@@ -1,148 +1,229 @@
 # apps/admissions/email_utils.py
-from django.core.mail import send_mail, EmailMultiAlternatives
+from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
-from django.utils.html import strip_tags
+
+
+def send_student_credentials_email(student, username, password):
+    """
+    Send login credentials to newly enrolled student
+    """
+    subject = f'Welcome to {settings.DEFAULT_FROM_EMAIL.split("<")[0].strip()} - Your Login Credentials'
+    
+    # Use the existing template or plain text
+    message = f"""
+Dear {student.first_name} {student.last_name},
+
+Congratulations! You have been successfully enrolled at Excellence Academy.
+
+Here are your login credentials:
+
+Student ID: {student.student_id}
+Username: {username}
+Temporary Password: {password}
+
+Please log in at: http://127.0.0.1:8000/auth/
+
+IMPORTANT: You will be required to change your password on first login.
+
+Your class: {student.current_class.name if student.current_class else 'Not assigned yet'}
+Academic Year: {student.academic_year}
+
+If you have any questions, please contact the school administration.
+
+Best regards,
+Excellence Academy Administration
+    """
+    
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[student.user.email] if student.user and student.user.email else [],
+            fail_silently=False,
+        )
+        return True
+    except Exception as e:
+        print(f"Error sending student credentials email: {str(e)}")
+        return False
+
+
+def send_parent_credentials_email(parent, username, password):
+    """
+    Send login credentials to parent of newly enrolled student
+    """
+    subject = 'Excellence Academy - Parent Portal Access'
+    
+    # Get student names
+    student_names = ', '.join([
+        f"{child.first_name} {child.last_name}" 
+        for child in parent.children.all()
+    ])
+    
+    message = f"""
+Dear {parent.full_name},
+
+Welcome to Excellence Academy! Your child/children have been successfully enrolled.
+
+Your Children: {student_names}
+
+Here are your Parent Portal login credentials:
+
+Username: {username}
+Temporary Password: {password}
+
+Please log in at: http://127.0.0.1:8000/auth/
+
+Through the Parent Portal, you can:
+- View your children's attendance
+- Check academic performance
+- View timetables
+- Communicate with teachers
+- Track fee payments
+
+IMPORTANT: You will be required to change your password on first login.
+
+If you have any questions, please contact us at {settings.EMAIL_HOST_USER}
+
+Best regards,
+Excellence Academy Administration
+    """
+    
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[parent.email],
+            fail_silently=False,
+        )
+        return True
+    except Exception as e:
+        print(f"Error sending parent credentials email: {str(e)}")
+        return False
 
 
 def send_application_received_email(application):
     """
     Send confirmation email when application is received
     """
-    subject = f'Application Received - {application.application_number}'
+    subject = 'Application Received - Excellence Academy'
     
-    # Prepare context for template
-    context = {
-        'parent_name': application.declaration_name,
-        'student_name': f"{application.first_name} {application.last_name}",
-        'application_number': application.application_number,
-        'applying_for_class': application.applying_for_class,
-        'department': application.get_department_display(),
-        'submitted_date': application.submitted_at.strftime('%B %d, %Y at %I:%M %p'),
-    }
+    message = f"""
+Dear {application.parent_full_name},
+
+Thank you for submitting an application to Excellence Academy for {application.first_name} {application.last_name}.
+
+Application Number: {application.application_number}
+Submitted On: {application.submitted_at.strftime('%B %d, %Y at %I:%M %p')}
+
+Applying For: {application.applying_for_class}
+Department: {application.get_department_display()}
+
+Your application is currently under review. We will contact you within 5-7 business days regarding the next steps.
+
+You can track your application status by contacting our admissions office or checking back with us using your application number.
+
+Best regards,
+Excellence Academy Admissions Team
+Email: {settings.EMAIL_HOST_USER}
+    """
     
-    # Render HTML email
-    html_message = render_to_string('emails/application_received.html', context)
-    plain_message = strip_tags(html_message)
-    
-    # Send email
     try:
-        email = EmailMultiAlternatives(
+        send_mail(
             subject=subject,
-            body=plain_message,
+            message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[application.declaration_name],  # You'll need to add parent email to model
+            recipient_list=[application.parent_email],
+            fail_silently=False,
         )
-        email.attach_alternative(html_message, "text/html")
-        email.send()
         return True
     except Exception as e:
-        print(f"Error sending email: {e}")
+        print(f"Error sending application received email: {str(e)}")
         return False
 
 
-def send_application_accepted_email(application, student, exam_details):
+def send_exam_invitation_email(application):
     """
-    Send acceptance email with exam details
-    
-    exam_details should be a dict with:
-    - exam_date: str
-    - exam_time: str
-    - exam_location: str
-    - admission_fee: str
+    Send entrance exam invitation to applicant
     """
-    subject = f'Admission Approved - {student.student_id}'
+    subject = 'Entrance Examination Invitation - Excellence Academy'
     
-    context = {
-        'parent_name': application.declaration_name,
-        'student_name': f"{student.first_name} {student.last_name}",
-        'student_id': student.student_id,
-        'assigned_class': student.current_class.name if student.current_class else 'TBD',
-        'academic_year': student.academic_year,
-        'admission_date': student.admission_date.strftime('%B %d, %Y'),
-        'exam_date': exam_details.get('exam_date', 'To be announced'),
-        'exam_time': exam_details.get('exam_time', 'To be announced'),
-        'exam_location': exam_details.get('exam_location', 'School Campus'),
-        'admission_fee': exam_details.get('admission_fee', '0.00'),
-    }
-    
-    html_message = render_to_string('emails/application_accepted.html', context)
-    plain_message = strip_tags(html_message)
+    message = f"""
+Dear {application.parent_full_name},
+
+Congratulations! The application for {application.first_name} {application.last_name} has been approved for the next stage.
+
+Application Number: {application.application_number}
+
+Your child has been scheduled for an entrance examination. Please contact our admissions office for the exam date and time.
+
+What to bring:
+- This email (printed or on phone)
+- Application number
+- Valid ID
+- Writing materials
+
+Location: Excellence Academy Main Campus
+Contact: {settings.EMAIL_HOST_USER}
+
+We look forward to meeting {application.first_name}!
+
+Best regards,
+Excellence Academy Admissions Team
+    """
     
     try:
-        email = EmailMultiAlternatives(
+        send_mail(
             subject=subject,
-            body=plain_message,
+            message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[application.declaration_name],  # Add parent email
+            recipient_list=[application.parent_email],
+            fail_silently=False,
         )
-        email.attach_alternative(html_message, "text/html")
-        email.send()
         return True
     except Exception as e:
-        print(f"Error sending email: {e}")
+        print(f"Error sending exam invitation email: {str(e)}")
         return False
 
 
-def send_student_credentials_email(student, username, temporary_password, parent_email):
+def send_application_rejection_email(application, reason=''):
     """
-    Send login credentials to parent
+    Send rejection email to applicant
     """
-    subject = f'Student Portal Access - {student.student_id}'
+    subject = 'Application Status Update - Excellence Academy'
     
-    context = {
-        'parent_name': f"{student.first_name}'s Parent/Guardian",
-        'student_name': f"{student.first_name} {student.last_name}",
-        'username': username,
-        'temporary_password': temporary_password,
-        'portal_url': f"{settings.FRONTEND_URL}/auth/",
-    }
-    
-    html_message = render_to_string('emails/student_credentials.html', context)
-    plain_message = strip_tags(html_message)
-    
-    try:
-        email = EmailMultiAlternatives(
-            subject=subject,
-            body=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[parent_email],
-        )
-        email.attach_alternative(html_message, "text/html")
-        email.send()
-        return True
-    except Exception as e:
-        print(f"Error sending email: {e}")
-        return False
+    message = f"""
+Dear {application.parent_full_name},
 
-# apps/admissions/email_utils.py - ADD THIS FUNCTION
-def send_parent_credentials_email(parent, username, temporary_password, student_name):
+Thank you for your interest in Excellence Academy.
+
+Application Number: {application.application_number}
+Applicant: {application.first_name} {application.last_name}
+
+After careful consideration, we regret to inform you that we are unable to offer admission at this time.
+
+{f"Reason: {reason}" if reason else ""}
+
+We encourage you to reapply in the future. If you have any questions, please contact our admissions office.
+
+Thank you for considering Excellence Academy.
+
+Best regards,
+Excellence Academy Admissions Team
+Email: {settings.EMAIL_HOST_USER}
     """
-    Send login credentials to parent
-    """
-    subject = f'Parent Portal Access - Excellence Academy'
-    
-    context = {
-        'parent_name': parent.full_name,
-        'student_name': student_name,
-        'username': username,
-        'temporary_password': temporary_password,
-        'portal_url': f"{settings.FRONTEND_URL}/auth/",
-    }
-    
-    html_message = render_to_string('emails/parent_credentials.html', context)
-    plain_message = strip_tags(html_message)
     
     try:
-        email = EmailMultiAlternatives(
+        send_mail(
             subject=subject,
-            body=plain_message,
+            message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[parent.email],
+            recipient_list=[application.parent_email],
+            fail_silently=False,
         )
-        email.attach_alternative(html_message, "text/html")
-        email.send()
         return True
     except Exception as e:
-        print(f"Error sending email: {e}")
+        print(f"Error sending rejection email: {str(e)}")
         return False
