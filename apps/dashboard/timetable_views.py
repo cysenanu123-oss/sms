@@ -193,6 +193,8 @@ def create_timetable(request):
                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_or_update_timetable_entry(request):
@@ -204,14 +206,14 @@ def create_or_update_timetable_entry(request):
     entry_id = request.data.get('id')
     timetable_id = request.data.get('timetable_id')
     class_id = request.data.get('class_id')
-    time_slot_id = request.data.get('time_slot_id')
+    time_slot_input = request.data.get('time_slot')  # Can be ID or string
     day_of_week = request.data.get('day_of_week')
     subject_id = request.data.get('subject_id')
     teacher_id = request.data.get('teacher_id')
     room_number = request.data.get('room_number', '')
     
-    if not all([time_slot_id, day_of_week]):
-        return Response({'success': False, 'error': 'Missing required fields'}, 
+    if not all([time_slot_input, day_of_week]):
+        return Response({'success': False, 'error': 'Missing required fields: time_slot and day_of_week'}, 
                        status=status.HTTP_400_BAD_REQUEST)
     
     try:
@@ -237,8 +239,37 @@ def create_or_update_timetable_entry(request):
                 return Response({'success': False, 'error': 'Timetable or Class ID required'}, 
                                status=status.HTTP_400_BAD_REQUEST)
             
+            # Handle time_slot - it can be an ID or a string like "08:00 - 09:00"
+            time_slot = None
+            if isinstance(time_slot_input, int) or (isinstance(time_slot_input, str) and time_slot_input.isdigit()):
+                # It's a TimeSlot ID
+                time_slot = TimeSlot.objects.get(id=int(time_slot_input))
+            else:
+                # It's a time slot string - find or create it
+                time_slot_str = str(time_slot_input).strip()
+                time_slot = TimeSlot.objects.filter(name=time_slot_str).first()
+                
+                if not time_slot:
+                    # Parse time slot string (e.g., "08:00 - 09:00")
+                    try:
+                        times = time_slot_str.split('-')
+                        start_time = times[0].strip()
+                        end_time = times[1].strip()
+                        
+                        time_slot = TimeSlot.objects.create(
+                            name=time_slot_str,
+                            start_time=start_time,
+                            end_time=end_time,
+                            is_break=False,
+                            is_active=True
+                        )
+                    except Exception as e:
+                        return Response({
+                            'success': False, 
+                            'error': f'Invalid time slot format: {time_slot_str}. Expected format: "HH:MM - HH:MM"'
+                        }, status=status.HTTP_400_BAD_REQUEST)
+            
             # Get related objects
-            time_slot = TimeSlot.objects.get(id=time_slot_id)
             subject = Subject.objects.get(id=subject_id) if subject_id else None
             teacher = User.objects.get(id=teacher_id, role='teacher') if teacher_id else None
             
@@ -267,7 +298,7 @@ def create_or_update_timetable_entry(request):
                     existing.room_number = room_number
                     existing.save()
                     entry = existing
-                    message = 'Timetable entry updated successfully'
+                    message = 'Timetable entry updated (slot already existed)'
                 else:
                     # Create new
                     entry = TimetableEntry.objects.create(
@@ -285,7 +316,8 @@ def create_or_update_timetable_entry(request):
                 'message': message,
                 'data': {
                     'entry_id': entry.id,
-                    'timetable_id': timetable.id
+                    'timetable_id': timetable.id,
+                    'time_slot_id': time_slot.id
                 }
             }, status=status.HTTP_201_CREATED if not entry_id else status.HTTP_200_OK)
             
@@ -295,7 +327,7 @@ def create_or_update_timetable_entry(request):
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return Response({'success': False, 'error': str(e)}, 
+        return Response({'success': False, 'error': f'Server error: {str(e)}'}, 
                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

@@ -1,10 +1,10 @@
-# apps/admissions/serializers.py - FIXED VERSION
+# apps/admissions/serializers.py - UPDATED VERSION
 from rest_framework import serializers
 from .models import StudentApplication
 
 
 class StudentApplicationSerializer(serializers.ModelSerializer):
-    """Serializer for student application submissions - FIXED"""
+    """Serializer for student application submissions"""
     
     class Meta:
         model = StudentApplication
@@ -30,7 +30,7 @@ class StudentApplicationSerializer(serializers.ModelSerializer):
     
     def validate(self, data):
         """Additional validation"""
-        # Check required fields
+        # Check required fields (core fields only)
         required_fields = ['first_name', 'last_name', 'parent_full_name', 
                           'parent_email', 'parent_phone']
         

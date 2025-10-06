@@ -1,11 +1,6 @@
-# apps/dashboard/urls.py - UPDATED
+# apps/dashboard/urls.py 
 from django.urls import path
-from . import views, admin_views
-from apps.dashboard import complete_admin_views
-try:
-    from apps.dashboard import timetable_views
-except ImportError:
-    timetable_views = None
+from . import views, admin_views, complete_admin_views, timetable_views
 
 urlpatterns = [
     # Access verification
@@ -23,7 +18,6 @@ urlpatterns = [
     
     # Classes management endpoints
     path('admin/classes/', complete_admin_views.get_classes_list, name='admin-classes-list'),
-    path('admin/classes/', complete_admin_views.create_class, name='admin-create-class'),
     
     # Finance management endpoints
     path('admin/finance/overview/', complete_admin_views.get_finance_overview, name='admin-finance-overview'),
@@ -36,14 +30,22 @@ urlpatterns = [
     # Settings endpoints
     path('admin/settings/', complete_admin_views.manage_school_settings, name='admin-settings'),
 
-      # ========== TIMETABLE MANAGEMENT ENDPOINTS (NEW) ==========
+    # ========== TIMETABLE MANAGEMENT ENDPOINTS ==========
+    # Get time slots
     path('admin/timetable/time-slots/', timetable_views.get_time_slots, name='admin-time-slots'),
-    path('admin/timetable/time-slots/create/', timetable_views.create_time_slot, name='admin-create-time-slot'),
+    
+    # Get class timetable - THIS IS THE MISSING ENDPOINT
     path('admin/timetable/class/<int:class_id>/', timetable_views.get_class_timetable, name='admin-class-timetable'),
+    
+    # Create timetable
     path('admin/timetable/create/', timetable_views.create_timetable, name='admin-create-timetable'),
-    path('admin/timetable/entry/create/', timetable_views.create_or_update_timetable_entry, name='admin-create-timetable-entry'),
-    path('admin/timetable/entry/<int:entry_id>/update/', timetable_views.create_or_update_timetable_entry, name='admin-update-timetable-entry'),
-    path('admin/timetable/entry/<int:entry_id>/delete/', timetable_views.delete_timetable_entry, name='admin-delete-timetable-entry'),
+    
+    # Create/Update timetable entry
+    path('admin/timetable/entry/', timetable_views.create_or_update_timetable_entry, name='admin-timetable-entry'),
+    
+    # Delete timetable entry
+    path('admin/timetable/entry/<int:entry_id>/', timetable_views.delete_timetable_entry, name='admin-delete-timetable-entry'),
+    
+    # Get subjects and teachers for a class
     path('admin/timetable/class/<int:class_id>/resources/', timetable_views.get_subjects_and_teachers, name='admin-timetable-resources'),
-
 ]

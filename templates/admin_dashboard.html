@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -25,11 +26,13 @@
 
                 <div class="flex items-center space-x-4">
                     <div class="text-right hidden md:block">
-                        <p class="text-sm font-medium text-gray-900" x-text="user.first_name + ' ' + user.last_name"></p>
+                        <p class="text-sm font-medium text-gray-900" x-text="user.first_name + ' ' + user.last_name">
+                        </p>
                         <p class="text-xs text-gray-600">Administrator</p>
                     </div>
                     <div class="bg-indigo-600 text-white rounded-full w-10 h-10 flex items-center justify-center">
-                        <span x-text="user.first_name ? user.first_name.charAt(0) + user.last_name.charAt(0) : 'A'"></span>
+                        <span
+                            x-text="user.first_name ? user.first_name.charAt(0) + user.last_name.charAt(0) : 'A'"></span>
                     </div>
                     <button @click="logout()" class="text-red-600 hover:text-red-800">
                         <i class="fas fa-sign-out-alt"></i>
@@ -86,7 +89,7 @@
                     :class="currentView === 'reports' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
                     class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
                     <i class="fas fa-chart-bar mr-3"></i> Reports
-                </a> 
+                </a>
 
                 <a @click="currentView = 'timetable'"
                     :class="currentView === 'timetable' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
@@ -132,7 +135,8 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-600">Total Students</p>
-                                <p class="text-3xl font-bold text-gray-900" x-text="stats.students?.total_enrolled || 0"></p>
+                                <p class="text-3xl font-bold text-gray-900"
+                                    x-text="stats.students?.total_enrolled || 0"></p>
                                 <p class="text-sm text-green-600 mt-1">
                                     <i class="fas fa-arrow-up"></i>
                                     <span x-text="stats.students?.new_admissions || 0"></span> this month
@@ -148,7 +152,8 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-600">Pending Applications</p>
-                                <p class="text-3xl font-bold text-gray-900" x-text="stats.applications?.pending_review || 0"></p>
+                                <p class="text-3xl font-bold text-gray-900"
+                                    x-text="stats.applications?.pending_review || 0"></p>
                                 <p class="text-sm text-orange-600 mt-1">
                                     <span x-text="stats.applications?.total_received || 0"></span> total received
                                 </p>
@@ -163,7 +168,8 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-600">Total Teachers</p>
-                                <p class="text-3xl font-bold text-gray-900" x-text="stats.user_statistics?.teachers || 0"></p>
+                                <p class="text-3xl font-bold text-gray-900"
+                                    x-text="stats.user_statistics?.teachers || 0"></p>
                                 <p class="text-sm text-gray-600 mt-1">Active faculty</p>
                             </div>
                             <div class="bg-green-100 rounded-full p-4">
@@ -176,9 +182,11 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-sm text-gray-600">Collection Rate</p>
-                                <p class="text-3xl font-bold text-gray-900" x-text="(stats.financial?.collection_rate || 0) + '%'"></p>
+                                <p class="text-3xl font-bold text-gray-900"
+                                    x-text="(stats.financial?.collection_rate || 0) + '%'"></p>
                                 <p class="text-sm text-gray-600 mt-1">
-                                    GHS <span x-text="(stats.financial?.application_fees_collected || 0).toFixed(2)"></span>
+                                    GHS <span
+                                        x-text="(stats.financial?.application_fees_collected || 0).toFixed(2)"></span>
                                 </p>
                             </div>
                             <div class="bg-purple-100 rounded-full p-4">
@@ -229,7 +237,8 @@
                     <div class="bg-white rounded-lg shadow p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Applications</h3>
                         <div class="space-y-3">
-                            <template x-for="app in stats.recent_applications?.slice(0, 5)" :key="app.application_number">
+                            <template x-for="app in stats.recent_applications?.slice(0, 5)"
+                                :key="app.application_number">
                                 <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                                     <div>
                                         <p class="font-medium text-gray-900" x-text="app.name"></p>
@@ -249,7 +258,7 @@
                 </div>
             </div>
 
-            <!-- Applications Section -->
+            <!-- Applications Section with FIXED Accept Button -->
             <div x-show="currentView === 'applications' && !loading">
                 <div class="mb-6 flex justify-between items-center">
                     <div>
@@ -262,7 +271,6 @@
                     </button>
                 </div>
 
-                <!-- Filter Tabs -->
                 <div class="bg-white rounded-lg shadow mb-6">
                     <div class="border-b border-gray-200">
                         <nav class="flex space-x-8 px-6" aria-label="Tabs">
@@ -280,17 +288,22 @@
                         </nav>
                     </div>
 
-                    <!-- Applications Table -->
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Application #</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Applicant</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submitted</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        Application #</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        Applicant</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        Submitted</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -299,7 +312,8 @@
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
                                             x-text="app.application_number"></td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900" x-text="app.learner_name"></div>
+                                            <div class="text-sm font-medium text-gray-900" x-text="app.learner_name">
+                                            </div>
                                             <div class="text-sm text-gray-500" x-text="app.parent_email || ''"></div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"
@@ -317,16 +331,21 @@
                                                 x-text="app.status.replace('_', ' ').toUpperCase()"></span>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <button @click="viewApplication(app)" class="text-indigo-600 hover:text-indigo-900 mr-3">
+                                            <button @click="viewApplication(app)"
+                                                class="text-indigo-600 hover:text-indigo-900 mr-3" title="View">
                                                 <i class="fas fa-eye"></i>
                                             </button>
-                                            <button x-show="app.status === 'exam_completed'" @click="acceptApplication(app)"
-                                                class="text-green-600 hover:text-green-900 mr-3">
+                                            <!-- FIXED: Works for pending AND exam_completed -->
+                                            <button x-show="['pending', 'exam_completed'].includes(app.status)"
+                                                @click="acceptApplication(app)"
+                                                class="text-green-600 hover:text-green-900 mr-3"
+                                                title="Accept & Enroll">
                                                 <i class="fas fa-check"></i>
                                             </button>
-                                            <button x-show="['pending', 'under_review', 'exam_completed'].includes(app.status)"
-                                                @click="rejectApplication(app)"
-                                                class="text-red-600 hover:text-red-900">
+                                            <button
+                                                x-show="['pending', 'under_review', 'exam_completed'].includes(app.status)"
+                                                @click="rejectApplication(app)" class="text-red-600 hover:text-red-900"
+                                                title="Reject">
                                                 <i class="fas fa-times"></i>
                                             </button>
                                         </td>
@@ -354,7 +373,8 @@
                 <!-- Students Filter -->
                 <div class="bg-white rounded-lg shadow p-4 mb-6">
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <input type="text" x-model="studentSearch" @input="filterStudents()" placeholder="Search students..."
+                        <input type="text" x-model="studentSearch" @input="filterStudents()"
+                            placeholder="Search students..."
                             class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                         <select x-model="studentClassFilter" @change="filterStudents()"
                             class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
@@ -369,7 +389,8 @@
                             <option value="">All Status</option>
                             <option value="inactive">Inactive</option>
                         </select>
-                        <button @click="loadStudents()" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
+                        <button @click="loadStudents()"
+                            class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
                             <i class="fas fa-filter mr-2"></i>Apply Filters
                         </button>
                     </div>
@@ -384,7 +405,8 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Parent</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Attendance</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Attendance
+                                </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                             </tr>
                         </thead>
@@ -402,13 +424,16 @@
                                         <div class="text-gray-500" x-text="student.parent_contact"></div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="text-sm font-medium text-green-600" x-text="student.attendance_rate + '%'"></span>
+                                        <span class="text-sm font-medium text-green-600"
+                                            x-text="student.attendance_rate + '%'"></span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        <button @click="viewStudent(student)" class="text-indigo-600 hover:text-indigo-900 mr-3" title="View Details">
+                                        <button @click="viewStudent(student)"
+                                            class="text-indigo-600 hover:text-indigo-900 mr-3" title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </button>
-                                        <button @click="editStudent(student)" class="text-blue-600 hover:text-blue-900 mr-3" title="Edit">
+                                        <button @click="editStudent(student)"
+                                            class="text-blue-600 hover:text-blue-900 mr-3" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </button>
                                     </td>
@@ -435,7 +460,8 @@
                 <div x-show="teachers.length === 0" class="bg-white rounded-lg shadow p-12 text-center">
                     <i class="fas fa-chalkboard-teacher text-gray-300 text-6xl mb-4"></i>
                     <p class="text-gray-500 text-lg">No teachers added yet</p>
-                    <button @click="showAddTeacher = true" class="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                    <button @click="showAddTeacher = true"
+                        class="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                         Add Your First Teacher
                     </button>
                 </div>
@@ -445,13 +471,16 @@
                         <div class="bg-white rounded-lg shadow hover:shadow-lg transition p-6">
                             <div class="flex items-center justify-between mb-4">
                                 <div class="bg-indigo-100 rounded-full w-16 h-16 flex items-center justify-center">
-                                    <span class="text-2xl font-bold text-indigo-600" x-text="teacher.first_name.charAt(0) + teacher.last_name.charAt(0)"></span>
+                                    <span class="text-2xl font-bold text-indigo-600"
+                                        x-text="teacher.first_name.charAt(0) + teacher.last_name.charAt(0)"></span>
                                 </div>
                                 <div class="flex space-x-2">
-                                    <button @click="editTeacher(teacher)" class="text-blue-600 hover:text-blue-800" title="Edit">
+                                    <button @click="editTeacher(teacher)" class="text-blue-600 hover:text-blue-800"
+                                        title="Edit">
                                         <i class="fas fa-edit text-lg"></i>
                                     </button>
-                                    <button @click="deleteTeacher(teacher.id)" class="text-red-600 hover:text-red-800" title="Delete">
+                                    <button @click="deleteTeacher(teacher.id)" class="text-red-600 hover:text-red-800"
+                                        title="Delete">
                                         <i class="fas fa-trash text-lg"></i>
                                     </button>
                                 </div>
@@ -459,7 +488,7 @@
 
                             <h3 class="text-lg font-bold text-gray-900 mb-1" x-text="teacher.full_name"></h3>
                             <p class="text-sm text-gray-600 mb-3" x-text="teacher.email"></p>
-                            
+
                             <div class="space-y-2 text-sm mb-4">
                                 <div class="flex items-center">
                                     <i class="fas fa-phone text-gray-400 w-5"></i>
@@ -479,7 +508,8 @@
                                 <p class="text-xs text-gray-500 mb-2">Subjects:</p>
                                 <div class="flex flex-wrap gap-1">
                                     <template x-for="subject in teacher.subjects" :key="subject">
-                                        <span class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs" x-text="subject"></span>
+                                        <span class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs"
+                                            x-text="subject"></span>
                                     </template>
                                 </div>
                             </div>
@@ -494,7 +524,8 @@
                     <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                         <div class="p-6 border-b flex justify-between items-center">
                             <h3 class="text-xl font-bold text-gray-900">Add New Teacher</h3>
-                            <button @click="showAddTeacher = false; resetTeacherForm()" class="text-gray-400 hover:text-gray-600">
+                            <button @click="showAddTeacher = false; resetTeacherForm()"
+                                class="text-gray-400 hover:text-gray-600">
                                 <i class="fas fa-times text-xl"></i>
                             </button>
                         </div>
@@ -528,23 +559,28 @@
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Subjects to Teach *</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Subjects to Teach
+                                        *</label>
                                     <div class="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto">
                                         <template x-for="subject in availableSubjects" :key="subject.id">
-                                            <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                            <label
+                                                class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
                                                 <input type="checkbox" :value="subject.id" x-model="newTeacher.subjects"
                                                     class="mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                                <span class="text-sm" x-text="subject.name + ' (' + subject.code + ')'"></span>
+                                                <span class="text-sm"
+                                                    x-text="subject.name + ' (' + subject.code + ')'"></span>
                                             </label>
                                         </template>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Classes to Teach *</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Classes to Teach
+                                        *</label>
                                     <div class="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto">
                                         <template x-for="cls in availableClasses" :key="cls.id">
-                                            <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                            <label
+                                                class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
                                                 <input type="checkbox" :value="cls.id" x-model="newTeacher.classes"
                                                     class="mr-3 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
                                                 <span class="text-sm" x-text="cls.name"></span>
@@ -586,7 +622,8 @@
                         <h2 class="text-2xl font-bold text-gray-900">Class Management</h2>
                         <p class="text-gray-600">Manage classes, capacity, and assignments</p>
                     </div>
-                    <button @click="showCreateClass = true" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                    <button @click="showCreateClass = true"
+                        class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
                         <i class="fas fa-plus mr-2"></i>Create New Class
                     </button>
                 </div>
@@ -598,7 +635,8 @@
                             <div class="flex justify-between items-start mb-4">
                                 <div>
                                     <h3 class="text-xl font-bold text-gray-900" x-text="cls.name"></h3>
-                                    <p class="text-sm text-gray-600" x-text="cls.class_teacher || 'No Class Teacher'"></p>
+                                    <p class="text-sm text-gray-600" x-text="cls.class_teacher || 'No Class Teacher'">
+                                    </p>
                                 </div>
                                 <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
                                     <span x-text="cls.is_active ? 'Active' : 'Inactive'"></span>
@@ -611,7 +649,7 @@
                                         <span class="font-medium" x-text="cls.enrolled + '/' + cls.capacity"></span>
                                     </div>
                                     <div class="bg-gray-200 rounded-full h-2">
-                                        <div class="bg-indigo-600 h-2 rounded-full" 
+                                        <div class="bg-indigo-600 h-2 rounded-full"
                                             :style="'width: ' + (cls.enrolled/cls.capacity*100) + '%'"></div>
                                     </div>
                                 </div>
@@ -626,7 +664,8 @@
                                     </div>
                                 </div>
                             </div>
-                            <button @click="viewClassStudents(cls)" class="w-full mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                            <button @click="viewClassStudents(cls)"
+                                class="w-full mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                                 <i class="fas fa-users mr-2"></i>View Students
                             </button>
                         </div>
@@ -695,24 +734,29 @@
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                     <div class="bg-white rounded-lg shadow p-6">
                         <p class="text-sm text-gray-600">Total Revenue</p>
-                        <p class="text-2xl font-bold text-gray-900">GHS <span x-text="(financeData.total_revenue || 0).toFixed(2)"></span></p>
+                        <p class="text-2xl font-bold text-gray-900">GHS <span
+                                x-text="(financeData.total_revenue || 0).toFixed(2)"></span></p>
                         <p class="text-sm text-green-600 mt-1">
                             <i class="fas fa-arrow-up"></i> From collected fees
                         </p>
                     </div>
                     <div class="bg-white rounded-lg shadow p-6">
                         <p class="text-sm text-gray-600">Pending Fees</p>
-                        <p class="text-2xl font-bold text-orange-600">GHS <span x-text="(financeData.pending_fees || 0).toFixed(2)"></span></p>
-                        <p class="text-sm text-gray-600 mt-1" x-text="financeData.students_with_pending + ' students'"></p>
+                        <p class="text-2xl font-bold text-orange-600">GHS <span
+                                x-text="(financeData.pending_fees || 0).toFixed(2)"></span></p>
+                        <p class="text-sm text-gray-600 mt-1" x-text="financeData.students_with_pending + ' students'">
+                        </p>
                     </div>
                     <div class="bg-white rounded-lg shadow p-6">
                         <p class="text-sm text-gray-600">This Month Collection</p>
-                        <p class="text-2xl font-bold text-green-600">GHS <span x-text="(financeData.monthly_collection || 0).toFixed(2)"></span></p>
+                        <p class="text-2xl font-bold text-green-600">GHS <span
+                                x-text="(financeData.monthly_collection || 0).toFixed(2)"></span></p>
                         <p class="text-sm text-gray-600 mt-1" x-text="financeData.collection_rate + '% rate'"></p>
                     </div>
                     <div class="bg-white rounded-lg shadow p-6">
                         <p class="text-sm text-gray-600">Overdue Amount</p>
-                        <p class="text-2xl font-bold text-red-600">GHS <span x-text="(financeData.overdue_amount || 0).toFixed(2)"></span></p>
+                        <p class="text-2xl font-bold text-red-600">GHS <span
+                                x-text="(financeData.overdue_amount || 0).toFixed(2)"></span></p>
                         <p class="text-sm text-gray-600 mt-1">Overdue payments</p>
                     </div>
                 </div>
@@ -779,7 +823,8 @@
                                     <div class="flex justify-between items-start">
                                         <div>
                                             <p class="font-medium text-gray-900" x-text="student.name"></p>
-                                            <p class="text-sm text-gray-600" x-text="student.student_id + ' - ' + student.class"></p>
+                                            <p class="text-sm text-gray-600"
+                                                x-text="student.student_id + ' - ' + student.class"></p>
                                         </div>
                                         <span :class="{
                                             'bg-red-100 text-red-800': student.is_overdue,
@@ -788,8 +833,10 @@
                                             x-text="student.is_overdue ? 'OVERDUE' : 'PENDING'"></span>
                                     </div>
                                     <div class="mt-2 text-sm">
-                                        <p class="text-gray-600">Balance: <span class="font-bold text-red-600">GHS <span x-text="student.balance.toFixed(2)"></span></span></p>
-                                        <p class="text-gray-500">Due: <span x-text="formatDate(student.due_date)"></span></p>
+                                        <p class="text-gray-600">Balance: <span class="font-bold text-red-600">GHS <span
+                                                    x-text="student.balance.toFixed(2)"></span></span></p>
+                                        <p class="text-gray-500">Due: <span
+                                                x-text="formatDate(student.due_date)"></span></p>
                                     </div>
                                 </div>
                             </template>
@@ -813,7 +860,8 @@
                         </div>
                         <h3 class="font-semibold text-gray-900 mb-2">Academic Performance</h3>
                         <p class="text-sm text-gray-600 mb-4">Class-wise and student performance analysis</p>
-                        <button @click="generateReport('academic')" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        <button @click="generateReport('academic')"
+                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                             <i class="fas fa-download mr-2"></i>Generate Report
                         </button>
                     </div>
@@ -824,7 +872,8 @@
                         </div>
                         <h3 class="font-semibold text-gray-900 mb-2">Attendance Reports</h3>
                         <p class="text-sm text-gray-600 mb-4">Daily, weekly, and monthly attendance data</p>
-                        <button @click="generateReport('attendance')" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                        <button @click="generateReport('attendance')"
+                            class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
                             <i class="fas fa-download mr-2"></i>Generate Report
                         </button>
                     </div>
@@ -835,7 +884,8 @@
                         </div>
                         <h3 class="font-semibold text-gray-900 mb-2">Financial Reports</h3>
                         <p class="text-sm text-gray-600 mb-4">Revenue, expenses, and fee collection</p>
-                        <button @click="generateReport('financial')" class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                        <button @click="generateReport('financial')"
+                            class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
                             <i class="fas fa-download mr-2"></i>Generate Report
                         </button>
                     </div>
@@ -848,10 +898,14 @@
                         <table class="min-w-full">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teacher</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Classes</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Attendances Marked</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Performance</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teacher
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Classes
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        Attendances Marked</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        Performance</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -861,14 +915,18 @@
                                             <div class="text-sm font-medium text-gray-900" x-text="teacher.name"></div>
                                             <div class="text-sm text-gray-500" x-text="teacher.email"></div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="teacher.classes_assigned"></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="teacher.attendances_marked"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm"
+                                            x-text="teacher.classes_assigned"></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm"
+                                            x-text="teacher.attendances_marked"></td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
                                                 <template x-for="i in 5" :key="i">
-                                                    <i :class="i <= teacher.performance_score ? 'fas fa-star text-yellow-400' : 'far fa-star text-gray-300'"></i>
+                                                    <i
+                                                        :class="i <= teacher.performance_score ? 'fas fa-star text-yellow-400' : 'far fa-star text-gray-300'"></i>
                                                 </template>
-                                                <span class="ml-2 text-sm text-gray-600" x-text="teacher.performance_score.toFixed(1)"></span>
+                                                <span class="ml-2 text-sm text-gray-600"
+                                                    x-text="teacher.performance_score.toFixed(1)"></span>
                                             </div>
                                         </td>
                                     </tr>
@@ -878,6 +936,192 @@
                     </div>
                 </div>
             </div>
+            <div x-show="currentView === 'timetable' && !loading">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Timetable Management</h2>
+                    <p class="text-gray-600">Create and manage class schedules</p>
+                </div>
+
+                <!-- Class Selector -->
+                <div class="bg-white rounded-lg shadow p-6 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
+                            <select x-model="selectedTimetableClass" @change="loadTimetable()"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                <option value="">-- Select a Class --</option>
+                                <template x-for="cls in classes" :key="cls.id">
+                                    <option :value="cls.id" x-text="cls.name"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="flex items-end">
+                            <button x-show="selectedTimetableClass" @click="showAddTimetableEntry = true"
+                                class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 w-full">
+                                <i class="fas fa-plus mr-2"></i>Add Timetable Entry
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timetable Display -->
+                <div x-show="selectedTimetableClass" class="bg-white rounded-lg shadow overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Day</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teacher</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Room</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <template x-for="entry in timetableEntries" :key="entry.id">
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium"
+                                        x-text="entry.day_of_week"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="entry.time_slot"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="entry.subject_name"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="entry.teacher_name"></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="entry.room_number || '-'">
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                                        <button @click="editTimetableEntry(entry)"
+                                            class="text-blue-600 hover:text-blue-900">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button @click="deleteTimetableEntry(entry.id)"
+                                            class="text-red-600 hover:text-red-900">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                            <tr x-show="timetableEntries.length === 0">
+                                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                    <i class="fas fa-calendar-times text-4xl mb-2 block"></i>
+                                    No timetable entries yet. Add your first entry above.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Add/Edit Timetable Entry Modal -->
+                <div x-show="showAddTimetableEntry" x-cloak
+                    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+                    @click.self="showAddTimetableEntry = false">
+                    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                        <div class="p-6 border-b flex justify-between items-center">
+                            <h3 class="text-xl font-bold text-gray-900">
+                                <span x-text="editingTimetableEntry ? 'Edit' : 'Add'"></span> Timetable Entry
+                            </h3>
+                            <button @click="showAddTimetableEntry = false; resetTimetableForm()"
+                                class="text-gray-400 hover:text-gray-600">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+
+                        <form @submit.prevent="saveTimetableEntry()" class="p-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Day of Week -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Day of Week *</label>
+                                    <select x-model="newTimetableEntry.day_of_week" required
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                        <option value="">-- Select Day --</option>
+                                        <option value="Monday">Monday</option>
+                                        <option value="Tuesday">Tuesday</option>
+                                        <option value="Wednesday">Wednesday</option>
+                                        <option value="Thursday">Thursday</option>
+                                        <option value="Friday">Friday</option>
+                                    </select>
+                                </div>
+
+                                <!-- Time Slot -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Time Slot *</label>
+                                    <select x-model="newTimetableEntry.time_slot" required
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                        <option value="">-- Select Time --</option>
+                                        <option value="08:00 - 09:00">08:00 - 09:00</option>
+                                        <option value="09:00 - 10:00">09:00 - 10:00</option>
+                                        <option value="10:00 - 11:00">10:00 - 11:00</option>
+                                        <option value="11:00 - 12:00">11:00 - 12:00</option>
+                                        <option value="12:00 - 13:00">12:00 - 13:00 (Lunch)</option>
+                                        <option value="13:00 - 14:00">13:00 - 14:00</option>
+                                        <option value="14:00 - 15:00">14:00 - 15:00</option>
+                                        <option value="15:00 - 16:00">15:00 - 16:00</option>
+                                    </select>
+                                </div>
+
+                                <!-- Subject -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
+                                    <select x-model="newTimetableEntry.subject_id" required
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                        <option value="">-- Select Subject --</option>
+                                        <template x-for="subject in availableSubjects" :key="subject.id">
+                                            <option :value="subject.id"
+                                                x-text="subject.name + ' (' + subject.code + ')'"></option>
+                                        </template>
+                                    </select>
+                                </div>
+
+                                <!-- Teacher -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Teacher *</label>
+                                    <select x-model="newTimetableEntry.teacher_id" required
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                        <option value="">-- Select Teacher --</option>
+                                        <template x-for="teacher in teachers" :key="teacher.id">
+                                            <option :value="teacher.id" x-text="teacher.full_name"></option>
+                                        </template>
+                                    </select>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Only teachers in the system can be assigned
+                                    </p>
+                                </div>
+
+                                <!-- Room Number -->
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Room Number</label>
+                                    <input type="text" x-model="newTimetableEntry.room_number"
+                                        placeholder="e.g., Room 101"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                            </div>
+
+                            <div class="mt-6 flex justify-end space-x-3">
+                                <button type="button" @click="showAddTimetableEntry = false; resetTimetableForm()"
+                                    class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                                    Cancel
+                                </button>
+                                <button type="submit" :disabled="savingTimetable"
+                                    class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                                    <span x-show="!savingTimetable">
+                                        <span x-text="editingTimetableEntry ? 'Update' : 'Add'"></span> Entry
+                                    </span>
+                                    <span x-show="savingTimetable">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Saving...
+                                    </span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div x-show="!selectedTimetableClass" class="bg-white rounded-lg shadow p-12 text-center">
+                    <i class="fas fa-calendar-alt text-gray-300 text-6xl mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">Select a Class</h3>
+                    <p class="text-gray-500">Choose a class above to view or manage its timetable</p>
+                </div>
+            </div>
+
 
             <!-- Settings Section -->
             <div x-show="currentView === 'settings' && !loading">
@@ -915,7 +1159,8 @@
                                 <button type="submit" :disabled="savingSettings"
                                     class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
                                     <span x-show="!savingSettings"><i class="fas fa-save mr-2"></i>Save Changes</span>
-                                    <span x-show="savingSettings"><i class="fas fa-spinner fa-spin mr-2"></i>Saving...</span>
+                                    <span x-show="savingSettings"><i
+                                            class="fas fa-spinner fa-spin mr-2"></i>Saving...</span>
                                 </button>
                             </div>
                         </form>
@@ -927,7 +1172,8 @@
                         <form @submit.prevent="saveAcademicSettings()">
                             <div class="space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Current Academic Year</label>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Current Academic
+                                        Year</label>
                                     <input type="text" x-model="settings.current_academic_year" placeholder="2024-2025"
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                                 </div>
@@ -952,7 +1198,8 @@
                                 <button type="submit" :disabled="savingSettings"
                                     class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
                                     <span x-show="!savingSettings"><i class="fas fa-save mr-2"></i>Save Changes</span>
-                                    <span x-show="savingSettings"><i class="fas fa-spinner fa-spin mr-2"></i>Saving...</span>
+                                    <span x-show="savingSettings"><i
+                                            class="fas fa-spinner fa-spin mr-2"></i>Saving...</span>
                                 </button>
                             </div>
                         </form>
@@ -967,7 +1214,8 @@
                                     <p class="font-medium text-gray-900">Super Admin</p>
                                     <p class="text-sm text-gray-600">Full system access</p>
                                 </div>
-                                <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Critical</span>
+                                <span
+                                    class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Critical</span>
                             </div>
                             <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                                 <div>
@@ -1020,27 +1268,38 @@
                     <div>
                         <h4 class="font-semibold text-gray-900 mb-3">Personal Information</h4>
                         <div class="space-y-2">
-                            <p class="text-sm"><span class="font-medium">Student ID:</span> <span x-text="selectedStudent?.student_id"></span></p>
-                            <p class="text-sm"><span class="font-medium">Name:</span> <span x-text="selectedStudent?.name"></span></p>
-                            <p class="text-sm"><span class="font-medium">Email:</span> <span x-text="selectedStudent?.email"></span></p>
-                            <p class="text-sm"><span class="font-medium">Class:</span> <span x-text="selectedStudent?.class"></span></p>
-                            <p class="text-sm"><span class="font-medium">Roll Number:</span> <span x-text="selectedStudent?.roll_number"></span></p>
-                            <p class="text-sm"><span class="font-medium">Date of Birth:</span> <span x-text="selectedStudent?.date_of_birth"></span></p>
-                            <p class="text-sm"><span class="font-medium">Blood Group:</span> <span x-text="selectedStudent?.blood_group"></span></p>
+                            <p class="text-sm"><span class="font-medium">Student ID:</span> <span
+                                    x-text="selectedStudent?.student_id"></span></p>
+                            <p class="text-sm"><span class="font-medium">Name:</span> <span
+                                    x-text="selectedStudent?.name"></span></p>
+                            <p class="text-sm"><span class="font-medium">Email:</span> <span
+                                    x-text="selectedStudent?.email"></span></p>
+                            <p class="text-sm"><span class="font-medium">Class:</span> <span
+                                    x-text="selectedStudent?.class"></span></p>
+                            <p class="text-sm"><span class="font-medium">Roll Number:</span> <span
+                                    x-text="selectedStudent?.roll_number"></span></p>
+                            <p class="text-sm"><span class="font-medium">Date of Birth:</span> <span
+                                    x-text="selectedStudent?.date_of_birth"></span></p>
+                            <p class="text-sm"><span class="font-medium">Blood Group:</span> <span
+                                    x-text="selectedStudent?.blood_group"></span></p>
                         </div>
                     </div>
 
                     <div>
                         <h4 class="font-semibold text-gray-900 mb-3">Parent/Guardian Information</h4>
                         <div class="space-y-2">
-                            <p class="text-sm"><span class="font-medium">Name:</span> <span x-text="selectedStudent?.parent_name"></span></p>
-                            <p class="text-sm"><span class="font-medium">Contact:</span> <span x-text="selectedStudent?.parent_contact"></span></p>
+                            <p class="text-sm"><span class="font-medium">Name:</span> <span
+                                    x-text="selectedStudent?.parent_name"></span></p>
+                            <p class="text-sm"><span class="font-medium">Contact:</span> <span
+                                    x-text="selectedStudent?.parent_contact"></span></p>
                         </div>
 
                         <h4 class="font-semibold text-gray-900 mb-3 mt-6">Health Information</h4>
                         <div class="space-y-2">
-                            <p class="text-sm"><span class="font-medium">Allergies:</span> <span x-text="selectedStudent?.allergies"></span></p>
-                            <p class="text-sm"><span class="font-medium">Address:</span> <span x-text="selectedStudent?.address"></span></p>
+                            <p class="text-sm"><span class="font-medium">Allergies:</span> <span
+                                    x-text="selectedStudent?.allergies"></span></p>
+                            <p class="text-sm"><span class="font-medium">Address:</span> <span
+                                    x-text="selectedStudent?.address"></span></p>
                         </div>
                     </div>
 
@@ -1049,11 +1308,13 @@
                         <div class="grid grid-cols-3 gap-4">
                             <div class="bg-blue-50 p-4 rounded-lg">
                                 <p class="text-sm text-gray-600">Attendance Rate</p>
-                                <p class="text-2xl font-bold text-blue-600" x-text="selectedStudent?.attendance_rate + '%'"></p>
+                                <p class="text-2xl font-bold text-blue-600"
+                                    x-text="selectedStudent?.attendance_rate + '%'"></p>
                             </div>
                             <div class="bg-green-50 p-4 rounded-lg">
                                 <p class="text-sm text-gray-600">Average Grade</p>
-                                <p class="text-2xl font-bold text-green-600" x-text="selectedStudent?.average_grade + '%'"></p>
+                                <p class="text-2xl font-bold text-green-600"
+                                    x-text="selectedStudent?.average_grade + '%'"></p>
                             </div>
                             <div class="bg-purple-50 p-4 rounded-lg">
                                 <p class="text-sm text-gray-600">Status</p>
@@ -1073,7 +1334,7 @@
                 currentView: 'overview',
                 loading: true,
                 stats: {},
-                
+
                 // Applications
                 applications: [],
                 activeApplicationTab: 'all',
@@ -1132,6 +1393,190 @@
                 },
                 processingPayment: false,
 
+                selectedTimetableClass: null,
+                timetableEntries: [],
+                showAddTimetableEntry: false,
+                editingTimetableEntry: null,
+                savingTimetable: false,
+                newTimetableEntry: {
+                    day_of_week: '',
+                    time_slot: '',
+                    subject_id: '',
+                    teacher_id: '',
+                    room_number: ''
+                },
+
+                // Methods
+                // CORRECTED TIMETABLE FUNCTIONS FOR YOUR ADMIN DASHBOARD
+                // Replace the timetable-related functions in your adminDashboard() with these:
+
+                // Load timetable for selected class
+                async loadTimetable() {
+                    if (!this.selectedTimetableClass) {
+                        this.timetableEntries = [];
+                        return;
+                    }
+
+                    try {
+                        console.log('🔄 Loading timetable for class:', this.selectedTimetableClass);
+
+                        const response = await fetch(`/api/v1/dashboard/admin/timetable/class/${this.selectedTimetableClass}/`, {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+
+                        const data = await response.json();
+                        console.log('📥 Timetable response:', data);
+
+                        if (data.success) {
+                            // The backend returns entries in data.data.entries
+                            this.timetableEntries = data.data.entries || [];
+                            console.log('✅ Loaded', this.timetableEntries.length, 'timetable entries');
+                        } else {
+                            console.error('❌ Failed to load timetable:', data.error);
+                            this.timetableEntries = [];
+                        }
+                    } catch (error) {
+                        console.error('❌ Error loading timetable:', error);
+                        alert('Failed to load timetable. Check console for details.');
+                        this.timetableEntries = [];
+                    }
+                },
+
+                // Save timetable entry (create or update)
+                async saveTimetableEntry() {
+                    // Validation
+                    if (!this.newTimetableEntry.day_of_week || !this.newTimetableEntry.time_slot ||
+                        !this.newTimetableEntry.subject_id || !this.newTimetableEntry.teacher_id) {
+                        alert('Please fill in all required fields:\n- Day of Week\n- Time Slot\n- Subject\n- Teacher');
+                        return;
+                    }
+
+                    if (!this.selectedTimetableClass) {
+                        alert('Please select a class first');
+                        return;
+                    }
+
+                    this.savingTimetable = true;
+
+                    try {
+                        console.log('💾 Saving timetable entry...');
+                        console.log('Data:', {
+                            class_id: this.selectedTimetableClass,
+                            ...this.newTimetableEntry
+                        });
+
+                        // Use single endpoint for both create and update
+                        const url = '/api/v1/dashboard/admin/timetable/entry/';
+                        const method = 'POST';
+
+                        const requestBody = {
+                            class_id: this.selectedTimetableClass,
+                            day_of_week: this.newTimetableEntry.day_of_week,
+                            time_slot: this.newTimetableEntry.time_slot,
+                            subject_id: this.newTimetableEntry.subject_id,
+                            teacher_id: this.newTimetableEntry.teacher_id,
+                            room_number: this.newTimetableEntry.room_number || ''
+                        };
+
+                        // If editing, include the entry ID
+                        if (this.editingTimetableEntry) {
+                            requestBody.id = this.editingTimetableEntry.id;
+                        }
+
+                        const response = await fetch(url, {
+                            method: method,
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(requestBody)
+                        });
+
+                        const data = await response.json();
+                        console.log('📥 Save response:', data);
+
+                        if (data.success) {
+                            alert(this.editingTimetableEntry ?
+                                '✅ Timetable entry updated successfully!' :
+                                '✅ Timetable entry added successfully!');
+
+                            this.showAddTimetableEntry = false;
+                            this.resetTimetableForm();
+                            await this.loadTimetable();
+                        } else {
+                            alert('❌ Error: ' + (data.error || 'Failed to save timetable entry'));
+                            console.error('Save error details:', data);
+                        }
+                    } catch (error) {
+                        console.error('❌ Network error saving timetable entry:', error);
+                        alert('Network error: Could not save timetable entry. Check console for details.');
+                    } finally {
+                        this.savingTimetable = false;
+                    }
+                },
+
+                // Edit timetable entry
+                editTimetableEntry(entry) {
+                    console.log('✏️ Editing entry:', entry);
+
+                    this.editingTimetableEntry = entry;
+
+                    // Populate the form with entry data
+                    this.newTimetableEntry = {
+                        day_of_week: entry.day_of_week,
+                        time_slot: entry.time_slot_name || entry.time_slot,
+                        subject_id: entry.subject_id,
+                        teacher_id: entry.teacher_id,
+                        room_number: entry.room_number || ''
+                    };
+
+                    this.showAddTimetableEntry = true;
+                },
+
+                // Delete timetable entry
+                async deleteTimetableEntry(entryId) {
+                    if (!confirm('⚠️ Are you sure you want to delete this timetable entry?')) {
+                        return;
+                    }
+
+                    try {
+                        console.log('🗑️ Deleting entry:', entryId);
+
+                        const response = await fetch(`/api/v1/dashboard/admin/timetable/entry/${entryId}/`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+
+                        const data = await response.json();
+                        console.log('📥 Delete response:', data);
+
+                        if (data.success) {
+                            alert('✅ Timetable entry deleted successfully!');
+                            await this.loadTimetable();
+                        } else {
+                            alert('❌ Error: ' + (data.error || 'Failed to delete entry'));
+                        }
+                    } catch (error) {
+                        console.error('❌ Error deleting entry:', error);
+                        alert('Network error: Could not delete entry. Check console for details.');
+                    }
+                },
+
+                // Reset timetable form
+                resetTimetableForm() {
+                    this.editingTimetableEntry = null;
+                    this.newTimetableEntry = {
+                        day_of_week: '',
+                        time_slot: '',
+                        subject_id: '',
+                        teacher_id: '',
+                        room_number: ''
+                    };
+                },
                 // Reports
                 teacherPerformance: [],
 
@@ -1273,14 +1718,14 @@
 
                 filterStudents() {
                     this.filteredStudents = this.students.filter(student => {
-                        const matchesSearch = !this.studentSearch || 
+                        const matchesSearch = !this.studentSearch ||
                             student.name.toLowerCase().includes(this.studentSearch.toLowerCase()) ||
                             student.student_id.toLowerCase().includes(this.studentSearch.toLowerCase());
-                        
-                        const matchesClass = !this.studentClassFilter || 
+
+                        const matchesClass = !this.studentClassFilter ||
                             student.class_id == this.studentClassFilter;
-                        
-                        const matchesStatus = !this.studentStatusFilter || 
+
+                        const matchesStatus = !this.studentStatusFilter ||
                             student.status === this.studentStatusFilter;
 
                         return matchesSearch && matchesClass && matchesStatus;
@@ -1599,7 +2044,7 @@
                     return this.saveSchoolSettings();
                 },
 
-                  async loadTimeSlots() {
+                async loadTimeSlots() {
                     try {
                         const response = await fetch('/api/v1/admin/timetable/time-slots/', {
                             headers: {
@@ -1698,7 +2143,7 @@
                     this.showTimetableEntryModal = true;
                 },
 
-               
+
                 async loadTimeSlots() {
                     try {
                         const response = await fetch('/api/v1/admin/timetable/time-slots/', {
@@ -1833,43 +2278,56 @@
                 },
 
                 async saveTimetableEntry() {
-                    if (!this.timetableEntry.time_slot_id || !this.timetableEntry.day_of_week || 
-                        !this.timetableEntry.subject_id || !this.timetableEntry.teacher_id) {
-                        alert('Please fill in all required fields');
+                    // Validate required fields
+                    if (!this.newTimetableEntry.day_of_week || !this.newTimetableEntry.time_slot ||
+                        !this.newTimetableEntry.subject_id || !this.newTimetableEntry.teacher_id) {
+                        alert('Please fill in all required fields (Day, Time, Subject, and Teacher are required)');
+                        return;
+                    }
+
+                    if (!this.selectedTimetableClass) {
+                        alert('Please select a class first');
                         return;
                     }
 
                     this.savingTimetable = true;
 
                     try {
-                        const url = this.timetableEntry.id 
-                            ? `/api/v1/admin/timetable/entry/${this.timetableEntry.id}/update/`
-                            : '/api/v1/admin/timetable/entry/create/';
+                        const url = this.editingTimetableEntry
+                            ? `/api/v1/admin/timetable/entry/${this.editingTimetableEntry.id}/`
+                            : '/api/v1/admin/timetable/entry/';
+
+                        const method = this.editingTimetableEntry ? 'PUT' : 'POST';
 
                         const response = await fetch(url, {
-                            method: 'POST',
+                            method: method,
                             headers: {
                                 'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                ...this.timetableEntry,
-                                class_id: this.selectedTimetableClass
+                                class_id: this.selectedTimetableClass,
+                                day_of_week: this.newTimetableEntry.day_of_week,
+                                time_slot: this.newTimetableEntry.time_slot,
+                                subject_id: this.newTimetableEntry.subject_id,
+                                teacher_id: this.newTimetableEntry.teacher_id,
+                                room_number: this.newTimetableEntry.room_number || ''
                             })
                         });
 
                         const data = await response.json();
 
                         if (data.success) {
-                            alert('Timetable entry saved successfully!');
-                            this.showTimetableEntryModal = false;
-                            await this.loadClassTimetable();
+                            alert(this.editingTimetableEntry ? 'Timetable entry updated!' : 'Timetable entry added!');
+                            this.showAddTimetableEntry = false;
+                            this.resetTimetableForm();
+                            await this.loadTimetable();
                         } else {
-                            alert('Error: ' + data.error);
+                            alert('Error: ' + (data.error || 'Failed to save timetable entry'));
                         }
                     } catch (error) {
                         console.error('Error saving timetable entry:', error);
-                        alert('Error saving timetable entry');
+                        alert('Network error: Could not save timetable entry. Check console for details.');
                     } finally {
                         this.savingTimetable = false;
                     }
@@ -1902,7 +2360,7 @@
                         alert('Error deleting entry');
                     }
                 },
-                
+
                 initCharts() {
                     if (this.stats.applications) {
                         const ctx1 = document.getElementById('applicationsChart');
@@ -1967,8 +2425,19 @@
                 },
 
                 async acceptApplication(app) {
-                    const classId = prompt('Enter Class ID to assign student:');
+                    // Show available classes with more details
+                    let classOptions = 'Available Classes:\n\n';
+                    this.availableClasses.forEach(cls => {
+                        classOptions += `ID: ${cls.id} - ${cls.name} (${cls.capacity} capacity)\n`;
+                    });
+                    classOptions += '\nEnter the Class ID number:';
+
+                    const classId = prompt(classOptions);
                     if (!classId) return;
+
+                    console.log('🔄 Starting enrollment process...');
+                    console.log('Application:', app.application_number);
+                    console.log('Class ID:', classId);
 
                     try {
                         const response = await fetch(`/api/v1/admin/admissions/applications/${app.application_number}/enroll/`, {
@@ -1981,17 +2450,57 @@
                         });
 
                         const data = await response.json();
+                        console.log('📥 Enrollment response:', data);
 
                         if (data.success) {
-                            alert(`Student enrolled!\n\nStudent ID: ${data.data.student_id}\nUsername: ${data.data.student_username}\nPassword: ${data.data.student_password}\n\nParent Username: ${data.data.parent_username}\nParent Password: ${data.data.parent_password}`);
-                            await this.loadApplications();
-                            await this.loadStudents();
+                            const isNewParent = data.data.parent_password !== 'Existing parent - no new password';
+
+                            let message = `✅ STUDENT ENROLLED SUCCESSFULLY!\n\n`;
+                            message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                            message += `STUDENT CREDENTIALS:\n`;
+                            message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                            message += `Student ID: ${data.data.student_id}\n`;
+                            message += `Username: ${data.data.student_username}\n`;
+                            message += `Password: ${data.data.student_password}\n`;
+                            message += `Class: ${data.data.class}\n\n`;
+
+                            message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                            message += `PARENT CREDENTIALS:\n`;
+                            message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                            message += `Username: ${data.data.parent_username}\n`;
+
+                            if (isNewParent) {
+                                message += `Password: ${data.data.parent_password}\n`;
+                                message += `📧 NEW parent account created\n\n`;
+                            } else {
+                                message += `🔗 EXISTING parent account\n`;
+                                message += `(Parent already had an account)\n\n`;
+                            }
+
+                            message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+                            message += `📧 Credentials sent to: ${app.parent_email}\n`;
+                            message += `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n`;
+                            message += `⚠️  IMPORTANT: Save these credentials!\n`;
+                            message += `They will not be shown again.`;
+
+                            alert(message);
+
+                            // Reload data
+                            await Promise.all([
+                                this.loadApplications(),
+                                this.loadStudents(),
+                                this.loadClasses(),
+                                this.loadDashboardData()
+                            ]);
+
+                            console.log('✅ All data reloaded successfully');
                         } else {
-                            alert('Error: ' + data.error);
+                            alert('❌ ENROLLMENT FAILED\n\nError: ' + data.error);
+                            console.error('Enrollment error:', data.error);
                         }
                     } catch (error) {
-                        console.error('Error accepting application:', error);
-                        alert('Error enrolling student');
+                        console.error('❌ Enrollment request failed:', error);
+                        alert('❌ NETWORK ERROR\n\nFailed to connect to server.\nCheck console for details.');
                     }
                 },
 
@@ -2006,7 +2515,7 @@
                                 'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({ 
+                            body: JSON.stringify({
                                 status: 'rejected',
                                 admin_notes: reason
                             })
@@ -2051,10 +2560,10 @@
                 formatDate(dateString) {
                     if (!dateString) return 'N/A';
                     const date = new Date(dateString);
-                    return date.toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'short', 
-                        day: 'numeric' 
+                    return date.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
                     });
                 },
 
@@ -2071,28 +2580,29 @@
     </script>
 
     <style>
-        [x-cloak] { 
-            display: none !important; 
+        [x-cloak] {
+            display: none !important;
         }
-        
+
         /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
-        
+
         ::-webkit-scrollbar-track {
             background: #f1f1f1;
         }
-        
+
         ::-webkit-scrollbar-thumb {
             background: #888;
             border-radius: 4px;
         }
-        
+
         ::-webkit-scrollbar-thumb:hover {
             background: #555;
         }
     </style>
 </body>
+
 </html>

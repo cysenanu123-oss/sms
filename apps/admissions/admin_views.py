@@ -116,7 +116,7 @@ def update_application_status(request, application_number):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def accept_and_enroll(request, application_number):
-    """Accept application and create student + parent accounts"""
+    """Accept application and create student + parent accounts - FIXED"""
     
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
         return Response({'success': False, 'error': 'Admin access required'}, 
@@ -125,157 +125,32 @@ def accept_and_enroll(request, application_number):
     try:
         application = StudentApplication.objects.get(application_number=application_number)
         
-        if application.status == 'accepted':
-            return Response({'success': False, 'error': 'Already enrolled'}, 
-                           status=status.HTTP_400_BAD_REQUEST)
-        
-        assigned_class_id = request.data.get('class_id')
-        if not assigned_class_id:
-            return Response({'success': False, 'error': 'Class required'}, 
-                           status=status.HTTP_400_BAD_REQUEST)
-        
-        from apps.academics.models import Class
-        assigned_class = Class.objects.get(id=assigned_class_id)
-        
-        with transaction.atomic():
-            # Create student username
-            base_username = f"{application.first_name.lower()}_{application.last_name.lower()}"
-            username = base_username
-            counter = 1
-            while User.objects.filter(username=username).exists():
-                username = f"{base_username}{counter}"
-                counter += 1
-            
-            # Generate passwords
-            student_temp_password = secrets.token_urlsafe(12)
-            parent_temp_password = secrets.token_urlsafe(12)
-            
-            # Create STUDENT account
-            student_user = User.objects.create_user(
-                username=username,
-                email=f"{username}@student.excellenceacademy.edu.gh",
-                password=student_temp_password,
-                first_name=application.first_name.capitalize(),
-                last_name=application.last_name.capitalize(),
-                role='student',
-                must_change_password=True
-            )
-            
-            # Create student profile
-            student = Student.objects.create(
-                user=student_user,
-                application=application,
-                first_name=student_user.first_name,
-                last_name=student_user.last_name,
-                date_of_birth=application.date_of_birth,
-                sex=application.sex,
-                current_class=assigned_class,
-                academic_year=assigned_class.academic_year,
-                residential_address=application.residential_address,
-                nationality=application.nationality,
-                region=application.region,
-                has_health_challenge=application.has_health_challenge,
-                health_notes=application.health_challenge_details or application.allergies_details,
-                status='active',
-                admission_date=timezone.now().date()
-            )
-            
-            # Create PARENT account if email provided
-            parent = None
-            parent_username = None
-            if application.parent_email:
-                parent_username = f"parent_{username}"
-                
-                parent_user = User.objects.create_user(
-                    username=parent_username,
-                    email=application.parent_email,
-                    password=parent_temp_password,
-                    first_name=application.parent_full_name.split()[0] if application.parent_full_name else 'Parent',
-                    last_name=' '.join(application.parent_full_name.split()[1:]) if application.parent_full_name else '',
-                    role='parent',
-                    phone=application.parent_phone,
-                    must_change_password=True
-                )
-                
-                # Create parent profile
-                parent = Parent.objects.create(
-                    user=parent_user,
-                    full_name=application.parent_full_name or 'Parent/Guardian',
-                    relationship='guardian',
-                    phone=application.parent_phone or '',
-                    email=application.parent_email,
-                    residential_address=application.residential_address,
-                )
-                
-                # Link parent to student
-                parent.children.add(student)
-            
-            # Update application
-            application.status = 'accepted'
-            application.reviewed_by = request.user
-            application.reviewed_at = timezone.now()
-            application.save()
-            
-            # Send emails
-            if application.parent_email:
-                send_student_credentials_email(
-                    student, username, student_temp_password, application.parent_email
-                )
-                if parent:
-                    send_parent_credentials_email(
-                        parent, parent_username, parent_temp_password, 
-                        f"{student.first_name} {student.last_name}"
-                    )
-            
+        # ✅ CHECK IF STUDENT ALREADY EXISTS
+        existing_student = Student.objects.filter(application=application).first()
+        if existing_student:
             return Response({
-                'success': True,
-                'message': 'Student enrolled successfully',
-                'data': {
-                    'student_id': student.student_id,
-                    'student_username': username,
-                    'student_password': student_temp_password,
-                    'parent_username': parent_username,
-                    'parent_password': parent_temp_password if parent else None,
-                    'class': assigned_class.name,
-                    'admission_date': student.admission_date.isoformat()
-                }
-            })
-        
-    except StudentApplication.DoesNotExist:
-        return Response({'success': False, 'error': 'Application not found'}, 
-                       status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': f'Enrollment failed: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def accept_and_enroll(request, application_number):
-    """Accept application and create student + parent accounts - FIXED VERSION"""
-    
-    if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
-        return Response({'success': False, 'error': 'Admin access required'}, 
-                       status=status.HTTP_403_FORBIDDEN)
-    
-    try:
-        application = StudentApplication.objects.get(application_number=application_number)
+                'success': False, 
+                'error': f'Student already enrolled for this application. Student ID: {existing_student.student_id}'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         if application.status == 'accepted':
-            return Response({'success': False, 'error': 'Already enrolled'}, 
+            return Response({'success': False, 'error': 'Application already processed'}, 
                            status=status.HTTP_400_BAD_REQUEST)
         
         assigned_class_id = request.data.get('class_id')
         if not assigned_class_id:
-            return Response({'success': False, 'error': 'Class required'}, 
+            return Response({'success': False, 'error': 'Class ID required'}, 
                            status=status.HTTP_400_BAD_REQUEST)
         
         from apps.academics.models import Class
-        assigned_class = Class.objects.get(id=assigned_class_id)
+        try:
+            assigned_class = Class.objects.get(id=assigned_class_id)
+        except Class.DoesNotExist:
+            return Response({'success': False, 'error': f'Class with ID {assigned_class_id} not found'}, 
+                           status=status.HTTP_404_NOT_FOUND)
         
         with transaction.atomic():
-            # Create student username
+            # Generate username
             base_username = f"{application.first_name.lower()}_{application.last_name.lower()}"
             username = base_username
             counter = 1
@@ -283,11 +158,13 @@ def accept_and_enroll(request, application_number):
                 username = f"{base_username}{counter}"
                 counter += 1
             
+            print(f"✅ Student user created: {username}")
+            
             # Generate passwords
             student_temp_password = secrets.token_urlsafe(12)
             parent_temp_password = secrets.token_urlsafe(12)
             
-            # Create STUDENT account
+            # Create STUDENT USER
             student_user = User.objects.create_user(
                 username=username,
                 email=f"{username}@student.excellenceacademy.edu.gh",
@@ -298,13 +175,13 @@ def accept_and_enroll(request, application_number):
                 must_change_password=True
             )
             
-            # Create student profile with ALL data from application
+            # Create STUDENT PROFILE
             student = Student.objects.create(
                 user=student_user,
                 application=application,
                 first_name=application.first_name,
                 last_name=application.last_name,
-                other_names=application.other_names or '',  # Include other_names
+                other_names=application.other_names or '',
                 date_of_birth=application.date_of_birth,
                 sex=application.sex,
                 current_class=assigned_class,
@@ -313,50 +190,62 @@ def accept_and_enroll(request, application_number):
                 nationality=application.nationality,
                 region=application.region,
                 has_health_challenge=application.has_health_challenge,
-                health_notes=application.health_challenge_details or application.allergies_details,
+                health_notes=application.health_challenge_details or application.allergies_details or '',
                 status='active',
                 admission_date=timezone.now().date()
             )
             
-            # Create PARENT account with COMPLETE information
+            # Create/Update PARENT
             parent = None
             parent_username = None
-            if application.parent_email and application.parent_full_name:
-                parent_username = f"parent_{username}"
-                
-                # Split parent name properly
-                parent_name_parts = application.parent_full_name.strip().split()
-                parent_first = parent_name_parts[0] if parent_name_parts else 'Parent'
-                parent_last = ' '.join(parent_name_parts[1:]) if len(parent_name_parts) > 1 else ''
-                
-                parent_user = User.objects.create_user(
-                    username=parent_username,
-                    email=application.parent_email,
-                    password=parent_temp_password,
-                    first_name=parent_first,
-                    last_name=parent_last,
-                    role='parent',
-                    phone=application.parent_phone or '',  # Save phone to User model
-                    must_change_password=True
-                )
-                
-                # Create parent profile with COMPLETE data
-                parent = Parent.objects.create(
-                    user=parent_user,
-                    full_name=application.parent_full_name,  # Save COMPLETE name
-                    relationship=application.parent_relationship or 'guardian',
-                    phone=application.parent_phone or '',  # Save phone
-                    email=application.parent_email,  # Save email
-                    residential_address=application.residential_address,
-                    occupation=application.parent_occupation or '',
-                    is_emergency_contact=True,
-                    is_active=True
-                )
-                
-                # Link parent to student
-                parent.children.add(student)
             
-            # Update application
+            if application.parent_email:
+                # Check if parent already exists
+                existing_parent_user = User.objects.filter(
+                    email=application.parent_email,
+                    role='parent'
+                ).first()
+                
+                if existing_parent_user:
+                    # Parent exists - just link to new student
+                    parent = Parent.objects.get(user=existing_parent_user)
+                    parent.children.add(student)
+                    parent_username = existing_parent_user.username
+                    parent_temp_password = None  # Don't send new password
+                else:
+                    # Create new parent
+                    parent_username = f"parent_{username}"
+                    
+                    parent_name_parts = application.parent_full_name.strip().split()
+                    parent_first = parent_name_parts[0] if parent_name_parts else 'Parent'
+                    parent_last = ' '.join(parent_name_parts[1:]) if len(parent_name_parts) > 1 else ''
+                    
+                    parent_user = User.objects.create_user(
+                        username=parent_username,
+                        email=application.parent_email,
+                        password=parent_temp_password,
+                        first_name=parent_first,
+                        last_name=parent_last,
+                        role='parent',
+                        phone=application.parent_phone or '',
+                        must_change_password=True
+                    )
+                    
+                    parent = Parent.objects.create(
+                        user=parent_user,
+                        full_name=application.parent_full_name,
+                        relationship=application.parent_relationship or 'guardian',
+                        phone=application.parent_phone or '',
+                        email=application.parent_email,
+                        residential_address=application.residential_address,
+                        occupation=application.parent_occupation or '',
+                        is_emergency_contact=True,
+                        is_active=True
+                    )
+                    
+                    parent.children.add(student)
+            
+            # ✅ UPDATE APPLICATION STATUS
             application.status = 'accepted'
             application.reviewed_by = request.user
             application.reviewed_at = timezone.now()
@@ -367,7 +256,7 @@ def accept_and_enroll(request, application_number):
                 send_student_credentials_email(
                     student, username, student_temp_password, application.parent_email
                 )
-                if parent:
+                if parent_temp_password:  # Only if new parent
                     send_parent_credentials_email(
                         parent, parent_username, parent_temp_password, 
                         f"{student.first_name} {student.last_name}"
@@ -381,10 +270,7 @@ def accept_and_enroll(request, application_number):
                     'student_username': username,
                     'student_password': student_temp_password,
                     'parent_username': parent_username,
-                    'parent_password': parent_temp_password if parent else None,
-                    'parent_full_name': application.parent_full_name,
-                    'parent_phone': application.parent_phone,
-                    'parent_email': application.parent_email,
+                    'parent_password': parent_temp_password if parent_temp_password else 'Existing parent - no new password',
                     'class': assigned_class.name,
                     'admission_date': student.admission_date.isoformat()
                 }

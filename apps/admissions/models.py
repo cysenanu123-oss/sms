@@ -31,11 +31,9 @@ class StudentApplication(models.Model):
     )
 
     # Application Info
-    application_number = models.CharField(
-        max_length=20, unique=True, blank=True)
+    application_number = models.CharField(max_length=20, unique=True, blank=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
     # Learner's Details
     department = models.CharField(max_length=20, choices=DEPARTMENT_CHOICES)
@@ -61,8 +59,7 @@ class StudentApplication(models.Model):
     medication_details = models.TextField(blank=True)
     insurance_company = models.CharField(max_length=200, blank=True)
     insurance_number = models.CharField(max_length=100, blank=True)
-    insurance_card = models.FileField(
-        upload_to='applications/insurance/', blank=True, null=True)
+    insurance_card = models.FileField(upload_to='applications/insurance/', blank=True, null=True)
 
     # Parent Status
     parents_status = models.CharField(max_length=100, blank=True)
@@ -79,24 +76,24 @@ class StudentApplication(models.Model):
     ))
     parent_occupation = models.CharField(max_length=200, blank=True)
 
+    # Declaration - FIXED INDENTATION
+    declaration_name = models.CharField(max_length=200, blank=True, default='')
+    signature = models.FileField(upload_to='applications/signatures/', blank=True, null=True)
+    declaration_date = models.DateField(blank=True, null=True)
 
-# Declaration (add these fields back around line 88)
-declaration_name = models.CharField(max_length=200)
-signature = models.FileField(
-    upload_to='applications/signatures/', blank=True, null=True)
-declaration_date = models.DateField()
+    # Admin Notes - FIXED INDENTATION
+    admin_notes = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='reviewed_applications'
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
 
-# Admin Notes
-admin_notes = models.TextField(blank=True)
-reviewed_by = models.ForeignKey(
-    User, on_delete=models.SET_NULL, null=True, blank=True,
-    related_name='reviewed_applications')
-reviewed_at = models.DateTimeField(null=True, blank=True)
+    # FIXED: Meta class should be inside StudentApplication
+    class Meta:
+        ordering = ['-submitted_at']
 
-
-class Meta:
-    ordering = ['-submitted_at']
-
+    # FIXED: save method should be inside StudentApplication
     def save(self, *args, **kwargs):
         if not self.application_number:
             # Generate unique application number: APP-2024-0001
@@ -127,28 +124,24 @@ class Student(models.Model):
     """Enrolled students in the school"""
 
     # Link to User account (created after acceptance)
-    user = models.OneToOneField(
-        User, on_delete=models.CASCADE, related_name='student_profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
 
     # Unique student ID: STU-2024-0001
     student_id = models.CharField(max_length=20, unique=True, blank=True)
 
     # Link to original application
-    application = models.OneToOneField(
-        StudentApplication, on_delete=models.SET_NULL, null=True, blank=True)
+    application = models.OneToOneField(StudentApplication, on_delete=models.SET_NULL, null=True, blank=True)
 
     # Basic Info
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     other_names = models.CharField(max_length=100, blank=True)
     date_of_birth = models.DateField()
-    sex = models.CharField(
-        max_length=10, choices=StudentApplication.SEX_CHOICES)
+    sex = models.CharField(max_length=10, choices=StudentApplication.SEX_CHOICES)
 
     # Current Academic Info
-    current_class = models.ForeignKey(
-        'academics.Class', on_delete=models.SET_NULL, null=True, blank=True)
-    academic_year = models.CharField(max_length=20)  # e.g., "2024-2025"
+    current_class = models.ForeignKey('academics.Class', on_delete=models.SET_NULL, null=True, blank=True)
+    academic_year = models.CharField(max_length=20)
     roll_number = models.CharField(max_length=10, blank=True)
 
     # Contact Info
@@ -169,8 +162,7 @@ class Student(models.Model):
         ('transferred', 'Transferred'),
         ('expelled', 'Expelled'),
     )
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default='active')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
 
     # Dates
     admission_date = models.DateField()
@@ -182,33 +174,23 @@ class Student(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.student_id:
-            # Generate unique student ID: FirstInitial + OtherInitial + LastInitial + 4-digit-number
-            # Example: JDA2024 for John David Anderson
-
-            first_initial = self.first_name[0].upper(
-            ) if self.first_name else ''
-            other_initial = self.other_names[0].upper(
-            ) if self.other_names else ''
+            first_initial = self.first_name[0].upper() if self.first_name else ''
+            other_initial = self.other_names[0].upper() if self.other_names else ''
             last_initial = self.last_name[0].upper() if self.last_name else ''
 
-            # Generate 5-digit random number
             max_attempts = 100
             for attempt in range(max_attempts):
                 random_digits = str(random.randint(10000, 99999))
 
-                # Combine: FirstInitial + OtherInitial + LastInitial + 5digits
                 if other_initial:
                     potential_id = f"{first_initial}{other_initial}{last_initial}{random_digits}"
                 else:
-                    # If no other name, use first and last only
                     potential_id = f"{first_initial}{last_initial}{random_digits}"
 
-                # Check if this ID already exists
                 if not Student.objects.filter(student_id=potential_id).exists():
                     self.student_id = potential_id
                     break
 
-            # Fallback if all attempts fail (very unlikely)
             if not self.student_id:
                 year = timezone.now().year
                 last_student = Student.objects.filter(
@@ -231,7 +213,7 @@ class Student(models.Model):
 
 class AcademicYear(models.Model):
     """Track academic years and terms"""
-    year = models.CharField(max_length=20, unique=True)  # e.g., "2024-2025"
+    year = models.CharField(max_length=20, unique=True)
     start_date = models.DateField()
     end_date = models.DateField()
     is_current = models.BooleanField(default=False)
@@ -242,12 +224,9 @@ class AcademicYear(models.Model):
 
 class StudentPromotion(models.Model):
     """Track student promotions/repeats"""
-    student = models.ForeignKey(
-        Student, on_delete=models.CASCADE, related_name='promotions')
-    from_class = models.ForeignKey(
-        'academics.Class', on_delete=models.SET_NULL, null=True, related_name='promoted_from')
-    to_class = models.ForeignKey(
-        'academics.Class', on_delete=models.SET_NULL, null=True, related_name='promoted_to')
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='promotions')
+    from_class = models.ForeignKey('academics.Class', on_delete=models.SET_NULL, null=True, related_name='promoted_from')
+    to_class = models.ForeignKey('academics.Class', on_delete=models.SET_NULL, null=True, related_name='promoted_to')
     academic_year = models.CharField(max_length=20)
 
     PROMOTION_TYPE = (
@@ -266,11 +245,8 @@ class StudentPromotion(models.Model):
 class Parent(models.Model):
     """Parent/Guardian accounts linked to students"""
 
-    # Link to User account
-    user = models.OneToOneField(
-        User, on_delete=models.CASCADE, related_name='parent_profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='parent_profile')
 
-    # Personal Info
     full_name = models.CharField(max_length=200)
     relationship = models.CharField(max_length=50, choices=(
         ('father', 'Father'),
@@ -279,24 +255,17 @@ class Parent(models.Model):
         ('other', 'Other'),
     ))
 
-    # Contact Info
     phone = models.CharField(max_length=20)
     alt_phone = models.CharField(max_length=20, blank=True)
     email = models.EmailField()
     residential_address = models.TextField()
 
-    # Professional Info (optional)
     occupation = models.CharField(max_length=200, blank=True)
     employer = models.CharField(max_length=200, blank=True)
     work_phone = models.CharField(max_length=20, blank=True)
 
-    # Emergency Contact
     is_emergency_contact = models.BooleanField(default=True)
-
-    # Students linked to this parent
     children = models.ManyToManyField(Student, related_name='parents')
-
-    # Status
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
