@@ -2,6 +2,10 @@
 from django.urls import path
 from . import views, admin_views
 from apps.dashboard import complete_admin_views
+try:
+    from apps.dashboard import timetable_views
+except ImportError:
+    timetable_views = None
 
 urlpatterns = [
     # Access verification
@@ -31,4 +35,15 @@ urlpatterns = [
     
     # Settings endpoints
     path('admin/settings/', complete_admin_views.manage_school_settings, name='admin-settings'),
+
+      # ========== TIMETABLE MANAGEMENT ENDPOINTS (NEW) ==========
+    path('admin/timetable/time-slots/', timetable_views.get_time_slots, name='admin-time-slots'),
+    path('admin/timetable/time-slots/create/', timetable_views.create_time_slot, name='admin-create-time-slot'),
+    path('admin/timetable/class/<int:class_id>/', timetable_views.get_class_timetable, name='admin-class-timetable'),
+    path('admin/timetable/create/', timetable_views.create_timetable, name='admin-create-timetable'),
+    path('admin/timetable/entry/create/', timetable_views.create_or_update_timetable_entry, name='admin-create-timetable-entry'),
+    path('admin/timetable/entry/<int:entry_id>/update/', timetable_views.create_or_update_timetable_entry, name='admin-update-timetable-entry'),
+    path('admin/timetable/entry/<int:entry_id>/delete/', timetable_views.delete_timetable_entry, name='admin-delete-timetable-entry'),
+    path('admin/timetable/class/<int:class_id>/resources/', timetable_views.get_subjects_and_teachers, name='admin-timetable-resources'),
+
 ]
