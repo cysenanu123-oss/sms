@@ -32,6 +32,7 @@ class Grade(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    
     class Meta:
         db_table = 'grades'
         ordering = ['-exam_date', '-created_at']
@@ -165,3 +166,4 @@ class AssignmentSubmission(models.Model):
     
     def __str__(self):
         return f"{self.student.student_id} - {self.assignment.title}"
+

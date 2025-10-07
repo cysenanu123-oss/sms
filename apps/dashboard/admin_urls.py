@@ -1,6 +1,6 @@
 # apps/dashboard/admin_urls.py
 from django.urls import path
-from . import complete_admin_views
+from . import complete_admin_views, timetable_views
 
 urlpatterns = [
     # Student Management

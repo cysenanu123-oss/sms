@@ -138,6 +138,8 @@ class Student(models.Model):
     other_names = models.CharField(max_length=100, blank=True)
     date_of_birth = models.DateField()
     sex = models.CharField(max_length=10, choices=StudentApplication.SEX_CHOICES)
+    roll_number = models.CharField(max_length=20, null=True, blank=True)
+    blood_group = models.CharField(max_length=5, null=True, blank=True)
 
     # Current Academic Info
     current_class = models.ForeignKey('academics.Class', on_delete=models.SET_NULL, null=True, blank=True)

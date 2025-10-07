@@ -476,9 +476,9 @@
                                     name: child.name,
                                     class: child.class,
                                     student_id: child.student_id,
-                                    roll_number: '15', // TODO: Get from API
-                                    class_teacher: 'Mrs. Sarah Johnson', // TODO: Get from API
-                                    blood_group: 'O+', // TODO: Get from API
+                                    roll_number: data.data.roll_number,  
+                                    class_teacher: data.data.class_teacher,  
+                                    blood_group: data.data.blood_group,  
                                     attendance_rate: child.attendance_rate,
                                     overall_grade: child.overall_grade,
                                     average_percentage: child.average_percentage,
@@ -503,21 +503,7 @@
                     }
                 },
 
-                generateAttendanceCalendar() {
-                    const calendar = [];
-                    const statuses = ['present', 'present', 'present', 'present', 'late', 'absent', 'holiday'];
-
-                    for (let i = 1; i <= 30; i++) {
-                        calendar.push({
-                            date: `2024-09-${i.toString().padStart(2, '0')}`,
-                            day: i,
-                            status: statuses[Math.floor(Math.random() * statuses.length)]
-                        });
-                    }
-
-                    return calendar;
-                },
-
+              
                 initCharts() {
                     const ctx = document.getElementById('performanceChart');
                     if (ctx) {

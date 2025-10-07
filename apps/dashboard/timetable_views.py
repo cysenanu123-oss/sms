@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
 from apps.academics.models import (
-    Class, Subject, Timetable, TimetableEntry, 
+    Class, Subject, Timetable, TimetableEntry,
     TimeSlot, ClassSubject, TeacherClassAssignment
 )
 from apps.accounts.models import User
@@ -16,11 +16,11 @@ from apps.accounts.models import User
 def get_time_slots(request):
     """Get all available time slots"""
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
-        return Response({'success': False, 'error': 'Admin access required'}, 
+        return Response({'success': False, 'error': 'Admin access required'},
                        status=status.HTTP_403_FORBIDDEN)
-    
+
     time_slots = TimeSlot.objects.filter(is_active=True).order_by('start_time')
-    
+
     slots_data = []
     for slot in time_slots:
         slots_data.append({
@@ -31,7 +31,7 @@ def get_time_slots(request):
             'is_break': slot.is_break,
             'day_of_week': slot.day_of_week if hasattr(slot, 'day_of_week') else None
         })
-    
+
     return Response({
         'success': True,
         'data': slots_data
@@ -43,18 +43,18 @@ def get_time_slots(request):
 def create_time_slot(request):
     """Create a new time slot"""
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
-        return Response({'success': False, 'error': 'Admin access required'}, 
+        return Response({'success': False, 'error': 'Admin access required'},
                        status=status.HTTP_403_FORBIDDEN)
-    
+
     name = request.data.get('name')
     start_time = request.data.get('start_time')  # Format: "08:00"
     end_time = request.data.get('end_time')      # Format: "09:00"
     is_break = request.data.get('is_break', False)
-    
+
     if not all([name, start_time, end_time]):
-        return Response({'success': False, 'error': 'Missing required fields'}, 
+        return Response({'success': False, 'error': 'Missing required fields'},
                        status=status.HTTP_400_BAD_REQUEST)
-    
+
     try:
         time_slot = TimeSlot.objects.create(
             name=name,
@@ -63,7 +63,7 @@ def create_time_slot(request):
             is_break=is_break,
             is_active=True
         )
-        
+
         return Response({
             'success': True,
             'message': 'Time slot created successfully',
@@ -72,9 +72,9 @@ def create_time_slot(request):
                 'name': time_slot.name
             }
         }, status=status.HTTP_201_CREATED)
-        
+
     except Exception as e:
-        return Response({'success': False, 'error': str(e)}, 
+        return Response({'success': False, 'error': str(e)},
                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -83,18 +83,18 @@ def create_time_slot(request):
 def get_class_timetable(request, class_id):
     """Get timetable for a specific class"""
     if request.user.role not in ['admin', 'super_admin', 'teacher'] and not request.user.is_superuser:
-        return Response({'success': False, 'error': 'Access denied'}, 
+        return Response({'success': False, 'error': 'Access denied'},
                        status=status.HTTP_403_FORBIDDEN)
-    
+
     try:
         class_obj = Class.objects.get(id=class_id)
-        
+
         # Get active timetable
         timetable = Timetable.objects.filter(
             class_obj=class_obj,
             is_active=True
         ).first()
-        
+
         if not timetable:
             return Response({
                 'success': True,
@@ -104,14 +104,14 @@ def get_class_timetable(request, class_id):
                     'entries': []
                 }
             })
-        
+
         # Get all entries
         entries = TimetableEntry.objects.filter(
             timetable=timetable
         ).select_related('subject', 'teacher', 'time_slot').order_by(
             'day_of_week', 'time_slot__start_time'
         )
-        
+
         entries_data = []
         for entry in entries:
             entries_data.append({
@@ -127,7 +127,7 @@ def get_class_timetable(request, class_id):
                 'teacher_name': entry.teacher.get_full_name() if entry.teacher else 'TBA',
                 'room_number': entry.room_number or ''
             })
-        
+
         return Response({
             'success': True,
             'data': {
@@ -139,9 +139,9 @@ def get_class_timetable(request, class_id):
                 'entries': entries_data
             }
         })
-        
+
     except Class.DoesNotExist:
-        return Response({'success': False, 'error': 'Class not found'}, 
+        return Response({'success': False, 'error': 'Class not found'},
                        status=status.HTTP_404_NOT_FOUND)
 
 
@@ -150,23 +150,23 @@ def get_class_timetable(request, class_id):
 def create_timetable(request):
     """Create a new timetable for a class"""
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
-        return Response({'success': False, 'error': 'Admin access required'}, 
+        return Response({'success': False, 'error': 'Admin access required'},
                        status=status.HTTP_403_FORBIDDEN)
-    
+
     class_id = request.data.get('class_id')
     academic_year = request.data.get('academic_year', '2024-2025')
     term = request.data.get('term', 'first')
-    
+
     if not class_id:
-        return Response({'success': False, 'error': 'Class ID required'}, 
+        return Response({'success': False, 'error': 'Class ID required'},
                        status=status.HTTP_400_BAD_REQUEST)
-    
+
     try:
         class_obj = Class.objects.get(id=class_id)
-        
+
         # Deactivate existing timetables
         Timetable.objects.filter(class_obj=class_obj).update(is_active=False)
-        
+
         # Create new timetable
         timetable = Timetable.objects.create(
             class_obj=class_obj,
@@ -174,7 +174,7 @@ def create_timetable(request):
             term=term,
             is_active=True
         )
-        
+
         return Response({
             'success': True,
             'message': 'Timetable created successfully',
@@ -184,15 +184,13 @@ def create_timetable(request):
                 'class_name': class_obj.name
             }
         }, status=status.HTTP_201_CREATED)
-        
+
     except Class.DoesNotExist:
-        return Response({'success': False, 'error': 'Class not found'}, 
+        return Response({'success': False, 'error': 'Class not found'},
                        status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response({'success': False, 'error': str(e)}, 
+        return Response({'success': False, 'error': str(e)},
                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
 
 
 @api_view(['POST'])
@@ -200,9 +198,9 @@ def create_timetable(request):
 def create_or_update_timetable_entry(request):
     """Create or update a timetable entry"""
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
-        return Response({'success': False, 'error': 'Admin access required'}, 
+        return Response({'success': False, 'error': 'Admin access required'},
                        status=status.HTTP_403_FORBIDDEN)
-    
+
     entry_id = request.data.get('id')
     timetable_id = request.data.get('timetable_id')
     class_id = request.data.get('class_id')
@@ -211,11 +209,11 @@ def create_or_update_timetable_entry(request):
     subject_id = request.data.get('subject_id')
     teacher_id = request.data.get('teacher_id')
     room_number = request.data.get('room_number', '')
-    
+
     if not all([time_slot_input, day_of_week]):
-        return Response({'success': False, 'error': 'Missing required fields: time_slot and day_of_week'}, 
+        return Response({'success': False, 'error': 'Missing required fields: time_slot and day_of_week'},
                        status=status.HTTP_400_BAD_REQUEST)
-    
+
     try:
         with transaction.atomic():
             # Get or create timetable
@@ -227,7 +225,7 @@ def create_or_update_timetable_entry(request):
                     class_obj=class_obj,
                     is_active=True
                 ).first()
-                
+
                 if not timetable:
                     timetable = Timetable.objects.create(
                         class_obj=class_obj,
@@ -236,9 +234,9 @@ def create_or_update_timetable_entry(request):
                         is_active=True
                     )
             else:
-                return Response({'success': False, 'error': 'Timetable or Class ID required'}, 
+                return Response({'success': False, 'error': 'Timetable or Class ID required'},
                                status=status.HTTP_400_BAD_REQUEST)
-            
+
             # Handle time_slot - it can be an ID or a string like "08:00 - 09:00"
             time_slot = None
             if isinstance(time_slot_input, int) or (isinstance(time_slot_input, str) and time_slot_input.isdigit()):
@@ -250,23 +248,35 @@ def create_or_update_timetable_entry(request):
                 time_slot = TimeSlot.objects.filter(name=time_slot_str).first()
                 
                 if not time_slot:
-                    # Parse time slot string (e.g., "08:00 - 09:00")
+                    # Parse time slot string (e.g., "08:00 - 09:00" or "08:00-09:00")
                     try:
-                        times = time_slot_str.split('-')
+                        # Handle both "08:00 - 09:00" and "08:00-09:00" formats
+                        if ' - ' in time_slot_str:
+                            times = time_slot_str.split(' - ')
+                        elif '-' in time_slot_str:
+                            times = time_slot_str.split('-')
+                        else:
+                            raise ValueError("No dash separator found")
+                        
                         start_time = times[0].strip()
                         end_time = times[1].strip()
                         
+                        # Validate time format (HH:MM)
+                        from datetime import datetime
+                        datetime.strptime(start_time, '%H:%M')
+                        datetime.strptime(end_time, '%H:%M')
+                        
+                        # FIXED: Remove is_break field
                         time_slot = TimeSlot.objects.create(
                             name=time_slot_str,
                             start_time=start_time,
                             end_time=end_time,
-                            is_break=False,
                             is_active=True
                         )
-                    except Exception as e:
+                    except (IndexError, ValueError) as e:
                         return Response({
                             'success': False, 
-                            'error': f'Invalid time slot format: {time_slot_str}. Expected format: "HH:MM - HH:MM"'
+                            'error': f'Invalid time slot format: "{time_slot_str}". Expected format: "HH:MM - HH:MM" (e.g., "08:00 - 09:00"). Error: {str(e)}'
                         }, status=status.HTTP_400_BAD_REQUEST)
             
             # Get related objects
@@ -329,7 +339,6 @@ def create_or_update_timetable_entry(request):
         traceback.print_exc()
         return Response({'success': False, 'error': f'Server error: {str(e)}'}, 
                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])

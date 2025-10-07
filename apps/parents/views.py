@@ -1,9 +1,12 @@
-# apps/parents/views.py
+# apps/parents/views.py - COMPLETE FIXED VERSION
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from apps.admissions.models import Parent, Student
+from apps.academics.models import TeacherClassAssignment, ClassSubject
+from apps.grades.models import Grade
+from django.db.models import Avg, Count
 
 
 @api_view(['GET'])
@@ -31,6 +34,72 @@ def parent_dashboard_data(request):
     
     children_data = []
     for child in children:
+        # Calculate attendance rate (last 30 days)
+        from apps.attendance.models import AttendanceRecord
+        from datetime import datetime, timedelta
+        from django.utils import timezone
+        
+        thirty_days_ago = timezone.now().date() - timedelta(days=30)
+        attendance_records = AttendanceRecord.objects.filter(
+            student=child,
+            attendance__date__gte=thirty_days_ago
+        )
+        
+        total_days = attendance_records.count()
+        present_days = attendance_records.filter(status='present').count()
+        attendance_rate = (present_days / total_days * 100) if total_days > 0 else 0
+        
+        # Calculate overall grade and percentage
+        grades = Grade.objects.filter(student=child)
+        if grades.exists():
+            avg_percentage = grades.aggregate(
+                avg=Avg('score') * 100 / Avg('total_marks')
+            )['avg'] or 0
+            
+            # Determine letter grade
+            if avg_percentage >= 90:
+                overall_grade = 'A+'
+            elif avg_percentage >= 80:
+                overall_grade = 'A'
+            elif avg_percentage >= 70:
+                overall_grade = 'B+'
+            elif avg_percentage >= 60:
+                overall_grade = 'B'
+            elif avg_percentage >= 50:
+                overall_grade = 'C+'
+            elif avg_percentage >= 40:
+                overall_grade = 'C'
+            elif avg_percentage >= 33:
+                overall_grade = 'D'
+            else:
+                overall_grade = 'F'
+        else:
+            avg_percentage = 0
+            overall_grade = 'N/A'
+        
+        # Get pending fees (TODO: implement in finance app)
+        pending_fees = 0  # Replace with actual finance calculation
+        
+        # Calculate class rank
+        if child.current_class:
+            class_students = Student.objects.filter(
+                current_class=child.current_class,
+                status='active'
+            ).annotate(
+                avg_score=Avg('grade__score')
+            ).order_by('-avg_score')
+            
+            class_rank = 0
+            total_students = class_students.count()
+            
+            for idx, student in enumerate(class_students, 1):
+                if student.id == child.id:
+                    class_rank = idx
+                    break
+        else:
+            class_rank = 0
+            total_students = 0
+        
         child_data = {
             'id': child.id,
             'student_id': child.student_id,
@@ -39,13 +108,13 @@ def parent_dashboard_data(request):
             'class_id': child.current_class.id if child.current_class else None,
             'academic_year': child.academic_year,
             'status': child.status,
-            'admission_date': child.admission_date.isoformat(),
-            'attendance_rate': 95.5,  # TODO: Calculate from attendance
-            'overall_grade': 'A',      # TODO: Calculate from grades
-            'average_percentage': 87.3, # TODO: Calculate
-            'pending_fees': 250,        # TODO: Get from finance
-            'class_rank': 3,            # TODO: Calculate
-            'total_students': 45,       # TODO: Get from class
+            'admission_date': child.admission_date.isoformat() if child.admission_date else None,
+            'attendance_rate': round(attendance_rate, 1),
+            'overall_grade': overall_grade,
+            'average_percentage': round(avg_percentage, 1),
+            'pending_fees': pending_fees,
+            'class_rank': class_rank,
+            'total_students': total_students,
         }
         children_data.append(child_data)
     
@@ -71,7 +140,13 @@ def parent_dashboard_data(request):
 @permission_classes([IsAuthenticated])
 def get_child_details(request, student_id):
     """
-    Get detailed information about a specific child
+    Get detailed information about a specific child including:
+    - Roll number
+    - Class teacher
+    - Blood group
+    - Recent test results
+    - Courses/subjects
+    - Timetable
     """
     if request.user.role != 'parent' and not request.user.is_superuser:
         return Response({
@@ -90,31 +165,100 @@ def get_child_details(request, student_id):
                 'error': 'Access denied'
             }, status=status.HTTP_403_FORBIDDEN)
         
-        # Get detailed child data including courses, timetable, etc.
-        from apps.students.views import get_student_timetable_helper
-        from apps.academics.models import ClassSubject
-        
         current_class = child.current_class
         
-        # Get courses
-        class_subjects = ClassSubject.objects.filter(class_obj=current_class).select_related('subject', 'teacher')
+        # Get class teacher
+        class_teacher = "Not Assigned"
+        if current_class:
+            class_teacher_assignment = TeacherClassAssignment.objects.filter(
+                class_obj=current_class,
+                is_class_teacher=True,
+                is_active=True
+            ).select_related('teacher').first()
+            
+            if class_teacher_assignment:
+                teacher = class_teacher_assignment.teacher
+                class_teacher = f"{teacher.first_name} {teacher.last_name}"
+        
+        # Get courses/subjects
+        class_subjects = ClassSubject.objects.filter(
+            class_obj=current_class
+        ).select_related('subject', 'teacher')
+        
         courses = []
+        teachers_list = []
+        
         for cs in class_subjects:
-            courses.append({
+            course_data = {
+                'id': cs.id,
                 'subject': cs.subject.name,
+                'code': cs.subject.code,
                 'teacher': cs.teacher.get_full_name() if cs.teacher else 'TBA',
+            }
+            courses.append(course_data)
+            
+            # Add to teachers list (for contact)
+            if cs.teacher:
+                teachers_list.append({
+                    'id': cs.teacher.id,
+                    'name': cs.teacher.get_full_name(),
+                    'subject': cs.subject.name,
+                    'email': cs.teacher.email
+                })
+        
+        # Get recent test results
+        recent_results = Grade.objects.filter(
+            student=child
+        ).select_related('subject').order_by('-exam_date')[:10]
+        
+        results_data = []
+        for result in recent_results:
+            results_data.append({
+                'id': result.id,
+                'subject': result.subject.name if result.subject else 'N/A',
+                'test_name': result.exam_name,
+                'date': result.exam_date.strftime('%b %d, %Y'),
+                'score': result.score,
+                'total': result.total_marks,
+                'percentage': round((result.score / result.total_marks * 100), 1),
+                'grade': result.grade
             })
         
         # Get timetable
+        from apps.students.views import get_student_timetable_helper
         timetable_data = get_student_timetable_helper(current_class)
+        
+        # Get attendance calendar (last 30 days)
+        from apps.attendance.models import AttendanceRecord
+        from datetime import datetime, timedelta
+        from django.utils import timezone
+        
+        thirty_days_ago = timezone.now().date() - timedelta(days=30)
+        attendance_records = AttendanceRecord.objects.filter(
+            student=child,
+            attendance__date__gte=thirty_days_ago
+        ).select_related('attendance').order_by('attendance__date')
+        
+        attendance_calendar = []
+        for record in attendance_records:
+            attendance_calendar.append({
+                'date': record.attendance.date.isoformat(),
+                'day': record.attendance.date.day,
+                'status': record.status  # present, absent, late
+            })
         
         child_data = {
             'student_id': child.student_id,
             'name': f"{child.first_name} {child.last_name}",
             'class': current_class.name if current_class else 'Not Assigned',
-            'roll_number': child.roll_number,
+            'roll_number': child.roll_number or 'Not Assigned',
+            'class_teacher': class_teacher,
+            'blood_group': child.blood_group or 'Not Specified',
             'courses': courses,
+            'recent_results': results_data,
             'timetable': timetable_data,
+            'attendance_calendar': attendance_calendar,
+            'teachers': teachers_list
         }
         
         return Response({
@@ -132,3 +276,10 @@ def get_child_details(request, student_id):
             'success': False,
             'error': 'Student not found'
         }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'success': False,
+            'error': f'Error: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
