@@ -13,6 +13,7 @@ from apps.admissions.models import Student
 from apps.attendance.models import Attendance, AttendanceRecord
 from apps.grades.models import Assignment
 from apps.grades.models import Grade
+from apps.admissions.email_utils import send_teacher_credentials_email
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -507,3 +508,125 @@ def save_grades(request):
             'success': False,
             'error': f'Error saving grades: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_teacher(request):
+    """Create a new teacher account - WITH EMAIL"""
+    if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
+        return Response({'success': False, 'error': 'Admin access required'}, 
+                       status=status.HTTP_403_FORBIDDEN)
+    
+    first_name = request.data.get('first_name')
+    last_name = request.data.get('last_name')
+    email = request.data.get('email')
+    phone = request.data.get('phone', '')
+    subject_ids = request.data.get('subjects', [])
+    class_ids = request.data.get('classes', [])
+    
+    if not all([first_name, last_name, email]):
+        return Response({'success': False, 'error': 'Missing required fields'}, 
+                       status=status.HTTP_400_BAD_REQUEST)
+    
+    if not subject_ids or not class_ids:
+        return Response({'success': False, 'error': 'At least one subject and one class required'}, 
+                       status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if email already exists
+    if User.objects.filter(email=email).exists():
+        return Response({'success': False, 'error': 'Email already in use'}, 
+                       status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        with transaction.atomic():
+            # Generate username
+            base_username = f"{first_name.lower()}_{last_name.lower()}"
+            username = base_username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+            
+            # Generate temporary password
+            temp_password = secrets.token_urlsafe(12)
+            
+            # Create user
+            teacher_user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=temp_password,
+                first_name=first_name.capitalize(),
+                last_name=last_name.capitalize(),
+                role='teacher',
+                phone=phone,
+                must_change_password=True  # ✅ Force password change on first login
+            )
+            
+            # Get subject and class names for email
+            subjects = Subject.objects.filter(id__in=subject_ids)
+            classes = Class.objects.filter(id__in=class_ids)
+            
+            subject_names = [s.name for s in subjects]
+            class_names = [c.name for c in classes]
+            
+            # Assign subjects
+            for subject_id in subject_ids:
+                subject = Subject.objects.get(id=subject_id)
+                
+                # Assign to each selected class
+                for class_id in class_ids:
+                    class_obj = Class.objects.get(id=class_id)
+                    
+                    # Check if assignment exists
+                    assignment, created = ClassSubject.objects.get_or_create(
+                        class_obj=class_obj,
+                        subject=subject,
+                        defaults={'teacher': teacher_user, 'is_active': True}
+                    )
+                    
+                    if not created and not assignment.teacher:
+                        assignment.teacher = teacher_user
+                        assignment.is_active = True
+                        assignment.save()
+            
+            # Create class assignments
+            for class_id in class_ids:
+                class_obj = Class.objects.get(id=class_id)
+                TeacherClassAssignment.objects.get_or_create(
+                    teacher=teacher_user,
+                    class_obj=class_obj,
+                    defaults={'is_active': True, 'is_class_teacher': False}
+                )
+            
+            # ✅ SEND EMAIL TO TEACHER
+            send_teacher_credentials_email(
+                teacher_user, 
+                username, 
+                temp_password,
+                subject_names,
+                class_names
+            )
+            
+            return Response({
+                'success': True,
+                'message': 'Teacher created successfully! Credentials sent via email.',
+                'data': {
+                    'id': teacher_user.id,
+                    'username': username,
+                    'temporary_password': temp_password,
+                    'email': email,
+                    'subjects': subject_names,
+                    'classes': class_names
+                }
+            }, status=status.HTTP_201_CREATED)
+            
+    except (Subject.DoesNotExist, Class.DoesNotExist) as e:
+        return Response({'success': False, 'error': f'Invalid subject or class ID: {str(e)}'}, 
+                       status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response({'success': False, 'error': f'Failed to create teacher: {str(e)}'}, 
+                       status=status.HTTP_500_INTERNAL_SERVER_ERROR)

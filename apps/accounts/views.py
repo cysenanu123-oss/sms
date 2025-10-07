@@ -75,3 +75,64 @@ def logout_view(request):
             'success': False,
             'errors': {'general': ['Invalid token']}
         }, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    """
+    Change user password (forced on first login or voluntary)
+    """
+    user = request.user
+    current_password = request.data.get('current_password')
+    new_password = request.data.get('new_password')
+    confirm_password = request.data.get('confirm_password')
+    
+    # Validation
+    if not all([current_password, new_password, confirm_password]):
+        return Response({
+            'success': False,
+            'error': 'All fields are required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    if new_password != confirm_password:
+        return Response({
+            'success': False,
+            'error': 'New passwords do not match'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check current password
+    if not user.check_password(current_password):
+        return Response({
+            'success': False,
+            'error': 'Current password is incorrect'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Password strength check
+    if len(new_password) < 8:
+        return Response({
+            'success': False,
+            'error': 'Password must be at least 8 characters long'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Change password
+    user.set_password(new_password)
+    user.must_change_password = False  # ✅ Clear the flag
+    user.save()
+    
+    return Response({
+        'success': True,
+        'message': 'Password changed successfully! Please login with your new password.'
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def check_password_status(request):
+    """
+    Check if user must change password
+    """
+    return Response({
+        'success': True,
+        'must_change_password': request.user.must_change_password
+    })

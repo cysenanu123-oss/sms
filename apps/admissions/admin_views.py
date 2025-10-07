@@ -113,10 +113,11 @@ def update_application_status(request, application_number):
         }, status=status.HTTP_404_NOT_FOUND)
 
 
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def accept_and_enroll(request, application_number):
-    """Accept application and create student + parent accounts - FIXED"""
+    """Accept application and create student + parent accounts - IMPROVED"""
     
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
         return Response({'success': False, 'error': 'Admin access required'}, 
@@ -125,12 +126,12 @@ def accept_and_enroll(request, application_number):
     try:
         application = StudentApplication.objects.get(application_number=application_number)
         
-        # ✅ CHECK IF STUDENT ALREADY EXISTS
+        # Check if student already exists
         existing_student = Student.objects.filter(application=application).first()
         if existing_student:
             return Response({
                 'success': False, 
-                'error': f'Student already enrolled for this application. Student ID: {existing_student.student_id}'
+                'error': f'Student already enrolled. Student ID: {existing_student.student_id}'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         if application.status == 'accepted':
@@ -146,36 +147,31 @@ def accept_and_enroll(request, application_number):
         try:
             assigned_class = Class.objects.get(id=assigned_class_id)
         except Class.DoesNotExist:
-            return Response({'success': False, 'error': f'Class with ID {assigned_class_id} not found'}, 
+            return Response({'success': False, 'error': f'Class not found'}, 
                            status=status.HTTP_404_NOT_FOUND)
         
         with transaction.atomic():
-            # Generate username
+            # ========== CREATE STUDENT USER ==========
             base_username = f"{application.first_name.lower()}_{application.last_name.lower()}"
-            username = base_username
+            student_username = base_username
             counter = 1
-            while User.objects.filter(username=username).exists():
-                username = f"{base_username}{counter}"
+            while User.objects.filter(username=student_username).exists():
+                student_username = f"{base_username}{counter}"
                 counter += 1
             
-            print(f"✅ Student user created: {username}")
-            
-            # Generate passwords
             student_temp_password = secrets.token_urlsafe(12)
-            parent_temp_password = secrets.token_urlsafe(12)
             
-            # Create STUDENT USER
             student_user = User.objects.create_user(
-                username=username,
-                email=f"{username}@student.excellenceacademy.edu.gh",
+                username=student_username,
+                email=f"{student_username}@student.excellenceacademy.edu.gh",
                 password=student_temp_password,
                 first_name=application.first_name.capitalize(),
                 last_name=application.last_name.capitalize(),
                 role='student',
-                must_change_password=True
+                must_change_password=True  # ✅ Force password change on first login
             )
             
-            # Create STUDENT PROFILE
+            # ========== CREATE STUDENT PROFILE ==========
             student = Student.objects.create(
                 user=student_user,
                 application=application,
@@ -195,26 +191,33 @@ def accept_and_enroll(request, application_number):
                 admission_date=timezone.now().date()
             )
             
-            # Create/Update PARENT
+            # ========== CREATE/UPDATE PARENT ==========
             parent = None
             parent_username = None
+            parent_temp_password = None
             
             if application.parent_email:
-                # Check if parent already exists
+                # Check if parent exists
                 existing_parent_user = User.objects.filter(
                     email=application.parent_email,
                     role='parent'
                 ).first()
                 
                 if existing_parent_user:
-                    # Parent exists - just link to new student
+                    # Parent exists - just link
                     parent = Parent.objects.get(user=existing_parent_user)
                     parent.children.add(student)
                     parent_username = existing_parent_user.username
-                    parent_temp_password = None  # Don't send new password
+                    parent_temp_password = None
                 else:
-                    # Create new parent
-                    parent_username = f"parent_{username}"
+                    # ✅ NEW PARENT USERNAME FORMAT: firstname.parent
+                    parent_username = f"{application.first_name.lower()}.parent"
+                    counter = 1
+                    while User.objects.filter(username=parent_username).exists():
+                        parent_username = f"{application.first_name.lower()}.parent{counter}"
+                        counter += 1
+                    
+                    parent_temp_password = secrets.token_urlsafe(12)
                     
                     parent_name_parts = application.parent_full_name.strip().split()
                     parent_first = parent_name_parts[0] if parent_name_parts else 'Parent'
@@ -245,16 +248,16 @@ def accept_and_enroll(request, application_number):
                     
                     parent.children.add(student)
             
-            # ✅ UPDATE APPLICATION STATUS
+            # Update application status
             application.status = 'accepted'
             application.reviewed_by = request.user
             application.reviewed_at = timezone.now()
             application.save()
             
-            # Send emails
+            # ========== SEND EMAILS ==========
             if application.parent_email:
                 send_student_credentials_email(
-                    student, username, student_temp_password, application.parent_email
+                    student, student_username, student_temp_password, application.parent_email
                 )
                 if parent_temp_password:  # Only if new parent
                     send_parent_credentials_email(
@@ -264,10 +267,10 @@ def accept_and_enroll(request, application_number):
             
             return Response({
                 'success': True,
-                'message': 'Student enrolled successfully',
+                'message': 'Student enrolled successfully!',
                 'data': {
                     'student_id': student.student_id,
-                    'student_username': username,
+                    'student_username': student_username,
                     'student_password': student_temp_password,
                     'parent_username': parent_username,
                     'parent_password': parent_temp_password if parent_temp_password else 'Existing parent - no new password',

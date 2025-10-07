@@ -276,3 +276,83 @@ Email: {settings.EMAIL_HOST_USER}
         import traceback
         traceback.print_exc()
         return False
+
+# ADD THIS TO apps/admissions/email_utils.py
+
+def send_teacher_credentials_email(teacher_user, username, password, subjects, classes):
+    """
+    Send login credentials to newly created teacher
+    
+    Args:
+        teacher_user: User object for the teacher
+        username: Teacher's username
+        password: Teacher's temporary password
+        subjects: List of subject names
+        classes: List of class names
+    """
+    subject = 'Welcome to Excellence Academy - Teacher Account Created'
+    
+    subjects_list = ', '.join(subjects) if subjects else 'Not assigned yet'
+    classes_list = ', '.join(classes) if classes else 'Not assigned yet'
+    
+    message = f"""
+Dear {teacher_user.first_name} {teacher_user.last_name},
+
+Welcome to Excellence Academy! Your teacher account has been successfully created.
+
+TEACHER LOGIN CREDENTIALS:
+
+Username: {username}
+Temporary Password: {password}
+
+Login URL: http://127.0.0.1:8000/auth/
+
+IMPORTANT SECURITY NOTICE:
+⚠️ You will be required to change this password on first login.
+⚠️ Please keep these credentials secure.
+
+TEACHING ASSIGNMENT:
+
+Subjects: {subjects_list}
+Classes: {classes_list}
+
+Through the Teacher Portal, you can:
+✓ View your class schedules and timetables
+✓ Mark student attendance
+✓ Record grades and assessments
+✓ Upload learning resources
+✓ Communicate with students and parents
+✓ Access student performance data
+
+GETTING STARTED:
+1. Log in to the portal using the credentials above
+2. Change your temporary password
+3. Complete your profile information
+4. Review your teaching assignments
+5. Explore the Teacher Dashboard
+
+If you have any questions or need assistance, please contact:
+Email: {settings.EMAIL_HOST_USER}
+Phone: +233 XX XXX XXXX
+
+We're excited to have you join our teaching staff!
+
+Best regards,
+Excellence Academy Administration
+    """
+    
+    try:
+        result = send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[teacher_user.email],
+            fail_silently=False,
+        )
+        print(f"✅ Teacher credentials email sent to {teacher_user.email}. Result: {result}")
+        return True
+    except Exception as e:
+        print(f"❌ Error sending teacher credentials email: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
