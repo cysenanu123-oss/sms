@@ -48,4 +48,17 @@ urlpatterns = [
     
     # Get subjects and teachers for a class
     path('admin/timetable/class/<int:class_id>/resources/', timetable_views.get_subjects_and_teachers, name='admin-timetable-resources'),
+
+    
+    # Timetable endpoints
+    path('api/v1/admin/timetable/slots/', timetable_views.get_time_slots, name='get_time_slots'),
+    path('api/v1/admin/timetable/slots/create/', timetable_views.create_time_slot, name='create_time_slot'),
+    path('api/v1/admin/timetable/class/<int:class_id>/', timetable_views.get_class_timetable, name='get_class_timetable'),
+    path('api/v1/admin/timetable/create/', timetable_views.create_timetable, name='create_timetable'),
+    path('api/v1/admin/timetable/entry/', timetable_views.create_or_update_timetable_entry, name='create_or_update_timetable_entry'),
+    
+    # FIXED DELETE ENDPOINT - Remove '/delete/' from the URL
+    path('api/v1/admin/timetable/entry/<int:entry_id>/', timetable_views.delete_timetable_entry, name='delete_timetable_entry'),
+    
+    path('api/v1/admin/timetable/class/<int:class_id>/resources/', timetable_views.get_subjects_and_teachers, name='get_subjects_and_teachers'),
 ]

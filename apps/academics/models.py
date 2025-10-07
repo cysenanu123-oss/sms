@@ -164,6 +164,7 @@ class TimeSlot(models.Model):
     end_time = models.TimeField()
     slot_order = models.IntegerField()
     
+    
     SLOT_TYPE_CHOICES = (
         ('class', 'Class Period'),
         ('break', 'Break'),
