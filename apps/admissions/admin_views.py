@@ -21,15 +21,15 @@ def get_applications(request):
             'success': False,
             'error': 'Admin access required'
         }, status=status.HTTP_403_FORBIDDEN)
-    
+
     status_filter = request.GET.get('status', None)
     applications = StudentApplication.objects.all()
-    
+
     if status_filter:
         applications = applications.filter(status=status_filter)
-    
+
     serializer = StudentApplicationSerializer(applications, many=True)
-    
+
     stats = {
         'total_received': StudentApplication.objects.count(),
         'pending_review': StudentApplication.objects.filter(status='pending').count(),
@@ -38,7 +38,7 @@ def get_applications(request):
         'accepted': StudentApplication.objects.filter(status='accepted').count(),
         'rejected': StudentApplication.objects.filter(status='rejected').count(),
     }
-    
+
     return Response({
         'success': True,
         'data': {
@@ -57,11 +57,12 @@ def get_application_detail(request, application_number):
             'success': False,
             'error': 'Admin access required'
         }, status=status.HTTP_403_FORBIDDEN)
-    
+
     try:
-        application = StudentApplication.objects.get(application_number=application_number)
+        application = StudentApplication.objects.get(
+            application_number=application_number)
         serializer = StudentApplicationSerializer(application)
-        
+
         return Response({
             'success': True,
             'data': serializer.data
@@ -82,30 +83,31 @@ def update_application_status(request, application_number):
             'success': False,
             'error': 'Admin access required'
         }, status=status.HTTP_403_FORBIDDEN)
-    
+
     try:
-        application = StudentApplication.objects.get(application_number=application_number)
+        application = StudentApplication.objects.get(
+            application_number=application_number)
         new_status = request.data.get('status')
         admin_notes = request.data.get('admin_notes', '')
-        
+
         if new_status not in dict(StudentApplication.STATUS_CHOICES).keys():
             return Response({
                 'success': False,
                 'error': 'Invalid status'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
+
         application.status = new_status
         application.admin_notes = admin_notes
         application.reviewed_by = request.user
         application.reviewed_at = timezone.now()
         application.save()
-        
+
         return Response({
             'success': True,
             'message': f'Application status updated to {new_status}',
             'data': StudentApplicationSerializer(application).data
         })
-        
+
     except StudentApplication.DoesNotExist:
         return Response({
             'success': False,
@@ -113,43 +115,44 @@ def update_application_status(request, application_number):
         }, status=status.HTTP_404_NOT_FOUND)
 
 
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def accept_and_enroll(request, application_number):
     """Accept application and create student + parent accounts - IMPROVED"""
-    
+
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
-        return Response({'success': False, 'error': 'Admin access required'}, 
+        return Response({'success': False, 'error': 'Admin access required'},
                        status=status.HTTP_403_FORBIDDEN)
-    
+
     try:
-        application = StudentApplication.objects.get(application_number=application_number)
-        
+        application = StudentApplication.objects.get(
+            application_number=application_number)
+
         # Check if student already exists
-        existing_student = Student.objects.filter(application=application).first()
+        existing_student = Student.objects.filter(
+            application=application).first()
         if existing_student:
             return Response({
-                'success': False, 
+                'success': False,
                 'error': f'Student already enrolled. Student ID: {existing_student.student_id}'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
+
         if application.status == 'accepted':
-            return Response({'success': False, 'error': 'Application already processed'}, 
+            return Response({'success': False, 'error': 'Application already processed'},
                            status=status.HTTP_400_BAD_REQUEST)
-        
+
         assigned_class_id = request.data.get('class_id')
         if not assigned_class_id:
-            return Response({'success': False, 'error': 'Class ID required'}, 
+            return Response({'success': False, 'error': 'Class ID required'},
                            status=status.HTTP_400_BAD_REQUEST)
-        
+
         from apps.academics.models import Class
         try:
             assigned_class = Class.objects.get(id=assigned_class_id)
         except Class.DoesNotExist:
-            return Response({'success': False, 'error': f'Class not found'}, 
+            return Response({'success': False, 'error': f'Class not found'},
                            status=status.HTTP_404_NOT_FOUND)
-        
+
         with transaction.atomic():
             # ========== CREATE STUDENT USER ==========
             base_username = f"{application.first_name.lower()}_{application.last_name.lower()}"
@@ -158,9 +161,9 @@ def accept_and_enroll(request, application_number):
             while User.objects.filter(username=student_username).exists():
                 student_username = f"{base_username}{counter}"
                 counter += 1
-            
+
             student_temp_password = secrets.token_urlsafe(12)
-            
+
             student_user = User.objects.create_user(
                 username=student_username,
                 email=f"{student_username}@student.excellenceacademy.edu.gh",
@@ -170,7 +173,7 @@ def accept_and_enroll(request, application_number):
                 role='student',
                 must_change_password=True  # ✅ Force password change on first login
             )
-            
+
             # ========== CREATE STUDENT PROFILE ==========
             student = Student.objects.create(
                 user=student_user,
@@ -190,26 +193,37 @@ def accept_and_enroll(request, application_number):
                 status='active',
                 admission_date=timezone.now().date()
             )
-            
+
             # ========== CREATE/UPDATE PARENT ==========
             parent = None
             parent_username = None
             parent_temp_password = None
-            
+
             if application.parent_email:
                 # Check if parent exists
                 existing_parent_user = User.objects.filter(
                     email=application.parent_email,
                     role='parent'
                 ).first()
-                
+
                 if existing_parent_user:
-                    # Parent exists - just link
-                    parent = Parent.objects.get(user=existing_parent_user)
-                    parent.children.add(student)
-                    parent_username = existing_parent_user.username
-                    parent_temp_password = None
-                else:
+                    try:
+                        parent = Parent.objects.get(user=existing_parent_user)
+                        parent_password = "Existing parent - no new password"
+                    except Parent.DoesNotExist:
+                         # Parent user exists but Parent profile doesn't - create it
+                            parent = Parent.objects.create(
+                            user=existing_parent_user,
+                            full_name=application.parent_full_name,
+                            email=application.parent_email,
+                            phone=application.parent_phone or '',
+                            relationship=application.parent_relationship or 'guardian',
+                            residential_address=application.residential_address,
+                    )
+                        
+
+                parent.children.add(student)
+            else:
                     # ✅ NEW PARENT USERNAME FORMAT: firstname.parent
                     parent_username = f"{application.first_name.lower()}.parent"
                     counter = 1

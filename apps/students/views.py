@@ -64,7 +64,6 @@ def student_dashboard(request):
     # Get courses
     class_subjects = ClassSubject.objects.filter(
         class_obj=current_class,
-        is_active=True
     ).select_related('subject', 'teacher')
     
     courses = []

@@ -1,20 +1,19 @@
-# apps/parents/views.py - COMPLETE FIXED VERSION
+# apps/parents/views.py - FIXED VERSION
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from apps.admissions.models import Parent, Student
-from apps.academics.models import TeacherClassAssignment, ClassSubject
 from apps.grades.models import Grade
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Q
+from datetime import datetime, timedelta
+from django.utils import timezone
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def parent_dashboard_data(request):
-    """
-    Get parent dashboard with all linked children data
-    """
+    """Get parent dashboard with all linked children data"""
     if request.user.role != 'parent' and not request.user.is_superuser:
         return Response({
             'success': False,
@@ -29,16 +28,13 @@ def parent_dashboard_data(request):
             'error': 'Parent profile not found'
         }, status=status.HTTP_404_NOT_FOUND)
     
-    # Get all children linked to this parent
+    # Get all children
     children = parent.children.all()
     
     children_data = []
     for child in children:
-        # Calculate attendance rate (last 30 days)
+        # Calculate attendance
         from apps.attendance.models import AttendanceRecord
-        from datetime import datetime, timedelta
-        from django.utils import timezone
-        
         thirty_days_ago = timezone.now().date() - timedelta(days=30)
         attendance_records = AttendanceRecord.objects.filter(
             student=child,
@@ -49,12 +45,18 @@ def parent_dashboard_data(request):
         present_days = attendance_records.filter(status='present').count()
         attendance_rate = (present_days / total_days * 100) if total_days > 0 else 0
         
-        # Calculate overall grade and percentage
+        # Calculate grades - FIXED
         grades = Grade.objects.filter(student=child)
         if grades.exists():
-            avg_percentage = grades.aggregate(
-                avg=Avg('score') * 100 / Avg('total_marks')
-            )['avg'] or 0
+            avg_percentage = 0
+            total_score = 0
+            total_marks = 0
+            
+            for grade in grades:
+                total_score += grade.score
+                total_marks += grade.total_marks
+            
+            avg_percentage = (total_score / total_marks * 100) if total_marks > 0 else 0
             
             # Determine letter grade
             if avg_percentage >= 90:
@@ -77,28 +79,37 @@ def parent_dashboard_data(request):
             avg_percentage = 0
             overall_grade = 'N/A'
         
-        # Get pending fees (TODO: implement in finance app)
-        pending_fees = 0  # Replace with actual finance calculation
+        # Pending fees
+        pending_fees = 0
         
-        # Calculate class rank
+        # Class rank
+        class_rank = 0
+        total_students = 0
         if child.current_class:
+            from django.db.models import Sum
             class_students = Student.objects.filter(
                 current_class=child.current_class,
                 status='active'
-            ).annotate(
-                avg_score=Avg('grade__score')
-            ).order_by('-avg_score')
+            )
             
-            class_rank = 0
-            total_students = class_students.count()
+            # Calculate average for each student
+            student_averages = []
+            for student in class_students:
+                student_grades = Grade.objects.filter(student=student)
+                if student_grades.exists():
+                    total_s = sum(g.score for g in student_grades)
+                    total_m = sum(g.total_marks for g in student_grades)
+                    avg = (total_s / total_m * 100) if total_m > 0 else 0
+                    student_averages.append({'id': student.id, 'avg': avg})
             
-            for idx, student in enumerate(class_students, 1):
-                if student.id == child.id:
+            # Sort and find rank
+            student_averages.sort(key=lambda x: x['avg'], reverse=True)
+            total_students = len(student_averages)
+            
+            for idx, sa in enumerate(student_averages, 1):
+                if sa['id'] == child.id:
                     class_rank = idx
                     break
-        else:
-            class_rank = 0
-            total_students = 0
         
         child_data = {
             'id': child.id,
@@ -118,7 +129,6 @@ def parent_dashboard_data(request):
         }
         children_data.append(child_data)
     
-    # Parent info
     parent_info = {
         'full_name': parent.full_name,
         'email': parent.email,
@@ -134,7 +144,6 @@ def parent_dashboard_data(request):
             'children': children_data,
         }
     })
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

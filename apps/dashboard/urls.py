@@ -59,6 +59,6 @@ urlpatterns = [
     
     # FIXED DELETE ENDPOINT - Remove '/delete/' from the URL
     path('api/v1/admin/timetable/entry/<int:entry_id>/', timetable_views.delete_timetable_entry, name='delete_timetable_entry'),
-    
+    path('admin/timetable/entry/<int:entry_id>/', timetable_views.delete_timetable_entry, name='delete_timetable_entry'),
     path('api/v1/admin/timetable/class/<int:class_id>/resources/', timetable_views.get_subjects_and_teachers, name='get_subjects_and_teachers'),
 ]
