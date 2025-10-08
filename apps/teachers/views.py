@@ -6,7 +6,7 @@ from rest_framework import status
 from django.db.models import Count, Avg, Q
 from django.utils import timezone
 from datetime import datetime, timedelta
-
+from django.db import transaction
 from apps.accounts.models import User
 from apps.academics.models import Class, Subject, ClassSubject, TeacherClassAssignment, Timetable, TimetableEntry
 from apps.admissions.models import Student
@@ -14,6 +14,8 @@ from apps.attendance.models import Attendance, AttendanceRecord
 from apps.grades.models import Assignment
 from apps.grades.models import Grade
 from apps.admissions.email_utils import send_teacher_credentials_email
+import secrets
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -511,122 +513,216 @@ def save_grades(request):
 
 
 
-@api_view(['POST'])
+@api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
-def create_teacher(request):
-    """Create a new teacher account - WITH EMAIL"""
+def manage_teachers(request):
+    """Get all teachers or create a new teacher"""
+    
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
-        return Response({'success': False, 'error': 'Admin access required'}, 
-                       status=status.HTTP_403_FORBIDDEN)
+        return Response({
+            'success': False,
+            'error': 'Admin access required'
+        }, status=status.HTTP_403_FORBIDDEN)
     
-    first_name = request.data.get('first_name')
-    last_name = request.data.get('last_name')
-    email = request.data.get('email')
-    phone = request.data.get('phone', '')
-    subject_ids = request.data.get('subjects', [])
-    class_ids = request.data.get('classes', [])
-    
-    if not all([first_name, last_name, email]):
-        return Response({'success': False, 'error': 'Missing required fields'}, 
-                       status=status.HTTP_400_BAD_REQUEST)
-    
-    if not subject_ids or not class_ids:
-        return Response({'success': False, 'error': 'At least one subject and one class required'}, 
-                       status=status.HTTP_400_BAD_REQUEST)
-    
-    # Check if email already exists
-    if User.objects.filter(email=email).exists():
-        return Response({'success': False, 'error': 'Email already in use'}, 
-                       status=status.HTTP_400_BAD_REQUEST)
-    
-    try:
-        with transaction.atomic():
-            # Generate username
-            base_username = f"{first_name.lower()}_{last_name.lower()}"
-            username = base_username
-            counter = 1
-            while User.objects.filter(username=username).exists():
-                username = f"{base_username}{counter}"
-                counter += 1
+    if request.method == 'GET':
+        teachers = User.objects.filter(role='teacher', is_active=True)
+        
+        teachers_data = []
+        for teacher in teachers:
+            # Get assigned subjects
+            subject_assignments = ClassSubject.objects.filter(teacher=teacher, is_active=True)
+            subjects = list(set([cs.subject.name for cs in subject_assignments]))
             
-            # Generate temporary password
-            temp_password = secrets.token_urlsafe(12)
-            
-            # Create user
-            teacher_user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=temp_password,
-                first_name=first_name.capitalize(),
-                last_name=last_name.capitalize(),
-                role='teacher',
-                phone=phone,
-                must_change_password=True  # ✅ Force password change on first login
+            # Get assigned classes
+            class_assignments = TeacherClassAssignment.objects.filter(
+                teacher=teacher, 
+                is_active=True
             )
+            classes_count = class_assignments.count()
             
-            # Get subject and class names for email
-            subjects = Subject.objects.filter(id__in=subject_ids)
-            classes = Class.objects.filter(id__in=class_ids)
+            # Count total students across all classes
+            total_students = sum([
+                assignment.class_obj.student_set.filter(status='active').count() 
+                for assignment in class_assignments
+            ])
             
-            subject_names = [s.name for s in subjects]
-            class_names = [c.name for c in classes]
-            
-            # Assign subjects
-            for subject_id in subject_ids:
-                subject = Subject.objects.get(id=subject_id)
+            teachers_data.append({
+                'id': teacher.id,
+                'full_name': teacher.get_full_name(),
+                'first_name': teacher.first_name,
+                'last_name': teacher.last_name,
+                'email': teacher.email,
+                'phone': teacher.phone or '',
+                'subjects': subjects,
+                'total_classes': classes_count,
+                'total_students': total_students,
+                'is_active': teacher.is_active
+            })
+        
+        return Response({
+            'success': True,
+            'data': teachers_data
+        })
+    
+    elif request.method == 'POST':
+        # ✅ FIXED: Create teacher with email sending
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+        email = request.data.get('email')
+        phone = request.data.get('phone', '')
+        subject_ids = request.data.get('subjects', [])
+        class_ids = request.data.get('classes', [])
+        
+        if not all([first_name, last_name, email]):
+            return Response({
+                'success': False,
+                'error': 'First name, last name, and email are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if User.objects.filter(email=email).exists():
+            return Response({
+                'success': False,
+                'error': 'A user with this email already exists'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            with transaction.atomic():
+                # Generate username
+                base_username = f"{first_name.lower()}.{last_name.lower()}"
+                username = base_username
+                counter = 1
+                while User.objects.filter(username=username).exists():
+                    username = f"{base_username}{counter}"
+                    counter += 1
                 
-                # Assign to each selected class
+                # ✅ Generate temporary password
+                temp_password = secrets.token_urlsafe(12)
+                
+                # ✅ Create user with the temp password
+                teacher_user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=temp_password,  # ✅ This will hash it properly
+                    first_name=first_name,
+                    last_name=last_name,
+                    phone=phone,
+                    role='teacher',
+                    is_active=True,
+                    must_change_password=True  # ✅ Force password change on first login
+                )
+                
+                # Assign subjects
+                subjects_list = []
+                for subject_id in subject_ids:
+                    try:
+                        subject = Subject.objects.get(id=subject_id)
+                        subjects_list.append(subject.name)
+                    except Subject.DoesNotExist:
+                        continue
+                
+                # Assign classes
+                classes_list = []
                 for class_id in class_ids:
-                    class_obj = Class.objects.get(id=class_id)
-                    
-                    # Check if assignment exists
-                    assignment, created = ClassSubject.objects.get_or_create(
-                        class_obj=class_obj,
-                        subject=subject,
-                        defaults={'teacher': teacher_user, 'is_active': True}
+                    try:
+                        class_obj = Class.objects.get(id=class_id)
+                        classes_list.append(class_obj.name)
+                        
+                        # Create class assignment
+                        TeacherClassAssignment.objects.create(
+                            teacher=teacher_user,
+                            class_obj=class_obj,
+                            is_class_teacher=False,
+                            is_active=True
+                        )
+                        
+                        # Assign subjects to this class
+                        for subject_id in subject_ids:
+                            try:
+                                subject = Subject.objects.get(id=subject_id)
+                                ClassSubject.objects.update_or_create(
+                                    class_obj=class_obj,
+                                    subject=subject,
+                                    defaults={
+                                        'teacher': teacher_user,
+                                        'is_active': True
+                                    }
+                                )
+                            except Subject.DoesNotExist:
+                                continue
+                                
+                    except Class.DoesNotExist:
+                        continue
+                
+                # ✅ SEND EMAIL WITH CREDENTIALS
+                try:
+                    email_sent = send_teacher_credentials_email(
+                        teacher_user=teacher_user,
+                        username=username,
+                        password=temp_password,
+                        subjects=subjects_list,
+                        classes=classes_list
                     )
                     
-                    if not created and not assignment.teacher:
-                        assignment.teacher = teacher_user
-                        assignment.is_active = True
-                        assignment.save()
-            
-            # Create class assignments
-            for class_id in class_ids:
-                class_obj = Class.objects.get(id=class_id)
-                TeacherClassAssignment.objects.get_or_create(
-                    teacher=teacher_user,
-                    class_obj=class_obj,
-                    defaults={'is_active': True, 'is_class_teacher': False}
-                )
-            
-            # ✅ SEND EMAIL TO TEACHER
-            send_teacher_credentials_email(
-                teacher_user, 
-                username, 
-                temp_password,
-                subject_names,
-                class_names
-            )
-            
+                    if email_sent:
+                        print(f"✅ Teacher credentials email sent to {email}")
+                    else:
+                        print(f"⚠️ Email sending failed for {email}")
+                        
+                except Exception as email_error:
+                    print(f"⚠️ Email error: {str(email_error)}")
+                    # Don't fail the whole operation if email fails
+                
+                return Response({
+                    'success': True,
+                    'message': 'Teacher created successfully! Credentials have been sent via email.',
+                    'data': {
+                        'teacher_id': teacher_user.id,
+                        'username': username,
+                        'temporary_password': temp_password,  # ✅ Show in response too
+                        'email': email,
+                        'subjects_assigned': len(subjects_list),
+                        'classes_assigned': len(classes_list),
+                        'email_sent': email_sent
+                    }
+                }, status=status.HTTP_201_CREATED)
+                
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
             return Response({
-                'success': True,
-                'message': 'Teacher created successfully! Credentials sent via email.',
-                'data': {
-                    'id': teacher_user.id,
-                    'username': username,
-                    'temporary_password': temp_password,
-                    'email': email,
-                    'subjects': subject_names,
-                    'classes': class_names
-                }
-            }, status=status.HTTP_201_CREATED)
-            
-    except (Subject.DoesNotExist, Class.DoesNotExist) as e:
-        return Response({'success': False, 'error': f'Invalid subject or class ID: {str(e)}'}, 
-                       status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return Response({'success': False, 'error': f'Failed to create teacher: {str(e)}'}, 
-                       status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                'success': False,
+                'error': f'Error creating teacher: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_teacher(request, teacher_id):
+    """Deactivate a teacher"""
+    if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Admin access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        teacher = User.objects.get(id=teacher_id, role='teacher')
+        
+        # Deactivate instead of delete
+        teacher.is_active = False
+        teacher.save()
+        
+        # Deactivate assignments
+        TeacherClassAssignment.objects.filter(teacher=teacher).update(is_active=False)
+        ClassSubject.objects.filter(teacher=teacher).update(is_active=False)
+        
+        return Response({
+            'success': True,
+            'message': 'Teacher deactivated successfully'
+        })
+        
+    except User.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Teacher not found'
+        }, status=status.HTTP_404_NOT_FOUND)

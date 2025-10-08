@@ -118,7 +118,7 @@ def update_application_status(request, application_number):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def accept_and_enroll(request, application_number):
-    """Accept application and create student + parent accounts - IMPROVED"""
+    """Accept application and create student + parent accounts - COMPLETELY FIXED"""
 
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
         return Response({'success': False, 'error': 'Admin access required'},
@@ -171,7 +171,7 @@ def accept_and_enroll(request, application_number):
                 first_name=application.first_name.capitalize(),
                 last_name=application.last_name.capitalize(),
                 role='student',
-                must_change_password=True  # ✅ Force password change on first login
+                must_change_password=True
             )
 
             # ========== CREATE STUDENT PROFILE ==========
@@ -198,6 +198,7 @@ def accept_and_enroll(request, application_number):
             parent = None
             parent_username = None
             parent_temp_password = None
+            parent_is_new = False  # ✅ Track if parent is new
 
             if application.parent_email:
                 # Check if parent exists
@@ -209,22 +210,26 @@ def accept_and_enroll(request, application_number):
                 if existing_parent_user:
                     try:
                         parent = Parent.objects.get(user=existing_parent_user)
-                        parent_password = "Existing parent - no new password"
+                        print(f"ℹ️ Using existing parent account: {application.parent_email}")
+                        # ✅ DON'T set parent_temp_password for existing parents
+                        
                     except Parent.DoesNotExist:
-                         # Parent user exists but Parent profile doesn't - create it
-                            parent = Parent.objects.create(
+                        # Parent user exists but Parent profile doesn't - create it
+                        parent = Parent.objects.create(
                             user=existing_parent_user,
                             full_name=application.parent_full_name,
                             email=application.parent_email,
                             phone=application.parent_phone or '',
                             relationship=application.parent_relationship or 'guardian',
                             residential_address=application.residential_address,
-                    )
+                        )
+                        print(f"✅ Created Parent profile for existing user: {application.parent_email}")
                         
-
-                parent.children.add(student)
-            else:
-                    # ✅ NEW PARENT USERNAME FORMAT: firstname.parent
+                    parent.children.add(student)
+                    
+                else:
+                    # ✅ CREATE NEW PARENT
+                    parent_is_new = True
                     parent_username = f"{application.first_name.lower()}.parent"
                     counter = 1
                     while User.objects.filter(username=parent_username).exists():
@@ -261,6 +266,7 @@ def accept_and_enroll(request, application_number):
                     )
                     
                     parent.children.add(student)
+                    print(f"✅ Created NEW parent account: {parent_username}")
             
             # Update application status
             application.status = 'accepted'
@@ -270,27 +276,44 @@ def accept_and_enroll(request, application_number):
             
             # ========== SEND EMAILS ==========
             if application.parent_email:
-                send_student_credentials_email(
+                # ✅ ALWAYS send student credentials email
+                student_email_sent = send_student_credentials_email(
                     student, student_username, student_temp_password, application.parent_email
                 )
-                if parent_temp_password:  # Only if new parent
-                    send_parent_credentials_email(
+                
+                # ✅ ONLY send parent credentials if NEW parent
+                parent_email_sent = False
+                if parent_is_new and parent_temp_password:
+                    parent_email_sent = send_parent_credentials_email(
                         parent, parent_username, parent_temp_password, 
                         f"{student.first_name} {student.last_name}"
                     )
+                    print(f"✅ Sent parent credentials to NEW parent: {application.parent_email}")
+                else:
+                    print(f"ℹ️ Skipped parent email (existing parent)")
+            
+            # ✅ RETURN APPROPRIATE MESSAGE
+            response_data = {
+                'student_id': student.student_id,
+                'student_username': student_username,
+                'student_password': student_temp_password,
+                'class': assigned_class.name,
+                'admission_date': student.admission_date.isoformat()
+            }
+            
+            if parent_is_new:
+                response_data['parent_username'] = parent_username
+                response_data['parent_password'] = parent_temp_password
+                response_data['parent_status'] = 'NEW PARENT - Credentials emailed'
+            else:
+                response_data['parent_username'] = parent.user.username if parent else 'N/A'
+                response_data['parent_password'] = 'EXISTING PARENT - Already has login'
+                response_data['parent_status'] = 'Existing parent account'
             
             return Response({
                 'success': True,
-                'message': 'Student enrolled successfully!',
-                'data': {
-                    'student_id': student.student_id,
-                    'student_username': student_username,
-                    'student_password': student_temp_password,
-                    'parent_username': parent_username,
-                    'parent_password': parent_temp_password if parent_temp_password else 'Existing parent - no new password',
-                    'class': assigned_class.name,
-                    'admission_date': student.admission_date.isoformat()
-                }
+                'message': f'Student enrolled successfully! {"New parent account created." if parent_is_new else "Linked to existing parent account."}',
+                'data': response_data
             })
         
     except StudentApplication.DoesNotExist:

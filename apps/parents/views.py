@@ -8,7 +8,7 @@ from apps.grades.models import Grade
 from django.db.models import Avg, Count, Q
 from datetime import datetime, timedelta
 from django.utils import timezone
-
+from apps.academics.models import TeacherClassAssignment
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
