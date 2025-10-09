@@ -11,4 +11,9 @@ urlpatterns = [
     # JWT token endpoints (built-in)
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    #Password Reset
+    path('password-reset/request/', views.request_password_reset, name='request-password-reset'),
+    path('password-reset/confirm/', views.reset_password, name='reset-password'),
+    path('password-change/', views.change_password, name='change-password'),
 ]

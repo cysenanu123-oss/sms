@@ -210,6 +210,11 @@
                                             x-text="result.date"></td>
                                     </tr>
                                 </template>
+                                <template x-if="childData.recent_results.length === 0">
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">No test results available</td>
+                                    </tr>
+                                </template>
                             </tbody>
                         </table>
                     </div>
@@ -309,28 +314,10 @@
                             <span class="text-gray-900">Pay Fees</span>
                         </button>
 
-                        <button class="w-full flex items-center p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
+                        <button @click="downloadTimetable()" class="w-full flex items-center p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
                             <i class="fas fa-calendar text-blue-600 mr-3"></i>
-                            <span class="text-gray-900">View Timetable</span>
+                            <span class="text-gray-900">Download Timetable</span>
                         </button>
-                    </div>
-                </div>
-
-                <!-- Upcoming Events -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Upcoming Events</h3>
-                    <div class="space-y-4">
-                        <template x-for="event in upcomingEvents" :key="event.id">
-                            <div class="flex items-start p-3 bg-gray-50 rounded-lg">
-                                <div class="bg-indigo-100 rounded p-2 mr-3">
-                                    <i :class="event.icon" class="text-indigo-600"></i>
-                                </div>
-                                <div class="flex-1">
-                                    <p class="text-sm font-medium text-gray-900" x-text="event.title"></p>
-                                    <p class="text-xs text-gray-600 mt-1" x-text="event.date"></p>
-                                </div>
-                            </div>
-                        </template>
                     </div>
                 </div>
 
@@ -352,6 +339,9 @@
                                 </button>
                             </div>
                         </template>
+                        <template x-if="childData.teachers.length === 0">
+                            <div class="text-center text-gray-500 py-4">No teachers assigned</div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -359,7 +349,6 @@
     </div>
 
     <script>
-
         function parentDashboard() {
             return {
                 user: {},
@@ -381,10 +370,11 @@
                     total_students: 0,
                     recent_results: [],
                     attendance_calendar: [],
-                    teachers: []
+                    teachers: [],
+                    timetable: { periods: [], days: [] }
                 },
                 notifications: [],
-                upcomingEvents: [],
+                performanceChart: null,
 
                 async init() {
                     const token = localStorage.getItem('access_token');
@@ -398,7 +388,6 @@
 
                     this.user = JSON.parse(userData);
 
-                    // Verify parent access
                     try {
                         const response = await fetch('/api/v1/dashboard/verify-parent/', {
                             method: 'GET',
@@ -418,7 +407,6 @@
 
                         await this.loadParentDashboard();
                         this.loadNotifications();
-                        this.loadUpcomingEvents();
 
                     } catch (error) {
                         console.error('Error:', error);
@@ -468,29 +456,26 @@
                         const data = await response.json();
 
                         if (data.success) {
-                            // Find the selected child from children array
                             const child = this.children.find(c => c.id === this.selectedChild);
 
-                            if (child) {
+                            if (child && data.data) {
                                 this.childData = {
                                     name: child.name,
                                     class: child.class,
                                     student_id: child.student_id,
-                                    roll_number: data.data.roll_number,  
-                                    class_teacher: data.data.class_teacher,  
-                                    blood_group: data.data.blood_group,  
-                                    attendance_rate: child.attendance_rate,
-                                    overall_grade: child.overall_grade,
-                                    average_percentage: child.average_percentage,
-                                    pending_fees: child.pending_fees,
-                                    class_rank: child.class_rank,
-                                    total_students: child.total_students,
-                                    recent_results: [], // TODO: Get from API
-                                    attendance_calendar: this.generateAttendanceCalendar(),
-                                    teachers: data.data.courses.map(course => ({
-                                        name: course.teacher,
-                                        subject: course.subject
-                                    }))
+                                    roll_number: data.data.roll_number || 'Not Assigned',
+                                    class_teacher: data.data.class_teacher || 'Not Assigned',
+                                    blood_group: data.data.blood_group || 'Not Specified',
+                                    attendance_rate: child.attendance_rate || 0,
+                                    overall_grade: child.overall_grade || 'N/A',
+                                    average_percentage: child.average_percentage || 0,
+                                    pending_fees: child.pending_fees || 0,
+                                    class_rank: child.class_rank || 0,
+                                    total_students: child.total_students || 0,
+                                    recent_results: data.data.recent_results || [],
+                                    attendance_calendar: data.data.attendance_calendar || [],
+                                    teachers: data.data.teachers || [],
+                                    timetable: data.data.timetable || { periods: [], days: [] }
                                 };
 
                                 this.$nextTick(() => {
@@ -503,11 +488,14 @@
                     }
                 },
 
-              
                 initCharts() {
                     const ctx = document.getElementById('performanceChart');
                     if (ctx) {
-                        new Chart(ctx, {
+                        if (this.performanceChart) {
+                            this.performanceChart.destroy();
+                        }
+                        
+                        this.performanceChart = new Chart(ctx, {
                             type: 'line',
                             data: {
                                 labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
@@ -541,36 +529,54 @@
 
                 loadNotifications() {
                     this.notifications = [
-                        {
-                            id: 1,
-                            icon: 'fas fa-clipboard-list',
-                            title: 'New Assignment',
-                            message: 'Mathematics homework due on October 5th',
-                            time: '2 hours ago'
-                        },
-                        {
-                            id: 2,
-                            icon: 'fas fa-calendar',
-                            title: 'Parent-Teacher Meeting',
-                            message: 'Scheduled for October 10th at 3:00 PM',
-                            time: '1 day ago'
-                        },
-                        {
-                            id: 3,
-                            icon: 'fas fa-money-bill',
-                            title: 'Fee Reminder',
-                            message: 'Term fees due by October 15th',
-                            time: '2 days ago'
-                        }
+                
                     ];
                 },
 
-                loadUpcomingEvents() {
-                    this.upcomingEvents = [
-                        { id: 1, icon: 'fas fa-calendar-alt', title: 'Parent-Teacher Meeting', date: 'Oct 10, 2024' },
-                        { id: 2, icon: 'fas fa-futbol', title: 'Sports Day', date: 'Oct 15, 2024' },
-                        { id: 3, icon: 'fas fa-graduation-cap', title: 'Final Exams', date: 'Oct 25, 2024' }
-                    ];
+                downloadTimetable() {
+                    if (!this.childData.timetable || !this.childData.timetable.periods || this.childData.timetable.periods.length === 0) {
+                        alert('No timetable available for download');
+                        return;
+                    }
+
+                    let timetableText = `
+EXCELLENCE ACADEMY
+STUDENT TIMETABLE
+
+Student: ${this.childData.name}
+Class: ${this.childData.class}
+Student ID: ${this.childData.student_id}
+
+WEEKLY SCHEDULE
+================
+
+`;
+
+                    this.childData.timetable.periods.forEach(period => {
+                        timetableText += `\n${period.time}\n`;
+                        timetableText += `${'='.repeat(60)}\n`;
+
+                        this.childData.timetable.days.forEach(day => {
+                            const dayData = period[day];
+                            if (dayData && dayData.type === 'class') {
+                                timetableText += `${day.toUpperCase().padEnd(12)} : ${dayData.subject.padEnd(20)} - ${dayData.teacher}\n`;
+                            } else if (dayData && dayData.type === 'break') {
+                                timetableText += `${day.toUpperCase().padEnd(12)} : BREAK\n`;
+                            }
+                        });
+                    });
+
+                    timetableText += `\n\nGenerated on: ${new Date().toLocaleDateString()}\n`;
+
+                    const blob = new Blob([timetableText], { type: 'text/plain' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Timetable_${this.childData.name.replace(/ /g, '_')}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
                 },
 
                 logout() {

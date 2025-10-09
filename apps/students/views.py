@@ -428,9 +428,11 @@ def submit_assignment(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+
 def get_student_timetable_helper(class_obj):
     """
     Helper function to get timetable for a class
+    FIXED VERSION - Returns complete subject and teacher information
     """
     if not class_obj:
         return {'periods': [], 'days': []}
@@ -446,6 +448,8 @@ def get_student_timetable_helper(class_obj):
     entries = TimetableEntry.objects.filter(
         timetable=timetable
     ).select_related('subject', 'teacher', 'time_slot').order_by('time_slot__slot_order')
+    
+    print(f"📊 Found {entries.count()} timetable entries for {class_obj.name}")
     
     days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
     periods_dict = {}
@@ -464,12 +468,29 @@ def get_student_timetable_helper(class_obj):
                 'friday': None
             }
         
-        periods_dict[time_key][entry.day_of_week] = {
-            'subject': entry.subject.name,
-            'teacher': entry.teacher.get_full_name() if entry.teacher else 'TBA',
-            'room': entry.room_number or 'TBA',
-            'type': 'class'
-        }
+        # Get the day in lowercase to match our dictionary keys
+        day_lower = entry.day_of_week.lower()
+        
+        # ✅ FIX: Make sure we're returning complete information
+        if entry.subject and entry.teacher:
+            periods_dict[time_key][day_lower] = {
+                'subject': entry.subject.name,
+                'teacher': entry.teacher.get_full_name(),
+                'room': entry.room_number or 'TBA',
+                'type': 'class'
+            }
+            print(f"✅ Added: {day_lower.capitalize()} {time_str} - {entry.subject.name} by {entry.teacher.get_full_name()}")
+        elif entry.time_slot.is_break:
+            periods_dict[time_key][day_lower] = {
+                'subject': 'Break',
+                'teacher': '',
+                'room': '',
+                'type': 'break'
+            }
+        else:
+            print(f"⚠️ Incomplete entry: {day_lower.capitalize()} {time_str} - Missing subject or teacher")
+    
+    print(f"📋 Returning {len(periods_dict)} periods")
     
     return {
         'periods': list(periods_dict.values()),

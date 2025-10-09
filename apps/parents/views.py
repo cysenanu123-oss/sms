@@ -1,4 +1,4 @@
-# apps/parents/views.py - FIXED VERSION
+# apps/parents/views.py - COMPLETE FIXED VERSION
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -8,7 +8,9 @@ from apps.grades.models import Grade
 from django.db.models import Avg, Count, Q
 from datetime import datetime, timedelta
 from django.utils import timezone
-from apps.academics.models import TeacherClassAssignment
+from apps.academics.models import TeacherClassAssignment, ClassSubject, Timetable, TimetableEntry
+
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -45,7 +47,7 @@ def parent_dashboard_data(request):
         present_days = attendance_records.filter(status='present').count()
         attendance_rate = (present_days / total_days * 100) if total_days > 0 else 0
         
-        # Calculate grades - FIXED
+        # Calculate grades
         grades = Grade.objects.filter(student=child)
         if grades.exists():
             avg_percentage = 0
@@ -86,7 +88,6 @@ def parent_dashboard_data(request):
         class_rank = 0
         total_students = 0
         if child.current_class:
-            from django.db.models import Sum
             class_students = Student.objects.filter(
                 current_class=child.current_class,
                 status='active'
@@ -145,6 +146,7 @@ def parent_dashboard_data(request):
         }
     })
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_child_details(request, student_id):
@@ -156,6 +158,7 @@ def get_child_details(request, student_id):
     - Recent test results
     - Courses/subjects
     - Timetable
+    - Attendance calendar
     """
     if request.user.role != 'parent' and not request.user.is_superuser:
         return Response({
@@ -215,7 +218,16 @@ def get_child_details(request, student_id):
                     'email': cs.teacher.email
                 })
         
-        # Get recent test results
+        # Remove duplicates from teachers list
+        unique_teachers = []
+        seen_ids = set()
+        for teacher in teachers_list:
+            if teacher['id'] not in seen_ids:
+                unique_teachers.append(teacher)
+                seen_ids.add(teacher['id'])
+        teachers_list = unique_teachers
+        
+        # Get recent test results - FIXED
         recent_results = Grade.objects.filter(
             student=child
         ).select_related('subject').order_by('-exam_date')[:10]
@@ -229,18 +241,15 @@ def get_child_details(request, student_id):
                 'date': result.exam_date.strftime('%b %d, %Y'),
                 'score': result.score,
                 'total': result.total_marks,
-                'percentage': round((result.score / result.total_marks * 100), 1),
+                'percentage': round((result.score / result.total_marks * 100), 1) if result.total_marks > 0 else 0,
                 'grade': result.grade
             })
         
-        # Get timetable
-        from apps.students.views import get_student_timetable_helper
-        timetable_data = get_student_timetable_helper(current_class)
+        # Get timetable - FIXED
+        timetable_data = get_timetable_for_class(current_class)
         
-        # Get attendance calendar (last 30 days)
+        # Get attendance calendar (last 30 days) - FIXED
         from apps.attendance.models import AttendanceRecord
-        from datetime import datetime, timedelta
-        from django.utils import timezone
         
         thirty_days_ago = timezone.now().date() - timedelta(days=30)
         attendance_records = AttendanceRecord.objects.filter(
@@ -292,3 +301,63 @@ def get_child_details(request, student_id):
             'success': False,
             'error': f'Error: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def get_timetable_for_class(class_obj):
+    """
+    Helper function to get timetable for a class
+    Returns complete subject and teacher information
+    """
+    if not class_obj:
+        return {'periods': [], 'days': []}
+    
+    timetable = Timetable.objects.filter(
+        class_obj=class_obj,
+        is_active=True
+    ).first()
+    
+    if not timetable:
+        return {'periods': [], 'days': []}
+    
+    entries = TimetableEntry.objects.filter(
+        timetable=timetable
+    ).select_related('subject', 'teacher', 'time_slot').order_by('time_slot__slot_order')
+    
+    days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+    periods_dict = {}
+    
+    for entry in entries:
+        time_key = entry.time_slot.name
+        time_str = f"{entry.time_slot.start_time.strftime('%H:%M')} - {entry.time_slot.end_time.strftime('%H:%M')}"
+        
+        if time_key not in periods_dict:
+            periods_dict[time_key] = {
+                'time': time_str,
+                'monday': None,
+                'tuesday': None,
+                'wednesday': None,
+                'thursday': None,
+                'friday': None
+            }
+        
+        day_lower = entry.day_of_week.lower()
+        
+        if entry.subject and entry.teacher:
+            periods_dict[time_key][day_lower] = {
+                'subject': entry.subject.name,
+                'teacher': entry.teacher.get_full_name(),
+                'room': entry.room_number or 'TBA',
+                'type': 'class'
+            }
+        elif entry.time_slot.is_break:
+            periods_dict[time_key][day_lower] = {
+                'subject': 'Break',
+                'teacher': '',
+                'room': '',
+                'type': 'break'
+            }
+    
+    return {
+        'periods': list(periods_dict.values()),
+        'days': days
+    }
