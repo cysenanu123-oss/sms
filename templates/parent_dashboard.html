@@ -123,13 +123,14 @@
                 </div>
             </div>
 
-            <!-- Pending Fees -->
-            <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white">
+            <!-- Pending Fees - NOW WITH REAL DATA -->
+            <div class="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white cursor-pointer"
+                @click="showFeesModal = true">
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm opacity-90">Pending Fees</p>
                         <p class="text-3xl font-bold mt-1">GHS <span x-text="childData.pending_fees"></span></p>
-                        <button class="text-sm opacity-90 mt-1 underline">Pay Now →</button>
+                        <button class="text-sm opacity-90 mt-1 underline">View Details →</button>
                     </div>
                     <div class="bg-white bg-opacity-20 rounded-full p-4">
                         <i class="fas fa-money-bill-wave text-2xl"></i>
@@ -176,16 +177,11 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Test
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grade
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date
-                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Test</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grade</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -227,11 +223,9 @@
                     </div>
                     <div class="p-6">
                         <div class="grid grid-cols-7 gap-2 text-center">
-                            <!-- Day headers -->
                             <template x-for="day in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']" :key="day">
                                 <div class="text-xs font-medium text-gray-500 py-2" x-text="day"></div>
                             </template>
-                            <!-- Calendar days -->
                             <template x-for="day in childData.attendance_calendar" :key="day.date">
                                 <div :class="{
                                     'bg-green-100 text-green-800': day.status === 'present',
@@ -272,8 +266,7 @@
                         </div>
                         <h3 class="text-lg font-semibold text-gray-900" x-text="childData.name"></h3>
                         <p class="text-sm text-gray-600" x-text="childData.class"></p>
-                        <p class="text-xs text-gray-500 mt-1">Student ID: <span x-text="childData.student_id"></span>
-                        </p>
+                        <p class="text-xs text-gray-500 mt-1">Student ID: <span x-text="childData.student_id"></span></p>
                     </div>
 
                     <div class="mt-6 space-y-3 text-sm">
@@ -308,10 +301,10 @@
                             <span class="text-gray-900">Download Report Card</span>
                         </button>
 
-                        <button
+                        <button @click="showFeesModal = true"
                             class="w-full flex items-center p-3 bg-orange-50 rounded-lg hover:bg-orange-100 transition">
                             <i class="fas fa-credit-card text-orange-600 mr-3"></i>
-                            <span class="text-gray-900">Pay Fees</span>
+                            <span class="text-gray-900">View Fees Details</span>
                         </button>
 
                         <button @click="downloadTimetable()" class="w-full flex items-center p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition">
@@ -348,6 +341,193 @@
         </div>
     </div>
 
+    <!-- FEES MODAL -->
+    <div x-show="showFeesModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" 
+         @click.self="showFeesModal = false" x-transition>
+        <div class="bg-white rounded-lg shadow-2xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-hidden">
+            <!-- Modal Header -->
+            <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white p-6 flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-bold">Fee Details</h2>
+                    <p class="text-sm opacity-90" x-text="childData.name + ' - ' + childData.class"></p>
+                </div>
+                <button @click="showFeesModal = false" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+                <!-- Fee Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                        <p class="text-sm text-blue-600 font-medium">Total Fees</p>
+                        <p class="text-2xl font-bold text-blue-900">GHS <span x-text="childData.fee_summary?.total_fees || 0"></span></p>
+                    </div>
+                    <div class="bg-green-50 rounded-lg p-4 border border-green-200">
+                        <p class="text-sm text-green-600 font-medium">Amount Paid</p>
+                        <p class="text-2xl font-bold text-green-900">GHS <span x-text="childData.fee_summary?.total_paid || 0"></span></p>
+                    </div>
+                    <div class="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                        <p class="text-sm text-orange-600 font-medium">Balance</p>
+                        <p class="text-2xl font-bold text-orange-900">GHS <span x-text="childData.fee_summary?.total_balance || 0"></span></p>
+                    </div>
+                </div>
+
+                <!-- Fees Breakdown -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Fee Breakdown by Term</h3>
+                    <template x-for="fee in childData.fees" :key="fee.id">
+                        <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h4 class="font-semibold text-gray-900" x-text="fee.term + ' - ' + fee.academic_year"></h4>
+                                    <p class="text-sm text-gray-600">Due Date: <span x-text="fee.due_date"></span></p>
+                                </div>
+                                <span :class="{
+                                    'bg-green-100 text-green-800': fee.status === 'paid',
+                                    'bg-yellow-100 text-yellow-800': fee.status === 'partial',
+                                    'bg-orange-100 text-orange-800': fee.status === 'pending',
+                                    'bg-red-100 text-red-800': fee.status === 'overdue'
+                                }" class="px-3 py-1 rounded-full text-xs font-semibold uppercase" 
+                                     x-text="fee.status"></span>
+                            </div>
+
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm mb-3">
+                                <div>
+                                    <p class="text-gray-600">Total Amount</p>
+                                    <p class="font-semibold">GHS <span x-text="fee.total_amount"></span></p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-600">Discount</p>
+                                    <p class="font-semibold text-green-600">- GHS <span x-text="fee.discount"></span></p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-600">Amount Paid</p>
+                                    <p class="font-semibold text-blue-600">GHS <span x-text="fee.amount_paid"></span></p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-600">Balance</p>
+                                    <p class="font-semibold" :class="fee.balance > 0 ? 'text-red-600' : 'text-green-600'">
+                                        GHS <span x-text="fee.balance"></span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Fee Components Breakdown -->
+                            <details class="mt-3">
+                                <summary class="cursor-pointer text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                                    View detailed breakdown
+                                </summary>
+                                <div class="mt-3 grid grid-cols-2 md:grid-cols-3 gap-2 text-xs bg-gray-50 p-3 rounded">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Tuition:</span>
+                                        <span class="font-medium">GHS <span x-text="fee.breakdown.tuition"></span></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Admission:</span>
+                                        <span class="font-medium">GHS <span x-text="fee.breakdown.admission"></span></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Examination:</span>
+                                        <span class="font-medium">GHS <span x-text="fee.breakdown.examination"></span></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Library:</span>
+                                        <span class="font-medium">GHS <span x-text="fee.breakdown.library"></span></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Sports:</span>
+                                        <span class="font-medium">GHS <span x-text="fee.breakdown.sports"></span></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Laboratory:</span>
+                                        <span class="font-medium">GHS <span x-text="fee.breakdown.laboratory"></span></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Uniform:</span>
+                                        <span class="font-medium">GHS <span x-text="fee.breakdown.uniform"></span></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Transport:</span>
+                                        <span class="font-medium">GHS <span x-text="fee.breakdown.transport"></span></span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Miscellaneous:</span>
+                                        <span class="font-medium">GHS <span x-text="fee.breakdown.miscellaneous"></span></span>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                    </template>
+
+                    <template x-if="childData.fees?.length === 0">
+                        <div class="text-center py-8 text-gray-500">
+                            <i class="fas fa-inbox text-4xl mb-2"></i>
+                            <p>No fees assigned yet</p>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Payment History -->
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Payment History</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Receipt</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Term</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <template x-for="payment in childData.payment_history" :key="payment.id">
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-indigo-600" 
+                                            x-text="payment.receipt_number"></td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900" 
+                                            x-text="payment.payment_date"></td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600" 
+                                            x-text="payment.term"></td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm font-semibold text-green-600">
+                                            GHS <span x-text="payment.amount"></span>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600" 
+                                            x-text="payment.payment_method"></td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500" 
+                                            x-text="payment.reference || '-'"></td>
+                                    </tr>
+                                </template>
+                                <template x-if="childData.payment_history?.length === 0">
+                                    <tr>
+                                        <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                                            No payment history available
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="bg-gray-50 px-6 py-4 flex justify-end space-x-3">
+                <button @click="showFeesModal = false" 
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
+                    Close
+                </button>
+                <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                    <i class="fas fa-credit-card mr-2"></i>Make Payment
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         function parentDashboard() {
             return {
@@ -355,6 +535,7 @@
                 parentInfo: {},
                 children: [],
                 selectedChild: null,
+                showFeesModal: false,
                 childData: {
                     name: '',
                     class: '',
@@ -371,7 +552,10 @@
                     recent_results: [],
                     attendance_calendar: [],
                     teachers: [],
-                    timetable: { periods: [], days: [] }
+                    timetable: { periods: [], days: [] },
+                    fees: [],
+                    fee_summary: { total_fees: 0, total_paid: 0, total_balance: 0 },
+                    payment_history: []
                 },
                 notifications: [],
                 performanceChart: null,
@@ -475,7 +659,10 @@
                                     recent_results: data.data.recent_results || [],
                                     attendance_calendar: data.data.attendance_calendar || [],
                                     teachers: data.data.teachers || [],
-                                    timetable: data.data.timetable || { periods: [], days: [] }
+                                    timetable: data.data.timetable || { periods: [], days: [] },
+                                    fees: data.data.fees || [],
+                                    fee_summary: data.data.fee_summary || { total_fees: 0, total_paid: 0, total_balance: 0 },
+                                    payment_history: data.data.payment_history || []
                                 };
 
                                 this.$nextTick(() => {
@@ -528,9 +715,7 @@
                 },
 
                 loadNotifications() {
-                    this.notifications = [
-                
-                    ];
+                    this.notifications = [];
                 },
 
                 downloadTimetable() {

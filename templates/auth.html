@@ -47,7 +47,7 @@
                         placeholder="Enter your email or username" required>
                 </div>
 
-                <div class="mb-6">
+                <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                         <i class="fas fa-lock mr-2"></i>Password
                     </label>
@@ -60,6 +60,13 @@
                             <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
                         </button>
                     </div>
+                </div>
+
+                <!-- Forgot Password Link -->
+                <div class="mb-6 text-right">
+                    <a href="/reset-password/" class="text-sm text-indigo-600 hover:text-indigo-800">
+                        <i class="fas fa-question-circle mr-1"></i>Forgot Password?
+                    </a>
                 </div>
 
                 <div x-show="loginError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -118,7 +125,6 @@
 
                     if (token && user) {
                         try {
-                            // Verify the token is still valid
                             const userData = JSON.parse(user);
                             const response = await fetch(`/api/v1/dashboard/verify-${userData.role}/`, {
                                 method: 'GET',
@@ -129,16 +135,13 @@
                             });
 
                             if (response.ok) {
-                                // Token is valid, redirect to dashboard
                                 this.redirectToDashboard(userData.role);
                             } else {
-                                // Token is invalid/expired, clear it
                                 localStorage.removeItem('access_token');
                                 localStorage.removeItem('refresh_token');
                                 localStorage.removeItem('user_data');
                             }
                         } catch (error) {
-                            // Error validating token, clear it
                             console.error('Token validation error:', error);
                             localStorage.removeItem('access_token');
                             localStorage.removeItem('refresh_token');
@@ -163,14 +166,12 @@
                         const data = await response.json();
 
                         if (data.success) {
-                            // FIXED: Access nested data structure correctly
                             localStorage.setItem('access_token', data.data.tokens.access);
                             localStorage.setItem('refresh_token', data.data.tokens.refresh);
                             localStorage.setItem('user_data', JSON.stringify(data.data.user));
 
                             this.redirectToDashboard(data.data.user.role);
                         } else {
-                            // Handle error messages from backend
                             if (data.errors && data.errors.general) {
                                 this.loginError = data.errors.general[0];
                             } else {

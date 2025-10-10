@@ -1,21 +1,21 @@
-# apps/parents/views.py - COMPLETE FIXED VERSION
+# apps/parents/views.py - UPDATED WITH FINANCE INTEGRATION
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from apps.admissions.models import Parent, Student
 from apps.grades.models import Grade
-from django.db.models import Avg, Count, Q
+from apps.finance.models import StudentFee, Payment
+from django.db.models import Avg, Count, Q, Sum
 from datetime import datetime, timedelta
 from django.utils import timezone
 from apps.academics.models import TeacherClassAssignment, ClassSubject, Timetable, TimetableEntry
 
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def parent_dashboard_data(request):
-    """Get parent dashboard with all linked children data"""
+    """Get parent dashboard with all linked children data INCLUDING FEES"""
     if request.user.role != 'parent' and not request.user.is_superuser:
         return Response({
             'success': False,
@@ -81,8 +81,12 @@ def parent_dashboard_data(request):
             avg_percentage = 0
             overall_grade = 'N/A'
         
-        # Pending fees
-        pending_fees = 0
+        # ====== CALCULATE PENDING FEES ======
+        student_fees = StudentFee.objects.filter(
+            student=child,
+            status__in=['pending', 'partial', 'overdue']
+        )
+        pending_fees = sum([fee.balance for fee in student_fees])
         
         # Class rank
         class_rank = 0
@@ -124,7 +128,7 @@ def parent_dashboard_data(request):
             'attendance_rate': round(attendance_rate, 1),
             'overall_grade': overall_grade,
             'average_percentage': round(avg_percentage, 1),
-            'pending_fees': pending_fees,
+            'pending_fees': float(pending_fees),  # NOW SHOWING REAL DATA
             'class_rank': class_rank,
             'total_students': total_students,
         }
@@ -151,14 +155,7 @@ def parent_dashboard_data(request):
 @permission_classes([IsAuthenticated])
 def get_child_details(request, student_id):
     """
-    Get detailed information about a specific child including:
-    - Roll number
-    - Class teacher
-    - Blood group
-    - Recent test results
-    - Courses/subjects
-    - Timetable
-    - Attendance calendar
+    Get detailed information about a specific child including FEES
     """
     if request.user.role != 'parent' and not request.user.is_superuser:
         return Response({
@@ -227,7 +224,7 @@ def get_child_details(request, student_id):
                 seen_ids.add(teacher['id'])
         teachers_list = unique_teachers
         
-        # Get recent test results - FIXED
+        # Get recent test results
         recent_results = Grade.objects.filter(
             student=child
         ).select_related('subject').order_by('-exam_date')[:10]
@@ -245,10 +242,10 @@ def get_child_details(request, student_id):
                 'grade': result.grade
             })
         
-        # Get timetable - FIXED
+        # Get timetable
         timetable_data = get_timetable_for_class(current_class)
         
-        # Get attendance calendar (last 30 days) - FIXED
+        # Get attendance calendar (last 30 days)
         from apps.attendance.models import AttendanceRecord
         
         thirty_days_ago = timezone.now().date() - timedelta(days=30)
@@ -262,7 +259,65 @@ def get_child_details(request, student_id):
             attendance_calendar.append({
                 'date': record.attendance.date.isoformat(),
                 'day': record.attendance.date.day,
-                'status': record.status  # present, absent, late
+                'status': record.status
+            })
+        
+        # ====== GET DETAILED FEE INFORMATION ======
+        student_fees = StudentFee.objects.filter(
+            student=child
+        ).select_related('fee_structure').order_by('-due_date')
+        
+        fees_data = []
+        total_fees = 0
+        total_paid = 0
+        total_balance = 0
+        
+        for fee in student_fees:
+            fee_info = {
+                'id': fee.id,
+                'term': fee.fee_structure.get_term_display(),
+                'academic_year': fee.fee_structure.academic_year,
+                'total_amount': float(fee.total_amount),
+                'discount': float(fee.discount_amount),
+                'amount_paid': float(fee.amount_paid),
+                'balance': float(fee.balance),
+                'status': fee.status,
+                'due_date': fee.due_date.isoformat(),
+                'is_overdue': fee.is_overdue,
+                'breakdown': {
+                    'tuition': float(fee.fee_structure.tuition_fee),
+                    'admission': float(fee.fee_structure.admission_fee),
+                    'examination': float(fee.fee_structure.examination_fee),
+                    'library': float(fee.fee_structure.library_fee),
+                    'sports': float(fee.fee_structure.sports_fee),
+                    'laboratory': float(fee.fee_structure.laboratory_fee),
+                    'uniform': float(fee.fee_structure.uniform_fee),
+                    'transport': float(fee.fee_structure.transport_fee),
+                    'miscellaneous': float(fee.fee_structure.miscellaneous_fee),
+                }
+            }
+            fees_data.append(fee_info)
+            
+            total_fees += fee.total_amount
+            total_paid += fee.amount_paid
+            total_balance += fee.balance
+        
+        # Get payment history
+        payments = Payment.objects.filter(
+            student_fee__student=child,
+            status='completed'
+        ).select_related('student_fee').order_by('-payment_date')[:10]
+        
+        payment_history = []
+        for payment in payments:
+            payment_history.append({
+                'id': payment.id,
+                'receipt_number': payment.receipt_number,
+                'amount': float(payment.amount),
+                'payment_method': payment.get_payment_method_display(),
+                'payment_date': payment.payment_date.strftime('%b %d, %Y'),
+                'term': payment.student_fee.fee_structure.get_term_display(),
+                'reference': payment.reference_number or payment.transaction_id,
             })
         
         child_data = {
@@ -276,7 +331,15 @@ def get_child_details(request, student_id):
             'recent_results': results_data,
             'timetable': timetable_data,
             'attendance_calendar': attendance_calendar,
-            'teachers': teachers_list
+            'teachers': teachers_list,
+            # ====== FINANCE DATA ======
+            'fees': fees_data,
+            'fee_summary': {
+                'total_fees': float(total_fees),
+                'total_paid': float(total_paid),
+                'total_balance': float(total_balance),
+            },
+            'payment_history': payment_history,
         }
         
         return Response({
@@ -304,10 +367,7 @@ def get_child_details(request, student_id):
 
 
 def get_timetable_for_class(class_obj):
-    """
-    Helper function to get timetable for a class
-    Returns complete subject and teacher information
-    """
+    """Helper function to get timetable for a class"""
     if not class_obj:
         return {'periods': [], 'days': []}
     

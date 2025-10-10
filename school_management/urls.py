@@ -38,6 +38,7 @@ urlpatterns = [
     path('api/v1/parents/', include('apps.parents.urls')),
     path('api/v1/teachers/', include('apps.teachers.urls')),
     path('api/v1/academics/', include('apps.academics.urls')),
+    path('reset-password/', TemplateView.as_view(template_name='reset_password.html'), name='reset-password'),
 ]
 
 if settings.DEBUG:

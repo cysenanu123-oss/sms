@@ -17,4 +17,8 @@ urlpatterns = [
     path('assignments/', views.get_teacher_assignments, name='teacher-assignments'),
     path('timetable/', views.get_teacher_timetable, name='teacher-timetable'),
     path('grades/save/', views.save_grades, name='save-grades'),
+
+    path('dashboard/', views.get_teacher_timetable, name='teacher-dashboard'),
+    path('today-classes/', views.get_today_classes, name='teacher-today-classes'),
+
 ]

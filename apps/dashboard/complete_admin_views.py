@@ -294,7 +294,7 @@ def get_pending_fee_students(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def record_payment(request):
-    """Record a payment"""
+    """Record a payment - FIXED VERSION"""
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
         return Response({'success': False, 'error': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
     
@@ -307,6 +307,16 @@ def record_payment(request):
         return Response({'success': False, 'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
+        # Convert amount to Decimal
+        from decimal import Decimal
+        try:
+            amount = Decimal(str(amount))
+        except (ValueError, TypeError):
+            return Response({'success': False, 'error': 'Invalid amount format'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if amount <= 0:
+            return Response({'success': False, 'error': 'Amount must be greater than zero'}, status=status.HTTP_400_BAD_REQUEST)
+        
         student = Student.objects.get(student_id=student_id)
         
         # Get pending fee
@@ -318,6 +328,13 @@ def record_payment(request):
         if not pending_fee:
             return Response({'success': False, 'error': 'No pending fees for this student'}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Check if amount exceeds balance
+        if amount > pending_fee.balance:
+            return Response({
+                'success': False, 
+                'error': f'Amount exceeds balance. Balance is GHS {pending_fee.balance}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         # Create payment
         payment = Payment.objects.create(
             student_fee=pending_fee,
@@ -328,21 +345,27 @@ def record_payment(request):
             status='completed'
         )
         
+        # Update student fee
+        pending_fee.amount_paid += amount
+        pending_fee.update_status()
+        
         return Response({
             'success': True,
             'message': 'Payment recorded successfully',
             'data': {
                 'receipt_number': payment.receipt_number,
                 'amount': float(payment.amount),
-                'balance': float(pending_fee.balance)
+                'balance': float(pending_fee.balance),
+                'status': pending_fee.status
             }
         }, status=status.HTTP_201_CREATED)
         
     except Student.DoesNotExist:
         return Response({'success': False, 'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])

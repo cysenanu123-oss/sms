@@ -2276,6 +2276,52 @@
                     }
                     this.showTimetableEntryModal = true;
                 },
+                async downloadPerformanceReport() {
+                    const filters = this.reportFilters.performance;
+
+                    if (!filters.class_id) {
+                        alert('Please select a class');
+                        return;
+                    }
+
+                    this.downloadingReport = true;
+                    const token = localStorage.getItem('access_token');
+
+                    try {
+                        const params = new URLSearchParams({
+                            class_id: filters.class_id,
+                            format: filters.format
+                        });
+
+                        const response = await fetch(`/api/v1/admin/reports/academic/?${params}`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `academic_report_${filters.class_id}_${new Date().toISOString().split('T')[0]}.csv`;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                            alert('✅ Academic report downloaded successfully!');
+                        } else {
+                            const result = await response.json();
+                            alert('❌ Error: ' + result.error);
+                        }
+
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('❌ Network error downloading report');
+                    } finally {
+                        this.downloadingReport = false;
+                    }
+                },
 
                 async saveTimetableEntry() {
                     // Validate required fields

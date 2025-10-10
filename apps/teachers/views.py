@@ -726,3 +726,122 @@ def delete_teacher(request, teacher_id):
             'success': False,
             'error': 'Teacher not found'
         }, status=status.HTTP_404_NOT_FOUND)
+
+
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_teacher_timetable(request):
+    """Get timetable for logged-in teacher"""
+    if request.user.role != 'teacher':
+        return Response({'success': False, 'error': 'Teacher access only'}, status=403)
+    
+    try:
+        # Get all timetable entries where this teacher is assigned
+        entries = TimetableEntry.objects.filter(
+            teacher=request.user
+        ).select_related('timetable__class_obj', 'subject', 'time_slot').order_by(
+            'day_of_week', 'time_slot__start_time'
+        )
+        
+        # Organize by day and time
+        days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+        timetable_data = {}
+        
+        for day in days:
+            timetable_data[day] = []
+        
+        for entry in entries:
+            day = entry.day_of_week
+            if day in timetable_data:
+                timetable_data[day].append({
+                    'id': entry.id,
+                    'time_slot': entry.time_slot.name,
+                    'start_time': entry.time_slot.start_time.strftime('%H:%M'),
+                    'end_time': entry.time_slot.end_time.strftime('%H:%M'),
+                    'subject': entry.subject.name if entry.subject else 'Break',
+                    'class': entry.timetable.class_obj.name,
+                    'room': entry.room_number or '-'
+                })
+        
+        # Get today's schedule
+        today = datetime.now().strftime('%A')
+        today_schedule = timetable_data.get(today, [])
+        
+        # Get teacher's class assignments for quick stats
+        class_assignments = TeacherClassAssignment.objects.filter(
+            teacher=request.user,
+            is_active=True
+        ).select_related('class_obj', 'subject')
+        
+        assigned_classes = []
+        for assignment in class_assignments:
+            assigned_classes.append({
+                'class_id': assignment.class_obj.id,
+                'class_name': assignment.class_obj.name,
+                'subject': assignment.subject.name if assignment.subject else 'All Subjects',
+                'is_class_teacher': assignment.is_class_teacher
+            })
+        
+        return Response({
+            'success': True,
+            'data': {
+                'weekly_timetable': timetable_data,
+                'today_schedule': today_schedule,
+                'today': today,
+                'assigned_classes': assigned_classes,
+                'total_periods_per_week': entries.count()
+            }
+        })
+        
+    except Exception as e:
+        print(f"Error loading teacher timetable: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'success': False,
+            'error': f'Error loading timetable: {str(e)}'
+        }, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_today_classes(request):
+    """Get today's classes for teacher - for quick dashboard view"""
+    if request.user.role != 'teacher':
+        return Response({'success': False, 'error': 'Teacher access only'}, status=403)
+    
+    try:
+        today = datetime.now().strftime('%A')
+        
+        entries = TimetableEntry.objects.filter(
+            teacher=request.user,
+            day_of_week=today
+        ).select_related('timetable__class_obj', 'subject', 'time_slot').order_by(
+            'time_slot__start_time'
+        )
+        
+        today_classes = []
+        for entry in entries:
+            today_classes.append({
+                'id': entry.id,
+                'time': f"{entry.time_slot.start_time.strftime('%H:%M')} - {entry.time_slot.end_time.strftime('%H:%M')}",
+                'class': entry.timetable.class_obj.name,
+                'subject': entry.subject.name if entry.subject else 'Break',
+                'room': entry.room_number or 'TBA',
+                'class_id': entry.timetable.class_obj.id
+            })
+        
+        return Response({
+            'success': True,
+            'data': today_classes
+        })
+        
+    except Exception as e:
+        print(f"Error loading today's classes: {str(e)}")
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=500)

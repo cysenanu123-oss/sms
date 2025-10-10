@@ -1343,6 +1343,68 @@
                         this.savingAttendance = false;
                     }
                 },
+                async loadTimetable() {
+                    const token = localStorage.getItem('access_token');
+
+                    try {
+                        const response = await fetch('/api/v1/teachers/timetable/', {
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            const data = result.data;
+                            
+                            // Convert weekly timetable to periods format
+                            const timeSlots = new Set();
+                            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+                            
+                            // Collect all unique time slots
+                            days.forEach(day => {
+                                if (data.weekly_timetable[day]) {
+                                    data.weekly_timetable[day].forEach(entry => {
+                                        timeSlots.add(`${entry.start_time}-${entry.end_time}`);
+                                    });
+                                }
+                            });
+                            
+                            // Create timetable periods
+                            this.timetablePeriods = Array.from(timeSlots).sort().map(timeSlot => {
+                                const period = {
+                                    time: timeSlot
+                                };
+                                
+                                days.forEach(day => {
+                                    const dayEntries = data.weekly_timetable[day] || [];
+                                    const entry = dayEntries.find(e => 
+                                        `${e.start_time}-${e.end_time}` === timeSlot
+                                    );
+                                    
+                                    if (entry) {
+                                        period[day.toLowerCase()] = {
+                                            class: entry.class,
+                                            subject: entry.subject,
+                                            room: entry.room
+                                        };
+                                    }
+                                });
+                                
+                                return period;
+                            });
+                            
+                            console.log('✅ Timetable loaded:', this.timetablePeriods.length, 'periods');
+                        } else {
+                            console.error('❌ Error loading timetable:', result.error);
+                        }
+
+                    } catch (error) {
+                        console.error('❌ Error loading timetable:', error);
+                    }
+                },
 
                 async createAssignment() {
                     if (!this.newAssignment.title || !this.newAssignment.class_id || !this.newAssignment.due_date) {
