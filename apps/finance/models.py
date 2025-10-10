@@ -1,4 +1,4 @@
-# apps/finance/models.py
+# apps/finance/models.py - COMPLETE FILE REPLACEMENT
 from django.db import models
 from django.utils import timezone
 from apps.academics.models import Class
@@ -117,26 +117,32 @@ class StudentFee(models.Model):
         return self.due_date < timezone.now().date() and self.status != 'paid'
     
     def update_status(self):
-        """Update payment status based on amount paid"""
+        """Update payment status based on amount paid - NO SAVE VERSION"""
         balance = self.balance
+        
+        print(f"   💡 Updating status for {self.student.student_id} - Balance: GHS {balance}")
         
         if balance <= 0:
             self.status = 'paid'
             if not self.paid_date:
                 self.paid_date = timezone.now().date()
+            print(f"   ✅ Status: PAID")
         elif self.amount_paid > 0:
             self.status = 'partial'
+            print(f"   🟡 Status: PARTIAL")
         elif self.is_overdue:
             self.status = 'overdue'
+            print(f"   🔴 Status: OVERDUE")
         else:
             self.status = 'pending'
+            print(f"   🟠 Status: PENDING")
         
-        self.save()
+        # ✅ DON'T CALL SAVE HERE - let the caller save it
 
 
 class Payment(models.Model):
     """
-    Record of fee payments
+    Record of fee payments - FIXED VERSION
     """
     student_fee = models.ForeignKey(StudentFee, on_delete=models.CASCADE, related_name='payments')
     
@@ -184,7 +190,9 @@ class Payment(models.Model):
         return f"{self.receipt_number} - GHS {self.amount}"
     
     def save(self, *args, **kwargs):
-        # Generate receipt number
+        """Save payment and update student fee - BULLETPROOF VERSION"""
+        
+        # Generate receipt number if it doesn't exist
         if not self.receipt_number:
             last_payment = Payment.objects.filter(
                 receipt_number__startswith='RCP-'
@@ -198,12 +206,33 @@ class Payment(models.Model):
             
             self.receipt_number = f'RCP-{timezone.now().year}-{new_num:05d}'
         
+        # Save the payment record FIRST
         super().save(*args, **kwargs)
         
-        # Update student fee
+        # ✅ RECALCULATE TOTAL FROM ALL PAYMENTS (prevents double-counting)
         if self.status == 'completed':
-            self.student_fee.amount_paid += self.amount
+            from django.db.models import Sum
+            
+            print(f"\n💰 Processing payment for {self.student_fee.student.student_id}")
+            print(f"   Receipt: {self.receipt_number}")
+            print(f"   This payment: GHS {self.amount}")
+            
+            # Get TOTAL of ALL completed payments for this student fee
+            total_paid = Payment.objects.filter(
+                student_fee=self.student_fee,
+                status='completed'
+            ).aggregate(total=Sum('amount'))['total'] or 0
+            
+            print(f"   📊 Total from ALL payments: GHS {total_paid}")
+            
+            # Set the correct total (SETTING, not ADDING)
+            self.student_fee.amount_paid = total_paid
+            
+            # Update status
             self.student_fee.update_status()
+            
+            new_balance = self.student_fee.balance
+            print(f"   ✅ NEW Balance: GHS {new_balance}\n")
 
 
 class FeeReminder(models.Model):

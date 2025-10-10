@@ -845,7 +845,9 @@
                 </div>
             </div>
 
-          <!-- Reports Section -->
+            <!-- REPLACE THE ENTIRE REPORTS SECTION IN YOUR admin_dashboard.html -->
+            <!-- Find the section that starts with: <div x-show="currentView === 'reports' && !loading"> -->
+
             <div x-show="currentView === 'reports' && !loading">
                 <div class="mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Reports & Analytics</h2>
@@ -861,9 +863,9 @@
                         </div>
                         <h3 class="font-semibold text-gray-900 mb-2">Academic Performance</h3>
                         <p class="text-sm text-gray-600 mb-4">Class-wise and student performance analysis</p>
-                        
+
                         <div class="space-y-2 mb-4">
-                            <select x-model="reportFilters.academic.class_id" 
+                            <select x-model="reportFilters.academic.class_id"
                                 class="w-full px-3 py-2 border rounded-lg text-sm">
                                 <option value="">Select Class</option>
                                 <template x-for="cls in availableClasses" :key="cls.id">
@@ -871,11 +873,14 @@
                                 </template>
                             </select>
                         </div>
-                        
-                        <button @click="downloadReport('academic')" :disabled="!reportFilters.academic.class_id || downloadingReport"
-                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
-                            <span x-show="!downloadingReport"><i class="fas fa-download mr-2"></i>Download CSV</span>
-                            <span x-show="downloadingReport"><i class="fas fa-spinner fa-spin mr-2"></i>Downloading...</span>
+
+                        <button @click="downloadReport('academic')"
+                            :disabled="!reportFilters.academic.class_id || downloadingReport"
+                            :class="!reportFilters.academic.class_id || downloadingReport ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'"
+                            class="w-full px-4 py-2 text-white rounded-lg transition">
+                            <span x-show="!downloadingReport"><i class="fas fa-download mr-2"></i>Download Report</span>
+                            <span x-show="downloadingReport"><i
+                                    class="fas fa-spinner fa-spin mr-2"></i>Downloading...</span>
                         </button>
                     </div>
 
@@ -886,25 +891,28 @@
                         </div>
                         <h3 class="font-semibold text-gray-900 mb-2">Attendance Reports</h3>
                         <p class="text-sm text-gray-600 mb-4">Daily, weekly, and monthly attendance data</p>
-                        
+
                         <div class="space-y-2 mb-4">
-                            <select x-model="reportFilters.attendance.class_id" 
+                            <select x-model="reportFilters.attendance.class_id"
                                 class="w-full px-3 py-2 border rounded-lg text-sm">
                                 <option value="">Select Class</option>
                                 <template x-for="cls in availableClasses" :key="cls.id">
                                     <option :value="cls.id" x-text="cls.name"></option>
                                 </template>
                             </select>
-                            <input type="date" x-model="reportFilters.attendance.start_date" 
+                            <input type="date" x-model="reportFilters.attendance.start_date"
                                 class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Start Date">
-                            <input type="date" x-model="reportFilters.attendance.end_date" 
+                            <input type="date" x-model="reportFilters.attendance.end_date"
                                 class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="End Date">
                         </div>
-                        
-                        <button @click="downloadReport('attendance')" :disabled="!reportFilters.attendance.class_id || downloadingReport"
-                            class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
-                            <span x-show="!downloadingReport"><i class="fas fa-download mr-2"></i>Download CSV</span>
-                            <span x-show="downloadingReport"><i class="fas fa-spinner fa-spin mr-2"></i>Downloading...</span>
+
+                        <button @click="downloadReport('attendance')"
+                            :disabled="!reportFilters.attendance.class_id || downloadingReport"
+                            :class="!reportFilters.attendance.class_id || downloadingReport ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'"
+                            class="w-full px-4 py-2 text-white rounded-lg transition">
+                            <span x-show="!downloadingReport"><i class="fas fa-download mr-2"></i>Download Report</span>
+                            <span x-show="downloadingReport"><i
+                                    class="fas fa-spinner fa-spin mr-2"></i>Downloading...</span>
                         </button>
                     </div>
 
@@ -915,11 +923,12 @@
                         </div>
                         <h3 class="font-semibold text-gray-900 mb-2">Financial Reports</h3>
                         <p class="text-sm text-gray-600 mb-4">Revenue, expenses, and fee collection</p>
-                        
+
                         <div class="space-y-2 mb-4">
-                            <input type="text" x-model="reportFilters.financial.academic_year" 
-                                class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Academic Year">
-                            <select x-model="reportFilters.financial.term" 
+                            <input type="text" x-model="reportFilters.financial.academic_year"
+                                placeholder="Academic Year (e.g., 2024-2025)"
+                                class="w-full px-3 py-2 border rounded-lg text-sm">
+                            <select x-model="reportFilters.financial.term"
                                 class="w-full px-3 py-2 border rounded-lg text-sm">
                                 <option value="">All Terms</option>
                                 <option value="first">First Term</option>
@@ -927,11 +936,13 @@
                                 <option value="third">Third Term</option>
                             </select>
                         </div>
-                        
+
                         <button @click="downloadReport('financial')" :disabled="downloadingReport"
-                            class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
-                            <span x-show="!downloadingReport"><i class="fas fa-download mr-2"></i>Download CSV</span>
-                            <span x-show="downloadingReport"><i class="fas fa-spinner fa-spin mr-2"></i>Downloading...</span>
+                            :class="downloadingReport ? 'bg-gray-300 cursor-not-allowed' : 'bg-purple-600 hover:bg-purple-700'"
+                            class="w-full px-4 py-2 text-white rounded-lg transition">
+                            <span x-show="!downloadingReport"><i class="fas fa-download mr-2"></i>Download Report</span>
+                            <span x-show="downloadingReport"><i
+                                    class="fas fa-spinner fa-spin mr-2"></i>Downloading...</span>
                         </button>
                     </div>
 
@@ -942,9 +953,9 @@
                         </div>
                         <h3 class="font-semibold text-gray-900 mb-2">Applications Report</h3>
                         <p class="text-sm text-gray-600 mb-4">All application submissions and status</p>
-                        
+
                         <div class="space-y-2 mb-4">
-                            <select x-model="reportFilters.applications.status" 
+                            <select x-model="reportFilters.applications.status"
                                 class="w-full px-3 py-2 border rounded-lg text-sm">
                                 <option value="">All Statuses</option>
                                 <option value="pending">Pending</option>
@@ -952,11 +963,13 @@
                                 <option value="rejected">Rejected</option>
                             </select>
                         </div>
-                        
+
                         <button @click="downloadReport('applications')" :disabled="downloadingReport"
-                            class="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50">
-                            <span x-show="!downloadingReport"><i class="fas fa-download mr-2"></i>Download CSV</span>
-                            <span x-show="downloadingReport"><i class="fas fa-spinner fa-spin mr-2"></i>Downloading...</span>
+                            :class="downloadingReport ? 'bg-gray-300 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'"
+                            class="w-full px-4 py-2 text-white rounded-lg transition">
+                            <span x-show="!downloadingReport"><i class="fas fa-download mr-2"></i>Download Report</span>
+                            <span x-show="downloadingReport"><i
+                                    class="fas fa-spinner fa-spin mr-2"></i>Downloading...</span>
                         </button>
                     </div>
 
@@ -967,33 +980,35 @@
                         </div>
                         <h3 class="font-semibold text-gray-900 mb-2">Students List</h3>
                         <p class="text-sm text-gray-600 mb-4">Complete students database export</p>
-                        
+
                         <div class="space-y-2 mb-4">
-                            <select x-model="reportFilters.students.class_id" 
+                            <select x-model="reportFilters.students.class_id"
                                 class="w-full px-3 py-2 border rounded-lg text-sm">
                                 <option value="">All Classes</option>
                                 <template x-for="cls in availableClasses" :key="cls.id">
                                     <option :value="cls.id" x-text="cls.name"></option>
                                 </template>
                             </select>
-                            <select x-model="reportFilters.students.status" 
+                            <select x-model="reportFilters.students.status"
                                 class="w-full px-3 py-2 border rounded-lg text-sm">
                                 <option value="active">Active Students</option>
                                 <option value="">All Students</option>
                                 <option value="inactive">Inactive Students</option>
                             </select>
                         </div>
-                        
+
                         <button @click="downloadReport('students')" :disabled="downloadingReport"
-                            class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-                            <span x-show="!downloadingReport"><i class="fas fa-download mr-2"></i>Download CSV</span>
-                            <span x-show="downloadingReport"><i class="fas fa-spinner fa-spin mr-2"></i>Downloading...</span>
+                            :class="downloadingReport ? 'bg-gray-300 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'"
+                            class="w-full px-4 py-2 text-white rounded-lg transition">
+                            <span x-show="!downloadingReport"><i class="fas fa-download mr-2"></i>Download Report</span>
+                            <span x-show="downloadingReport"><i
+                                    class="fas fa-spinner fa-spin mr-2"></i>Downloading...</span>
                         </button>
                     </div>
                 </div>
 
                 <!-- Download Instructions -->
-                <div class="bg-blue-50 border-l-4 border-blue-400 p-6 mb-6">
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-6">
                     <div class="flex">
                         <div class="flex-shrink-0">
                             <i class="fas fa-info-circle text-blue-600 text-xl"></i>
@@ -1002,17 +1017,19 @@
                             <h3 class="text-sm font-medium text-blue-800">Download Instructions</h3>
                             <div class="mt-2 text-sm text-blue-700">
                                 <ul class="list-disc pl-5 space-y-1">
-                                    <li>All reports are downloaded as CSV files</li>
-                                    <li>CSV files can be opened in Excel, Google Sheets, or any spreadsheet software</li>
+                                    <li>All reports are downloaded as CSV files that can be opened in Excel or Google
+                                        Sheets</li>
                                     <li>Academic and Attendance reports require a class selection</li>
                                     <li>Use date filters for attendance reports to get specific periods</li>
-                                    <li>Financial reports can be filtered by term and payment status</li>
+                                    <li>Financial reports can be filtered by academic year and term</li>
+                                    <li>If a button is grayed out, fill in the required filters first</li>
                                 </ul>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
             <div x-show="currentView === 'timetable' && !loading">
                 <div class="mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Timetable Management</h2>
@@ -1040,7 +1057,6 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- Timetable Display -->
                 <div x-show="selectedTimetableClass" class="bg-white rounded-lg shadow overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -1058,7 +1074,8 @@
                             <template x-for="entry in timetableEntries" :key="entry.id">
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium"
-                                        x-text="entry.day_of_week"></td>
+                                        x-text="entry.day_of_week">
+                                    </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="entry.time_slot"></td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="entry.subject_name"></td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm" x-text="entry.teacher_name"></td>
@@ -1142,7 +1159,8 @@
                                         <option value="">-- Select Subject --</option>
                                         <template x-for="subject in availableSubjects" :key="subject.id">
                                             <option :value="subject.id"
-                                                x-text="subject.name + ' (' + subject.code + ')'"></option>
+                                                x-text="subject.name + ' (' + subject.code + ')'">
+                                            </option>
                                         </template>
                                     </select>
                                 </div>
@@ -1477,10 +1495,34 @@
                 savingTimetable: false,
                 newTimetableEntry: {
                     day_of_week: '',
-                    time_slot: '' ,
+                    time_slot: '',
                     subject_id: '',
                     teacher_id: '',
                     room_number: ''
+                },
+
+                // Report filters
+                downloadingReport: false,
+                reportFilters: {
+                    academic: {
+                        class_id: '',
+                    },
+                    attendance: {
+                        class_id: '',
+                        start_date: '',
+                        end_date: ''
+                    },
+                    financial: {
+                        academic_year: '2024-2025',
+                        term: ''
+                    },
+                    applications: {
+                        status: ''
+                    },
+                    students: {
+                        class_id: '',
+                        status: 'active'
+                    }
                 },
 
                 // Methods
@@ -2352,6 +2394,130 @@
                         };
                     }
                     this.showTimetableEntryModal = true;
+                },
+
+                async downloadReport(reportType) {
+                    console.log('📥 Downloading report:', reportType);
+
+                    this.downloadingReport = true;
+                    const token = localStorage.getItem('access_token');
+
+                    try {
+                        let url = '';
+                        let params = new URLSearchParams();
+                        let filename = '';
+
+                        switch (reportType) {
+                            case 'academic':
+                                if (!this.reportFilters.academic.class_id) {
+                                    alert('⚠️ Please select a class first');
+                                    this.downloadingReport = false;
+                                    return;
+                                }
+                                url = '/api/v1/dashboard/admin/reports/academic/';
+                                params.append('class_id', this.reportFilters.academic.class_id);
+
+                                // Find class name for filename
+                                const selectedClass = this.availableClasses.find(c => c.id == this.reportFilters.academic.class_id);
+                                const className = selectedClass ? selectedClass.name.replace(/\s+/g, '_') : 'class';
+                                filename = `academic_report_${className}_${new Date().toISOString().split('T')[0]}.csv`;
+                                break;
+
+                            case 'attendance':
+                                if (!this.reportFilters.attendance.class_id) {
+                                    alert('⚠️ Please select a class first');
+                                    this.downloadingReport = false;
+                                    return;
+                                }
+                                url = '/api/v1/dashboard/admin/reports/attendance/';
+                                params.append('class_id', this.reportFilters.attendance.class_id);
+                                if (this.reportFilters.attendance.start_date) {
+                                    params.append('start_date', this.reportFilters.attendance.start_date);
+                                }
+                                if (this.reportFilters.attendance.end_date) {
+                                    params.append('end_date', this.reportFilters.attendance.end_date);
+                                }
+
+                                const attClass = this.availableClasses.find(c => c.id == this.reportFilters.attendance.class_id);
+                                const attClassName = attClass ? attClass.name.replace(/\s+/g, '_') : 'class';
+                                filename = `attendance_report_${attClassName}_${new Date().toISOString().split('T')[0]}.csv`;
+                                break;
+
+                            case 'financial':
+                                url = '/api/v1/dashboard/admin/reports/financial/';
+                                if (this.reportFilters.financial.academic_year) {
+                                    params.append('academic_year', this.reportFilters.financial.academic_year);
+                                }
+                                if (this.reportFilters.financial.term) {
+                                    params.append('term', this.reportFilters.financial.term);
+                                }
+                                filename = `financial_report_${new Date().toISOString().split('T')[0]}.csv`;
+                                break;
+
+                            case 'applications':
+                                url = '/api/v1/dashboard/admin/reports/applications/';
+                                if (this.reportFilters.applications.status) {
+                                    params.append('status', this.reportFilters.applications.status);
+                                }
+                                filename = `applications_report_${new Date().toISOString().split('T')[0]}.csv`;
+                                break;
+
+                            case 'students':
+                                url = '/api/v1/dashboard/admin/reports/students/';
+                                if (this.reportFilters.students.class_id) {
+                                    params.append('class_id', this.reportFilters.students.class_id);
+                                }
+                                if (this.reportFilters.students.status) {
+                                    params.append('status', this.reportFilters.students.status);
+                                }
+                                filename = `students_report_${new Date().toISOString().split('T')[0]}.csv`;
+                                break;
+
+                            default:
+                                alert('❌ Unknown report type');
+                                this.downloadingReport = false;
+                                return;
+                        }
+
+                        console.log('🔗 Fetching:', `${url}?${params}`);
+
+                        const response = await fetch(`${url}?${params}`, {
+                            method: 'GET',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        console.log('📥 Response status:', response.status);
+
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            console.log('✅ Blob received, size:', blob.size);
+
+                            // Create download link
+                            const downloadUrl = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = downloadUrl;
+                            a.download = filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(downloadUrl);
+                            document.body.removeChild(a);
+
+                            console.log('✅ Download completed:', filename);
+                            alert(`✅ Report downloaded successfully!\n\nFile: ${filename}`);
+                        } else {
+                            const errorData = await response.json();
+                            console.error('❌ Error response:', errorData);
+                            alert('❌ Error downloading report:\n\n' + (errorData.error || 'Unknown error'));
+                        }
+
+                    } catch (error) {
+                        console.error('❌ Download error:', error);
+                        alert('❌ Network error downloading report.\nCheck console for details.');
+                    } finally {
+                        this.downloadingReport = false;
+                    }
                 },
                 async downloadPerformanceReport() {
                     const filters = this.reportFilters.performance;
