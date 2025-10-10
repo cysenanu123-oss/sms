@@ -845,7 +845,7 @@
                 </div>
             </div>
 
-            <!-- Reports Section -->
+          <!-- Reports Section -->
             <div x-show="currentView === 'reports' && !loading">
                 <div class="mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Reports & Analytics</h2>
@@ -854,85 +854,162 @@
 
                 <!-- Report Categories -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    <!-- Academic Performance Report -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
                             <i class="fas fa-chart-line text-blue-600 text-xl"></i>
                         </div>
                         <h3 class="font-semibold text-gray-900 mb-2">Academic Performance</h3>
                         <p class="text-sm text-gray-600 mb-4">Class-wise and student performance analysis</p>
-                        <button @click="generateReport('academic')"
-                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                            <i class="fas fa-download mr-2"></i>Generate Report
+                        
+                        <div class="space-y-2 mb-4">
+                            <select x-model="reportFilters.academic.class_id" 
+                                class="w-full px-3 py-2 border rounded-lg text-sm">
+                                <option value="">Select Class</option>
+                                <template x-for="cls in availableClasses" :key="cls.id">
+                                    <option :value="cls.id" x-text="cls.name"></option>
+                                </template>
+                            </select>
+                        </div>
+                        
+                        <button @click="downloadReport('academic')" :disabled="!reportFilters.academic.class_id || downloadingReport"
+                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                            <span x-show="!downloadingReport"><i class="fas fa-download mr-2"></i>Download CSV</span>
+                            <span x-show="downloadingReport"><i class="fas fa-spinner fa-spin mr-2"></i>Downloading...</span>
                         </button>
                     </div>
 
+                    <!-- Attendance Report -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="bg-green-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
                             <i class="fas fa-calendar-check text-green-600 text-xl"></i>
                         </div>
                         <h3 class="font-semibold text-gray-900 mb-2">Attendance Reports</h3>
                         <p class="text-sm text-gray-600 mb-4">Daily, weekly, and monthly attendance data</p>
-                        <button @click="generateReport('attendance')"
-                            class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                            <i class="fas fa-download mr-2"></i>Generate Report
+                        
+                        <div class="space-y-2 mb-4">
+                            <select x-model="reportFilters.attendance.class_id" 
+                                class="w-full px-3 py-2 border rounded-lg text-sm">
+                                <option value="">Select Class</option>
+                                <template x-for="cls in availableClasses" :key="cls.id">
+                                    <option :value="cls.id" x-text="cls.name"></option>
+                                </template>
+                            </select>
+                            <input type="date" x-model="reportFilters.attendance.start_date" 
+                                class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Start Date">
+                            <input type="date" x-model="reportFilters.attendance.end_date" 
+                                class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="End Date">
+                        </div>
+                        
+                        <button @click="downloadReport('attendance')" :disabled="!reportFilters.attendance.class_id || downloadingReport"
+                            class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
+                            <span x-show="!downloadingReport"><i class="fas fa-download mr-2"></i>Download CSV</span>
+                            <span x-show="downloadingReport"><i class="fas fa-spinner fa-spin mr-2"></i>Downloading...</span>
                         </button>
                     </div>
 
+                    <!-- Financial Report -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <div class="bg-purple-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
                             <i class="fas fa-money-bill text-purple-600 text-xl"></i>
                         </div>
                         <h3 class="font-semibold text-gray-900 mb-2">Financial Reports</h3>
                         <p class="text-sm text-gray-600 mb-4">Revenue, expenses, and fee collection</p>
-                        <button @click="generateReport('financial')"
-                            class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                            <i class="fas fa-download mr-2"></i>Generate Report
+                        
+                        <div class="space-y-2 mb-4">
+                            <input type="text" x-model="reportFilters.financial.academic_year" 
+                                class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Academic Year">
+                            <select x-model="reportFilters.financial.term" 
+                                class="w-full px-3 py-2 border rounded-lg text-sm">
+                                <option value="">All Terms</option>
+                                <option value="first">First Term</option>
+                                <option value="second">Second Term</option>
+                                <option value="third">Third Term</option>
+                            </select>
+                        </div>
+                        
+                        <button @click="downloadReport('financial')" :disabled="downloadingReport"
+                            class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
+                            <span x-show="!downloadingReport"><i class="fas fa-download mr-2"></i>Download CSV</span>
+                            <span x-show="downloadingReport"><i class="fas fa-spinner fa-spin mr-2"></i>Downloading...</span>
+                        </button>
+                    </div>
+
+                    <!-- Applications Report -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="bg-orange-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                            <i class="fas fa-file-alt text-orange-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Applications Report</h3>
+                        <p class="text-sm text-gray-600 mb-4">All application submissions and status</p>
+                        
+                        <div class="space-y-2 mb-4">
+                            <select x-model="reportFilters.applications.status" 
+                                class="w-full px-3 py-2 border rounded-lg text-sm">
+                                <option value="">All Statuses</option>
+                                <option value="pending">Pending</option>
+                                <option value="accepted">Accepted</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                        
+                        <button @click="downloadReport('applications')" :disabled="downloadingReport"
+                            class="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50">
+                            <span x-show="!downloadingReport"><i class="fas fa-download mr-2"></i>Download CSV</span>
+                            <span x-show="downloadingReport"><i class="fas fa-spinner fa-spin mr-2"></i>Downloading...</span>
+                        </button>
+                    </div>
+
+                    <!-- Students List Report -->
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="bg-indigo-100 rounded-full w-12 h-12 flex items-center justify-center mb-4">
+                            <i class="fas fa-users text-indigo-600 text-xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Students List</h3>
+                        <p class="text-sm text-gray-600 mb-4">Complete students database export</p>
+                        
+                        <div class="space-y-2 mb-4">
+                            <select x-model="reportFilters.students.class_id" 
+                                class="w-full px-3 py-2 border rounded-lg text-sm">
+                                <option value="">All Classes</option>
+                                <template x-for="cls in availableClasses" :key="cls.id">
+                                    <option :value="cls.id" x-text="cls.name"></option>
+                                </template>
+                            </select>
+                            <select x-model="reportFilters.students.status" 
+                                class="w-full px-3 py-2 border rounded-lg text-sm">
+                                <option value="active">Active Students</option>
+                                <option value="">All Students</option>
+                                <option value="inactive">Inactive Students</option>
+                            </select>
+                        </div>
+                        
+                        <button @click="downloadReport('students')" :disabled="downloadingReport"
+                            class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                            <span x-show="!downloadingReport"><i class="fas fa-download mr-2"></i>Download CSV</span>
+                            <span x-show="downloadingReport"><i class="fas fa-spinner fa-spin mr-2"></i>Downloading...</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Teacher Performance -->
-                <div class="bg-white rounded-lg shadow p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Teacher Performance Overview</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teacher
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Classes
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Attendances Marked</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Performance</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <template x-for="teacher in teacherPerformance" :key="teacher.id">
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900" x-text="teacher.name"></div>
-                                            <div class="text-sm text-gray-500" x-text="teacher.email"></div>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm"
-                                            x-text="teacher.classes_assigned"></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm"
-                                            x-text="teacher.attendances_marked"></td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <template x-for="i in 5" :key="i">
-                                                    <i
-                                                        :class="i <= teacher.performance_score ? 'fas fa-star text-yellow-400' : 'far fa-star text-gray-300'"></i>
-                                                </template>
-                                                <span class="ml-2 text-sm text-gray-600"
-                                                    x-text="teacher.performance_score.toFixed(1)"></span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
+                <!-- Download Instructions -->
+                <div class="bg-blue-50 border-l-4 border-blue-400 p-6 mb-6">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle text-blue-600 text-xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-blue-800">Download Instructions</h3>
+                            <div class="mt-2 text-sm text-blue-700">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li>All reports are downloaded as CSV files</li>
+                                    <li>CSV files can be opened in Excel, Google Sheets, or any spreadsheet software</li>
+                                    <li>Academic and Attendance reports require a class selection</li>
+                                    <li>Use date filters for attendance reports to get specific periods</li>
+                                    <li>Financial reports can be filtered by term and payment status</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
