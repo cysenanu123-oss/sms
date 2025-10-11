@@ -2049,20 +2049,33 @@
 
                 async loadPendingFees() {
                     try {
-                        const response = await fetch('/api/v1/admin/finance/pending-fees/', {
+                        console.log('🔄 Loading pending fees...');
+
+                        // Add cache-busting parameter to force fresh data
+                        const timestamp = new Date().getTime();
+
+                        const response = await fetch(`/api/v1/admin/finance/pending-fees/?t=${timestamp}`, {
                             headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                                'Cache-Control': 'no-cache'  // Prevent caching
                             }
                         });
+
                         const data = await response.json();
+                        console.log('📥 Pending fees data:', data);
+
                         if (data.success) {
-                            this.pendingFeeStudents = data.data;
+                            // Force update the display
+                            this.pendingFeeStudents = [];  // Clear first
+                            this.$nextTick(() => {
+                                this.pendingFeeStudents = data.data;  // Then set new data
+                                console.log('✅ Pending fees updated:', this.pendingFeeStudents.length, 'students');
+                            });
                         }
                     } catch (error) {
-                        console.error('Error loading pending fees:', error);
+                        console.error('❌ Error loading pending fees:', error);
                     }
                 },
-
                 async recordPayment() {
                     if (!this.payment.student_id || !this.payment.amount) {
                         alert('Please fill in all required fields');
@@ -2072,6 +2085,8 @@
                     this.processingPayment = true;
 
                     try {
+                        console.log('💰 Recording payment:', this.payment);
+
                         const response = await fetch('/api/v1/admin/finance/record-payment/', {
                             method: 'POST',
                             headers: {
@@ -2082,17 +2097,36 @@
                         });
 
                         const data = await response.json();
+                        console.log('📥 Payment response:', data);
 
                         if (data.success) {
+                            // Show success message
                             alert(`Payment recorded successfully!\n\nReceipt Number: ${data.data.receipt_number}\nAmount: GHS ${data.data.amount}\nBalance: GHS ${data.data.balance}`);
-                            this.payment = { student_id: '', amount: '', payment_method: 'cash', reference: '' };
-                            await this.loadFinanceData();
-                            await this.loadPendingFees();
+
+                            // Reset form
+                            this.payment = {
+                                student_id: '',
+                                amount: '',
+                                payment_method: 'cash',
+                                reference: ''
+                            };
+
+                            // ✅ CRITICAL FIX: Force reload ALL finance data
+                            console.log('🔄 Refreshing all finance data...');
+
+                            // Method 1: Reload both finance overview and pending fees
+                            await Promise.all([
+                                this.loadFinanceData(),
+                                this.loadPendingFees()
+                            ]);
+
+                            console.log('✅ Finance data refreshed!');
+
                         } else {
                             alert('Error: ' + data.error);
                         }
                     } catch (error) {
-                        console.error('Error recording payment:', error);
+                        console.error('❌ Error recording payment:', error);
                         alert('Error recording payment');
                     } finally {
                         this.processingPayment = false;

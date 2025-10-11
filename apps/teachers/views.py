@@ -845,3 +845,111 @@ def get_today_classes(request):
             'success': False,
             'error': str(e)
         }, status=500)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def promote_students(request):
+    """
+    Allow class teachers to promote their students to the next class
+    """
+    user = request.user
+    
+    if user.role != 'teacher' and not user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Teacher access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        from_class_id = request.data.get('from_class_id')
+        to_class_id = request.data.get('to_class_id')
+        academic_year = request.data.get('academic_year')
+        student_ids = request.data.get('student_ids', [])
+        
+        if not all([from_class_id, to_class_id, academic_year, student_ids]):
+            return Response({
+                'success': False,
+                'error': 'All fields are required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Get classes
+        from_class = Class.objects.get(id=from_class_id)
+        to_class = Class.objects.get(id=to_class_id)
+        
+        # ✅ VERIFY: Teacher is the class teacher for from_class
+        is_class_teacher = TeacherClassAssignment.objects.filter(
+            teacher=user,
+            class_obj=from_class,
+            is_class_teacher=True,
+            is_active=True
+        ).exists()
+        
+        if not is_class_teacher and not user.is_superuser:
+            return Response({
+                'success': False,
+                'error': 'Only the class teacher can promote students from this class'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Promote students
+        promoted_count = 0
+        errors = []
+        
+        with transaction.atomic():
+            for student_id in student_ids:
+                try:
+                    student = Student.objects.get(id=student_id)
+                    
+                    # Verify student is in from_class
+                    if student.current_class != from_class:
+                        errors.append(f'{student.first_name} {student.last_name} is not in the source class')
+                        continue
+                    
+                    # Create promotion record
+                    from apps.admissions.models import StudentPromotion
+                    StudentPromotion.objects.create(
+                        student=student,
+                        from_class=from_class,
+                        to_class=to_class,
+                        academic_year=academic_year,
+                        promotion_type='promoted',
+                        promoted_by=user
+                    )
+                    
+                    # ✅ UPDATE STUDENT'S CURRENT CLASS
+                    student.current_class = to_class
+                    student.academic_year = academic_year
+                    student.save()
+                    
+                    promoted_count += 1
+                    
+                except Student.DoesNotExist:
+                    errors.append(f'Student {student_id} not found')
+                except Exception as e:
+                    errors.append(f'Error promoting student {student_id}: {str(e)}')
+        
+        response_data = {
+            'success': True,
+            'message': f'Successfully promoted {promoted_count} student(s)',
+            'promoted_count': promoted_count,
+            'from_class': from_class.name,
+            'to_class': to_class.name
+        }
+        
+        if errors:
+            response_data['errors'] = errors
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+        
+    except Class.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Class not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'success': False,
+            'error': f'Error promoting students: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

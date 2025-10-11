@@ -1,20 +1,20 @@
-# apps/finance/models.py - COMPLETE FILE REPLACEMENT
+# ============================================
+# FILE 1: apps/finance/models.py (FIXED VERSION)
+# ============================================
+
 from django.db import models
 from django.utils import timezone
+from django.db.models import Sum
 from apps.academics.models import Class
 from apps.admissions.models import Student
 from apps.accounts.models import User
 
 
 class FeeStructure(models.Model):
-    """
-    Fee structure for each class/grade level
-    Admin defines fees here
-    """
+    """Fee structure for each class/grade level"""
     class_level = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='fee_structures')
     academic_year = models.CharField(max_length=20)
     
-    # Fee Types
     TERM_CHOICES = (
         ('first', 'First Term'),
         ('second', 'Second Term'),
@@ -34,12 +34,10 @@ class FeeStructure(models.Model):
     transport_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     miscellaneous_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
-    # Dates
     due_date = models.DateField()
     late_fee_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     late_fee_applicable_after = models.DateField(null=True, blank=True)
     
-    # Status
     is_active = models.BooleanField(default=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -54,36 +52,23 @@ class FeeStructure(models.Model):
     
     @property
     def total_fee(self):
-        """Calculate total fee"""
         return (
-            self.tuition_fee +
-            self.admission_fee +
-            self.examination_fee +
-            self.library_fee +
-            self.sports_fee +
-            self.laboratory_fee +
-            self.uniform_fee +
-            self.transport_fee +
-            self.miscellaneous_fee
+            self.tuition_fee + self.admission_fee + self.examination_fee +
+            self.library_fee + self.sports_fee + self.laboratory_fee +
+            self.uniform_fee + self.transport_fee + self.miscellaneous_fee
         )
 
 
 class StudentFee(models.Model):
-    """
-    Individual student fee records
-    Automatically created when student is enrolled
-    """
+    """Individual student fee records"""
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='fees')
     fee_structure = models.ForeignKey(FeeStructure, on_delete=models.CASCADE)
     
-    # Amount details
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     discount_reason = models.CharField(max_length=200, blank=True)
-    
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     
-    # Status
     STATUS_CHOICES = (
         ('pending', 'Pending'),
         ('partial', 'Partially Paid'),
@@ -93,10 +78,8 @@ class StudentFee(models.Model):
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
-    # Dates
     due_date = models.DateField()
     paid_date = models.DateField(null=True, blank=True)
-    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -116,37 +99,57 @@ class StudentFee(models.Model):
         """Check if payment is overdue"""
         return self.due_date < timezone.now().date() and self.status != 'paid'
     
-    def update_status(self):
-        """Update payment status based on amount paid - NO SAVE VERSION"""
-        balance = self.balance
+    def recalculate_from_payments(self):
+        """
+        🔥 CRITICAL FIX: Always calculate from actual payments
+        This prevents the multiplication bug!
+        """
+        actual_paid = Payment.objects.filter(
+            student_fee=self,
+            status='completed'
+        ).aggregate(total=Sum('amount'))['total'] or 0
         
-        print(f"   💡 Updating status for {self.student.student_id} - Balance: GHS {balance}")
+        # Only update if different
+        if self.amount_paid != actual_paid:
+            print(f"🔧 Auto-fixing {self.student.student_id}: "
+                  f"GHS {self.amount_paid} → GHS {actual_paid}")
+            self.amount_paid = actual_paid
+        
+        return actual_paid
+    
+    def update_status(self):
+        """Update payment status based on balance"""
+        balance = self.balance
         
         if balance <= 0:
             self.status = 'paid'
             if not self.paid_date:
                 self.paid_date = timezone.now().date()
-            print(f"   ✅ Status: PAID")
         elif self.amount_paid > 0:
             self.status = 'partial'
-            print(f"   🟡 Status: PARTIAL")
         elif self.is_overdue:
             self.status = 'overdue'
-            print(f"   🔴 Status: OVERDUE")
         else:
             self.status = 'pending'
-            print(f"   🟠 Status: PENDING")
+    
+    def save(self, *args, **kwargs):
+        """
+        Override save to ALWAYS verify payments before saving
+        This ensures consistency!
+        """
+        # Recalculate from actual payments
+        self.recalculate_from_payments()
         
-        # ✅ DON'T CALL SAVE HERE - let the caller save it
+        # Update status
+        self.update_status()
+        
+        # Now save
+        super().save(*args, **kwargs)
 
 
 class Payment(models.Model):
-    """
-    Record of fee payments - FIXED VERSION
-    """
+    """Record of fee payments - BULLETPROOF VERSION"""
     student_fee = models.ForeignKey(StudentFee, on_delete=models.CASCADE, related_name='payments')
-    
-    # Payment details
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     
     PAYMENT_METHOD_CHOICES = (
@@ -161,14 +164,9 @@ class Payment(models.Model):
     
     transaction_id = models.CharField(max_length=100, blank=True)
     reference_number = models.CharField(max_length=100, blank=True)
-    
-    # Receipt
     receipt_number = models.CharField(max_length=50, unique=True, blank=True)
-    
-    # Notes
     notes = models.TextField(blank=True)
     
-    # Status
     STATUS_CHOICES = (
         ('pending', 'Pending'),
         ('completed', 'Completed'),
@@ -177,10 +175,8 @@ class Payment(models.Model):
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='completed')
     
-    # Who processed
     processed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     payment_date = models.DateTimeField(default=timezone.now)
-    
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -190,9 +186,10 @@ class Payment(models.Model):
         return f"{self.receipt_number} - GHS {self.amount}"
     
     def save(self, *args, **kwargs):
-        """Save payment and update student fee - BULLETPROOF VERSION"""
-        
-        # Generate receipt number if it doesn't exist
+        """
+        🔥 FIXED VERSION: No more multiplication!
+        """
+        # Generate receipt number if needed
         if not self.receipt_number:
             last_payment = Payment.objects.filter(
                 receipt_number__startswith='RCP-'
@@ -206,42 +203,23 @@ class Payment(models.Model):
             
             self.receipt_number = f'RCP-{timezone.now().year}-{new_num:05d}'
         
-        # Save the payment record FIRST
+        # Save payment FIRST
         super().save(*args, **kwargs)
         
-        # ✅ RECALCULATE TOTAL FROM ALL PAYMENTS (prevents double-counting)
+        # Then update student fee (it will recalculate from ALL payments)
         if self.status == 'completed':
-            from django.db.models import Sum
+            print(f"\n💰 Payment {self.receipt_number}: GHS {self.amount}")
             
-            print(f"\n💰 Processing payment for {self.student_fee.student.student_id}")
-            print(f"   Receipt: {self.receipt_number}")
-            print(f"   This payment: GHS {self.amount}")
+            # Just save the student_fee - it will auto-recalculate!
+            self.student_fee.save()
             
-            # Get TOTAL of ALL completed payments for this student fee
-            total_paid = Payment.objects.filter(
-                student_fee=self.student_fee,
-                status='completed'
-            ).aggregate(total=Sum('amount'))['total'] or 0
-            
-            print(f"   📊 Total from ALL payments: GHS {total_paid}")
-            
-            # Set the correct total (SETTING, not ADDING)
-            self.student_fee.amount_paid = total_paid
-            
-            # Update status
-            self.student_fee.update_status()
-            
-            new_balance = self.student_fee.balance
-            print(f"   ✅ NEW Balance: GHS {new_balance}\n")
+            print(f"✅ New balance: GHS {self.student_fee.balance}\n")
 
 
 class FeeReminder(models.Model):
-    """
-    Automated fee reminders sent to parents
-    """
+    """Automated fee reminders"""
     student_fee = models.ForeignKey(StudentFee, on_delete=models.CASCADE, related_name='reminders')
     
-    # Reminder details
     reminder_type = models.CharField(max_length=20, choices=(
         ('due_soon', 'Due Soon'),
         ('overdue', 'Overdue'),
@@ -255,8 +233,9 @@ class FeeReminder(models.Model):
         ('both', 'Email & SMS'),
     ))
     
-    # Status
     is_sent = models.BooleanField(default=False)
     
     def __str__(self):
         return f"{self.student_fee.student.student_id} - {self.reminder_type}"
+
+

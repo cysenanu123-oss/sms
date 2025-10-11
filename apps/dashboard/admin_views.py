@@ -120,4 +120,78 @@ def admin_overview(request):
         'data': dashboard_data
     })
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def promote_students_bulk(request):
+    """Promote multiple students to next class"""
+    if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Admin access required'
+        }, status=status.HTTP_403_FORBIDDEN)
 
+    from_class_id = request.data.get('from_class_id')
+    to_class_id = request.data.get('to_class_id')
+    student_ids = request.data.get('student_ids', [])
+    academic_year = request.data.get('academic_year')
+
+    if not all([from_class_id, to_class_id, student_ids, academic_year]):
+        return Response({
+            'success': False,
+            'error': 'All fields are required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        from_class = Class.objects.get(id=from_class_id)
+        to_class = Class.objects.get(id=to_class_id)
+
+        promoted_count = 0
+        errors = []
+
+        with transaction.atomic():
+            for student_id in student_ids:
+                try:
+                    student = Student.objects.get(id=student_id)
+
+                    StudentPromotion.objects.create(
+                        student=student,
+                        from_class=from_class,
+                        to_class=to_class,
+                        academic_year=academic_year,
+                        promotion_type='promoted',
+                        promoted_by=request.user
+                    )
+
+                    # ✅ THIS IS THE FIX - ACTUALLY UPDATE THE STUDENT'S CLASS
+                    student.current_class = to_class
+                    student.academic_year = academic_year
+                    student.save()
+
+                    promoted_count += 1
+
+                except Student.DoesNotExist:
+                    errors.append(f'Student {student_id} not found')
+                except Exception as e:
+                    errors.append(str(e))
+
+        response_data = {
+            'success': True,
+            'message': f'Successfully promoted {promoted_count} student(s)',
+            'promoted_count': promoted_count
+        }
+
+        if errors:
+            response_data['warnings'] = errors
+
+        return Response(response_data)
+
+    except Class.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Class not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
