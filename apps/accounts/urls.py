@@ -13,7 +13,7 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     #Password Reset
-    path('password-reset/request/', views.request_password_reset, name='request-password-reset'),
-    path('password-reset/confirm/', views.reset_password, name='reset-password'),
-    path('password-change/', views.change_password, name='change-password'),
+    path('password-reset/request/', views.password_reset_request, name='password-reset-request'),
+    path('password-reset/confirm/', views.password_reset_confirm, name='password-reset-confirm'),
+
 ]
