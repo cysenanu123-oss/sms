@@ -23,6 +23,47 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
+                    <!-- ✅ REAL NOTIFICATIONS -->
+                    <div class="relative" x-data="{ open: false }">
+                        <button @click="open = !open; loadNotifications()" class="relative p-2 text-gray-600 hover:text-blue-600">
+                            <i class="fas fa-bell text-xl"></i>
+                            <span x-show="unreadCount > 0"
+                                class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                                x-text="unreadCount"></span>
+                        </button>
+
+                        <div x-show="open" @click.away="open = false"
+                            class="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 max-h-96 overflow-y-auto z-50"
+                            x-transition>
+                            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                                <h3 class="font-semibold text-gray-900">Notifications</h3>
+                                <button @click="markAllRead()" class="text-xs text-blue-600 hover:underline">
+                                    Mark all read
+                                </button>
+                            </div>
+                            <div>
+                                <template x-for="notif in notifications" :key="notif.id">
+                                    <div @click="markAsRead(notif.id)" 
+                                         :class="notif.is_read ? 'bg-white' : 'bg-blue-50'"
+                                         class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+                                        <div class="flex items-start">
+                                            <i :class="notif.icon" class="mr-3 mt-1"></i>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-medium text-gray-800" x-text="notif.title"></p>
+                                                <p class="text-xs text-gray-600 mt-1" x-text="notif.message"></p>
+                                                <p class="text-xs text-gray-500 mt-1" x-text="notif.time"></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div x-show="notifications.length === 0" class="p-8 text-center text-gray-500">
+                                    <i class="fas fa-bell-slash text-4xl mb-2"></i>
+                                    <p>No notifications</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Profile Dropdown -->
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
@@ -33,14 +74,8 @@
                             <i class="fas fa-chevron-down text-gray-600 text-sm"></i>
                         </button>
 
-                        <!-- Dropdown Menu -->
                         <div x-show="open" @click.away="open = false"
-                            x-transition:enter="transition ease-out duration-100"
-                            x-transition:enter-start="transform opacity-0 scale-95"
-                            x-transition:enter-end="transform opacity-100 scale-100"
-                            x-transition:leave="transition ease-in duration-75"
-                            x-transition:leave-start="transform opacity-100 scale-100"
-                            x-transition:leave-end="transform opacity-0 scale-95"
+                            x-transition
                             class="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl z-50 border border-gray-200">
 
                             <div class="p-4 border-b">
@@ -61,22 +96,12 @@
                                 <div class="flex items-center text-sm">
                                     <i class="fas fa-id-card w-6 text-gray-500"></i>
                                     <span class="text-gray-600">Student ID:</span>
-                                    <span x-text="childData.student_id"></span>
+                                    <span class="ml-auto font-semibold" x-text="studentInfo.student_id"></span>
                                 </div>
                                 <div class="flex items-center text-sm">
                                     <i class="fas fa-chalkboard w-6 text-gray-500"></i>
                                     <span class="text-gray-600">Class:</span>
-                                    <span x-text="childData.class_id"></span>
-                                </div>
-                                <div class="flex items-center text-sm">
-                                    <i class="fas fa-calendar w-6 text-gray-500"></i>
-                                    <span class="text-gray-600">Academic Year:</span>
-                                    <span class="ml-auto font-semibold text-gray-900">2024-2025</span>
-                                </div>
-                                <div class="flex items-center text-sm">
-                                    <i class="fas fa-phone w-6 text-gray-500"></i>
-                                    <span class="text-gray-600">Contact:</span>
-                                    <span x-text="childData.parent_phone"></span>
+                                    <span class="ml-auto font-semibold" x-text="studentInfo.class"></span>
                                 </div>
                             </div>
 

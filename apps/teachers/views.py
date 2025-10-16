@@ -1,4 +1,4 @@
-# apps/teachers/views.py
+# apps/teachers/views.py 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -11,39 +11,23 @@ from apps.accounts.models import User
 from apps.academics.models import Class, Subject, ClassSubject, TeacherClassAssignment, Timetable, TimetableEntry
 from apps.admissions.models import Student
 from apps.attendance.models import Attendance, AttendanceRecord
-from apps.grades.models import Assignment
-from apps.grades.models import Grade
+from apps.grades.models import Assignment, Grade
 from apps.admissions.email_utils import send_teacher_credentials_email
 import secrets
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
 from django.http import HttpResponse
-from django.db.models import Count, Avg, Q
-from django.utils import timezone
-from datetime import datetime, timedelta
 import csv
 from io import BytesIO
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
-
-from apps.accounts.models import User
-from apps.academics.models import Class, Subject, ClassSubject
-from apps.admissions.models import Student
-from apps.attendance.models import Attendance, AttendanceRecord
-from apps.grades.models import Assignment, AssignmentSubmission, Exam, ExamResult
-
+from apps.grades.models import AssignmentSubmission, Exam, ExamResult
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_teacher_dashboard_data(request):
-    """
-    Get complete teacher dashboard data including classes, students, and statistics
-    """
+    """Get complete teacher dashboard data"""
     user = request.user
     
     if user.role != 'teacher' and not user.is_superuser:
@@ -53,7 +37,6 @@ def get_teacher_dashboard_data(request):
         }, status=status.HTTP_403_FORBIDDEN)
     
     try:
-        # Get teacher's assigned classes
         class_assignments = TeacherClassAssignment.objects.filter(
             teacher=user,
             is_active=True
@@ -64,8 +47,6 @@ def get_teacher_dashboard_data(request):
         
         for assignment in class_assignments:
             class_obj = assignment.class_obj
-            
-            # Get students in this class
             students_count = Student.objects.filter(
                 current_class=class_obj,
                 status='active'
@@ -73,7 +54,6 @@ def get_teacher_dashboard_data(request):
             
             total_students += students_count
             
-            # Get class subjects taught by this teacher
             class_subjects = ClassSubject.objects.filter(
                 class_obj=class_obj,
                 teacher=user
@@ -81,7 +61,6 @@ def get_teacher_dashboard_data(request):
             
             subjects = [cs.subject.name for cs in class_subjects]
             
-            # Calculate average attendance for this class (last 30 days)
             thirty_days_ago = timezone.now().date() - timedelta(days=30)
             attendance_records = AttendanceRecord.objects.filter(
                 attendance__class_obj=class_obj,
@@ -99,17 +78,15 @@ def get_teacher_dashboard_data(request):
                 'total_students': students_count,
                 'capacity': class_obj.capacity,
                 'avg_attendance': round(avg_attendance, 1),
-                'class_average': 75.0,  # TODO: Calculate from grades
+                'class_average': 75.0,
                 'is_class_teacher': assignment.is_class_teacher
             })
         
-        # Get pending assignments
         pending_assignments = Assignment.objects.filter(
             teacher=user,
             due_date__gte=timezone.now().date()
         ).count()
         
-        # Statistics
         stats = {
             'total_classes': len(my_classes),
             'total_students': total_students,
@@ -117,7 +94,6 @@ def get_teacher_dashboard_data(request):
             'avg_attendance': round(sum([c['avg_attendance'] for c in my_classes]) / len(my_classes), 1) if my_classes else 0
         }
         
-        # Get today's schedule
         today = timezone.now().date()
         day_name = today.strftime('%A').lower()
         
@@ -145,7 +121,6 @@ def get_teacher_dashboard_data(request):
                         'room': entry.room_number or 'TBA'
                     })
         
-        # Sort by time
         today_schedule.sort(key=lambda x: x['time'])
         
         return Response({
@@ -167,9 +142,7 @@ def get_teacher_dashboard_data(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_class_students(request, class_id):
-    """
-    Get all students in a specific class for attendance marking
-    """
+    """Get all students in a specific class"""
     user = request.user
     
     if user.role != 'teacher' and not user.is_superuser:
@@ -181,7 +154,6 @@ def get_class_students(request, class_id):
     try:
         class_obj = Class.objects.get(id=class_id)
         
-        # Verify teacher has access to this class
         has_access = TeacherClassAssignment.objects.filter(
             teacher=user,
             class_obj=class_obj,
@@ -194,7 +166,6 @@ def get_class_students(request, class_id):
                 'error': 'You do not have access to this class'
             }, status=status.HTTP_403_FORBIDDEN)
         
-        # Get all active students in this class
         students = Student.objects.filter(
             current_class=class_obj,
             status='active'
@@ -207,7 +178,7 @@ def get_class_students(request, class_id):
                 'name': f"{student.first_name} {student.last_name}",
                 'roll_number': student.roll_number or 'N/A',
                 'student_id': student.student_id,
-                'attendance': None  # Will be set by frontend
+                'attendance': None
             })
         
         return Response({
@@ -228,9 +199,7 @@ def get_class_students(request, class_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def save_attendance(request):
-    """
-    Save attendance records for a class
-    """
+    """Save attendance records"""
     user = request.user
     
     if user.role != 'teacher' and not user.is_superuser:
@@ -254,7 +223,6 @@ def save_attendance(request):
         class_obj = Class.objects.get(id=class_id)
         attendance_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         
-        # Verify teacher has access
         has_access = TeacherClassAssignment.objects.filter(
             teacher=user,
             class_obj=class_obj,
@@ -267,7 +235,6 @@ def save_attendance(request):
                 'error': 'Access denied'
             }, status=status.HTTP_403_FORBIDDEN)
         
-        # Create or get attendance record
         attendance, created = Attendance.objects.get_or_create(
             class_obj=class_obj,
             date=attendance_date,
@@ -275,7 +242,6 @@ def save_attendance(request):
             defaults={'marked_by': user}
         )
         
-        # Save individual student attendance records
         for record in attendance_records:
             student_id = record.get('student_id')
             status_value = record.get('status')
@@ -303,9 +269,7 @@ def save_attendance(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_teacher_assignments(request):
-    """
-    Get all assignments created by the teacher
-    """
+    """Get all assignments created by teacher"""
     user = request.user
     
     if user.role != 'teacher' and not user.is_superuser:
@@ -326,7 +290,6 @@ def get_teacher_assignments(request):
         ).count()
         
         submissions_count = assignment.submissions.count()
-        
         status_value = 'active' if assignment.due_date >= timezone.now().date() else 'closed'
         
         assignments_data.append({
@@ -347,13 +310,11 @@ def get_teacher_assignments(request):
     })
 
 
-
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def save_grades(request):
     """
-    Save grades for multiple students in a class
+    ✅ FIXED: Save grades with proper academic_year handling
     """
     user = request.user
     
@@ -372,7 +333,6 @@ def save_grades(request):
         total_marks = request.data.get('total_marks')
         grades_data = request.data.get('grades', [])
         
-        # Validate required fields
         if not all([class_id, subject_id, exam_type, exam_name, exam_date_str, total_marks]):
             return Response({
                 'success': False,
@@ -385,7 +345,6 @@ def save_grades(request):
                 'error': 'No grades provided'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Get class and verify access
         class_obj = Class.objects.get(id=class_id)
         has_access = TeacherClassAssignment.objects.filter(
             teacher=user,
@@ -399,16 +358,12 @@ def save_grades(request):
                 'error': 'You do not have access to this class'
             }, status=status.HTTP_403_FORBIDDEN)
         
-        # Get subject
         subject = Subject.objects.get(id=subject_id)
-        
-        # Parse exam date
         exam_date = datetime.strptime(exam_date_str, '%Y-%m-%d').date()
         
-        # Import Grade model (add this at the top of your file)
-        from apps.grades.models import Grade
+        # ✅ Get academic year from class or use current year
+        academic_year = getattr(class_obj, 'academic_year', f"{timezone.now().year}-{timezone.now().year + 1}")
         
-        # Save grades for each student
         saved_count = 0
         errors = []
         
@@ -423,12 +378,11 @@ def save_grades(request):
                 
                 student = Student.objects.get(id=student_id)
                 
-                # Verify student is in the class
                 if student.current_class != class_obj:
                     errors.append(f"Student {student.first_name} is not in this class")
                     continue
                 
-                # Create or update grade
+                # ✅ FIXED: Create or update grade with proper fields
                 grade, created = Grade.objects.update_or_create(
                     student=student,
                     subject=subject,
@@ -441,10 +395,12 @@ def save_grades(request):
                         'total_marks': float(total_marks),
                         'grade': grade_letter,
                         'teacher': user,
-                        'academic_year': timezone.now().year  # Adjust as needed
+                        'academic_year': academic_year
                     }
                 )
                 saved_count += 1
+                
+                print(f"✅ Saved grade for {student.first_name}: {score}/{total_marks} = {grade_letter}")
                 
             except Student.DoesNotExist:
                 errors.append(f"Student with ID {student_id} not found")
@@ -481,17 +437,18 @@ def save_grades(request):
         }, status=status.HTTP_400_BAD_REQUEST)
         
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return Response({
             'success': False,
             'error': f'Error saving grades: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def manage_teachers(request):
-    """Get all teachers or create a new teacher"""
+    """Get all teachers or create new teacher"""
     
     if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
         return Response({
@@ -504,18 +461,15 @@ def manage_teachers(request):
         
         teachers_data = []
         for teacher in teachers:
-            # Get assigned subjects
             subject_assignments = ClassSubject.objects.filter(teacher=teacher, is_active=True)
             subjects = list(set([cs.subject.name for cs in subject_assignments]))
             
-            # Get assigned classes
             class_assignments = TeacherClassAssignment.objects.filter(
                 teacher=teacher, 
                 is_active=True
             )
             classes_count = class_assignments.count()
             
-            # Count total students across all classes
             total_students = sum([
                 assignment.class_obj.student_set.filter(status='active').count() 
                 for assignment in class_assignments
@@ -540,7 +494,6 @@ def manage_teachers(request):
         })
     
     elif request.method == 'POST':
-        # ✅ FIXED: Create teacher with email sending
         first_name = request.data.get('first_name')
         last_name = request.data.get('last_name')
         email = request.data.get('email')
@@ -562,7 +515,6 @@ def manage_teachers(request):
         
         try:
             with transaction.atomic():
-                # Generate username
                 base_username = f"{first_name.lower()}.{last_name.lower()}"
                 username = base_username
                 counter = 1
@@ -570,23 +522,20 @@ def manage_teachers(request):
                     username = f"{base_username}{counter}"
                     counter += 1
                 
-                # ✅ Generate temporary password
                 temp_password = secrets.token_urlsafe(12)
                 
-                # ✅ Create user with the temp password
                 teacher_user = User.objects.create_user(
                     username=username,
                     email=email,
-                    password=temp_password,  # ✅ This will hash it properly
+                    password=temp_password,
                     first_name=first_name,
                     last_name=last_name,
                     phone=phone,
                     role='teacher',
                     is_active=True,
-                    must_change_password=True  # ✅ Force password change on first login
+                    must_change_password=True
                 )
                 
-                # Assign subjects
                 subjects_list = []
                 for subject_id in subject_ids:
                     try:
@@ -595,14 +544,12 @@ def manage_teachers(request):
                     except Subject.DoesNotExist:
                         continue
                 
-                # Assign classes
                 classes_list = []
                 for class_id in class_ids:
                     try:
                         class_obj = Class.objects.get(id=class_id)
                         classes_list.append(class_obj.name)
                         
-                        # Create class assignment
                         TeacherClassAssignment.objects.create(
                             teacher=teacher_user,
                             class_obj=class_obj,
@@ -610,7 +557,6 @@ def manage_teachers(request):
                             is_active=True
                         )
                         
-                        # Assign subjects to this class
                         for subject_id in subject_ids:
                             try:
                                 subject = Subject.objects.get(id=subject_id)
@@ -628,7 +574,6 @@ def manage_teachers(request):
                     except Class.DoesNotExist:
                         continue
                 
-                # ✅ SEND EMAIL WITH CREDENTIALS
                 try:
                     email_sent = send_teacher_credentials_email(
                         teacher_user=teacher_user,
@@ -645,7 +590,6 @@ def manage_teachers(request):
                         
                 except Exception as email_error:
                     print(f"⚠️ Email error: {str(email_error)}")
-                    # Don't fail the whole operation if email fails
                 
                 return Response({
                     'success': True,
@@ -653,7 +597,7 @@ def manage_teachers(request):
                     'data': {
                         'teacher_id': teacher_user.id,
                         'username': username,
-                        'temporary_password': temp_password,  # ✅ Show in response too
+                        'temporary_password': temp_password,
                         'email': email,
                         'subjects_assigned': len(subjects_list),
                         'classes_assigned': len(classes_list),
@@ -683,11 +627,9 @@ def delete_teacher(request, teacher_id):
     try:
         teacher = User.objects.get(id=teacher_id, role='teacher')
         
-        # Deactivate instead of delete
         teacher.is_active = False
         teacher.save()
         
-        # Deactivate assignments
         TeacherClassAssignment.objects.filter(teacher=teacher).update(is_active=False)
         ClassSubject.objects.filter(teacher=teacher).update(is_active=False)
         
@@ -703,14 +645,10 @@ def delete_teacher(request, teacher_id):
         }, status=status.HTTP_404_NOT_FOUND)
 
 
-
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_teacher_timetable(request):
-    """
-    Get teacher's weekly timetable - FIXED VERSION
-    """
+    """Get teacher's weekly timetable"""
     user = request.user
     
     if user.role != 'teacher' and not user.is_superuser:
@@ -720,20 +658,13 @@ def get_teacher_timetable(request):
         }, status=status.HTTP_403_FORBIDDEN)
     
     try:
-        # Get all timetable entries for this teacher
         entries = TimetableEntry.objects.filter(
             teacher=user
         ).select_related('timetable__class_obj', 'subject', 'time_slot').order_by(
             'time_slot__slot_order'
         )
         
-        print(f"📊 Found {entries.count()} timetable entries for teacher: {user.get_full_name()}")
-        
-        # Organize by day and time
         days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-        weekly_timetable = {day: [] for day in days}
-        
-        # Group entries by time slot
         time_slots = {}
         
         for entry in entries:
@@ -752,7 +683,6 @@ def get_teacher_timetable(request):
                     'Friday': None
                 }
             
-            # Capitalize first letter of day
             day = entry.day_of_week.capitalize()
             
             if day in days:
@@ -762,13 +692,9 @@ def get_teacher_timetable(request):
                     'room': entry.room_number or 'TBA',
                     'class_id': entry.timetable.class_obj.id
                 }
-                
-                print(f"✅ Added: {day} {time_str} - {entry.subject.name if entry.subject else 'Break'} ({entry.timetable.class_obj.name})")
         
-        # Convert to list format for frontend
         timetable_periods = list(time_slots.values())
         
-        # Get today's schedule
         today = timezone.now().strftime('%A')
         today_schedule = []
         
@@ -781,9 +707,6 @@ def get_teacher_timetable(request):
                     'room': period[today]['room'],
                     'class_id': period[today].get('class_id')
                 })
-        
-        print(f"📋 Returning {len(timetable_periods)} periods")
-        print(f"📅 Today ({today}): {len(today_schedule)} classes")
         
         return Response({
             'success': True,
@@ -803,7 +726,6 @@ def get_teacher_timetable(request):
         
     except Exception as e:
         import traceback
-        print(f"❌ Error loading teacher timetable: {str(e)}")
         traceback.print_exc()
         return Response({
             'success': False,
@@ -811,65 +733,10 @@ def get_teacher_timetable(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_today_classes(request):
-    """
-    Get today's classes for teacher - for quick dashboard view
-    """
-    if request.user.role != 'teacher' and not request.user.is_superuser:
-        return Response({
-            'success': False,
-            'error': 'Teacher access required'
-        }, status=status.HTTP_403_FORBIDDEN)
-    
-    try:
-        today = timezone.now().strftime('%A')
-        
-        entries = TimetableEntry.objects.filter(
-            teacher=request.user,
-            day_of_week=today.lower()  # Make sure it's lowercase
-        ).select_related('timetable__class_obj', 'subject', 'time_slot').order_by(
-            'time_slot__start_time'
-        )
-        
-        print(f"📅 Loading today's classes for {request.user.get_full_name()} on {today}")
-        print(f"📊 Found {entries.count()} entries")
-        
-        today_classes = []
-        for entry in entries:
-            today_classes.append({
-                'id': entry.id,
-                'time': f"{entry.time_slot.start_time.strftime('%H:%M')} - {entry.time_slot.end_time.strftime('%H:%M')}",
-                'class': entry.timetable.class_obj.name,
-                'subject': entry.subject.name if entry.subject else 'Break',
-                'room': entry.room_number or 'TBA',
-                'class_id': entry.timetable.class_obj.id
-            })
-        
-        print(f"✅ Returning {len(today_classes)} classes for today")
-        
-        return Response({
-            'success': True,
-            'data': today_classes
-        })
-        
-    except Exception as e:
-        import traceback
-        print(f"❌ Error loading today's classes: {str(e)}")
-        traceback.print_exc()
-        return Response({
-            'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def promote_students(request):
-    """
-    Allow class teachers to promote their students to the next class
-    """
+    """Promote students to next class"""
     user = request.user
     
     if user.role != 'teacher' and not user.is_superuser:
@@ -890,11 +757,9 @@ def promote_students(request):
                 'error': 'All fields are required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Get classes
         from_class = Class.objects.get(id=from_class_id)
         to_class = Class.objects.get(id=to_class_id)
         
-        # ✅ VERIFY: Teacher is the class teacher for from_class
         is_class_teacher = TeacherClassAssignment.objects.filter(
             teacher=user,
             class_obj=from_class,
@@ -908,7 +773,6 @@ def promote_students(request):
                 'error': 'Only the class teacher can promote students from this class'
             }, status=status.HTTP_403_FORBIDDEN)
         
-        # Promote students
         promoted_count = 0
         errors = []
         
@@ -917,12 +781,10 @@ def promote_students(request):
                 try:
                     student = Student.objects.get(id=student_id)
                     
-                    # Verify student is in from_class
                     if student.current_class != from_class:
                         errors.append(f'{student.first_name} {student.last_name} is not in the source class')
                         continue
                     
-                    # Create promotion record
                     from apps.admissions.models import StudentPromotion
                     StudentPromotion.objects.create(
                         student=student,
@@ -933,14 +795,11 @@ def promote_students(request):
                         promoted_by=user
                     )
                     
-                    # ✅ UPDATE STUDENT'S CURRENT CLASS
                     student.current_class = to_class
                     student.academic_year = academic_year
                     student.save()
                     
                     promoted_count += 1
-                    
-                    print(f"✅ Promoted {student.first_name} {student.last_name} from {from_class.name} to {to_class.name}")
                     
                 except Student.DoesNotExist:
                     errors.append(f'Student {student_id} not found')
@@ -957,8 +816,6 @@ def promote_students(request):
         
         if errors:
             response_data['errors'] = errors
-        
-        print(f"📊 Promotion Summary: {promoted_count} students promoted from {from_class.name} to {to_class.name}")
         
         return Response(response_data, status=status.HTTP_200_OK)
         
@@ -980,9 +837,7 @@ def promote_students(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_promotion_eligible_students(request, class_id):
-    """
-    Get list of students eligible for promotion from a class
-    """
+    """Get list of students eligible for promotion"""
     user = request.user
     
     if user.role != 'teacher' and not user.is_superuser:
@@ -994,7 +849,6 @@ def get_promotion_eligible_students(request, class_id):
     try:
         class_obj = Class.objects.get(id=class_id)
         
-        # Verify teacher is the class teacher
         is_class_teacher = TeacherClassAssignment.objects.filter(
             teacher=user,
             class_obj=class_obj,
@@ -1008,7 +862,6 @@ def get_promotion_eligible_students(request, class_id):
                 'error': 'Only the class teacher can view promotion-eligible students'
             }, status=status.HTTP_403_FORBIDDEN)
         
-        # Get all active students in this class
         students = Student.objects.filter(
             current_class=class_obj,
             status='active'
@@ -1016,10 +869,8 @@ def get_promotion_eligible_students(request, class_id):
         
         students_data = []
         for student in students:
-            # Get student's grades
             grades = Grade.objects.filter(student=student)
             
-            # Calculate average
             if grades.exists():
                 total_score = sum(g.score for g in grades)
                 total_marks = sum(g.total_marks for g in grades)
@@ -1027,7 +878,6 @@ def get_promotion_eligible_students(request, class_id):
             else:
                 avg_percentage = 0
             
-            # Get attendance rate
             attendance_records = AttendanceRecord.objects.filter(student=student)
             total_days = attendance_records.count()
             present_days = attendance_records.filter(status='present').count()
@@ -1040,7 +890,7 @@ def get_promotion_eligible_students(request, class_id):
                 'roll_number': student.roll_number or 'N/A',
                 'average_grade': round(avg_percentage, 1),
                 'attendance_rate': round(attendance_rate, 1),
-                'eligible': avg_percentage >= 40 and attendance_rate >= 75  # Promotion criteria
+                'eligible': avg_percentage >= 40 and attendance_rate >= 75
             })
         
         return Response({
@@ -1060,17 +910,10 @@ def get_promotion_eligible_students(request, class_id):
         }, status=status.HTTP_404_NOT_FOUND)
 
 
-
-
-
-# Add these functions to apps/teachers/views.py
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_teacher_subjects(request):
-    """
-    Get all subjects taught by the teacher
-    """
+    """Get all subjects taught by teacher"""
     user = request.user
     
     if user.role != 'teacher' and not user.is_superuser:
@@ -1080,13 +923,11 @@ def get_teacher_subjects(request):
         }, status=status.HTTP_403_FORBIDDEN)
     
     try:
-        # Get all subjects assigned to this teacher through ClassSubject
         class_subjects = ClassSubject.objects.filter(
             teacher=user,
             is_active=True
         ).select_related('subject').distinct()
         
-        # Get unique subjects
         subjects_dict = {}
         for cs in class_subjects:
             if cs.subject.id not in subjects_dict:
@@ -1116,9 +957,7 @@ def get_teacher_subjects(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_assignment(request):
-    """
-    Create a new assignment for a class
-    """
+    """Create a new assignment"""
     user = request.user
     
     if user.role != 'teacher' and not user.is_superuser:
@@ -1128,7 +967,6 @@ def create_assignment(request):
         }, status=status.HTTP_403_FORBIDDEN)
     
     try:
-        # Get form data
         title = request.data.get('title')
         description = request.data.get('description')
         class_id = request.data.get('class_id')
@@ -1138,14 +976,12 @@ def create_assignment(request):
         instructions = request.data.get('instructions', '')
         attachment = request.FILES.get('attachment')
         
-        # Validate required fields
         if not all([title, description, class_id, due_date_str, total_marks]):
             return Response({
                 'success': False,
                 'error': 'Missing required fields'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Get class object
         try:
             class_obj = Class.objects.get(id=class_id)
         except Class.DoesNotExist:
@@ -1154,7 +990,6 @@ def create_assignment(request):
                 'error': 'Class not found'
             }, status=status.HTTP_404_NOT_FOUND)
         
-        # Verify teacher has access
         has_access = TeacherClassAssignment.objects.filter(
             teacher=user,
             class_obj=class_obj,
@@ -1167,7 +1002,6 @@ def create_assignment(request):
                 'error': 'Access denied'
             }, status=status.HTTP_403_FORBIDDEN)
         
-        # Get subject (optional)
         subject = None
         if subject_id:
             try:
@@ -1175,7 +1009,6 @@ def create_assignment(request):
             except Subject.DoesNotExist:
                 pass
         
-        # Parse due date
         try:
             due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date()
         except ValueError:
@@ -1184,7 +1017,6 @@ def create_assignment(request):
                 'error': 'Invalid date format'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Create assignment
         assignment = Assignment.objects.create(
             title=title,
             description=description,
@@ -1234,9 +1066,7 @@ def create_assignment(request):
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_assignment(request, assignment_id):
-    """
-    Delete an assignment
-    """
+    """Delete an assignment"""
     user = request.user
     
     if user.role != 'teacher' and not user.is_superuser:
@@ -1254,7 +1084,6 @@ def delete_assignment(request, assignment_id):
                 'error': 'Access denied'
             }, status=status.HTTP_403_FORBIDDEN)
         
-        # Check for submissions
         submissions_count = assignment.submissions.count()
         if submissions_count > 0:
             return Response({
@@ -1280,9 +1109,7 @@ def delete_assignment(request, assignment_id):
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
 def update_assignment_status(request, assignment_id):
-    """
-    Update assignment status (active/closed)
-    """
+    """Update assignment status"""
     user = request.user
     
     if user.role != 'teacher' and not user.is_superuser:
@@ -1325,9 +1152,7 @@ def update_assignment_status(request, assignment_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_assignment_submissions(request, assignment_id):
-    """
-    Get all submissions for an assignment
-    """
+    """Get all submissions for an assignment"""
     user = request.user
     
     if user.role != 'teacher' and not user.is_superuser:
@@ -1392,437 +1217,11 @@ def get_assignment_submissions(request, assignment_id):
             'error': 'Assignment not found'
         }, status=status.HTTP_404_NOT_FOUND)
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def download_attendance_report(request):
-    """
-    Download attendance report for a class
-    Supports CSV and PDF formats
-    """
-    user = request.user
-    
-    if user.role != 'teacher' and not user.is_superuser:
-        return Response({
-            'success': False,
-            'error': 'Teacher access required'
-        }, status=status.HTTP_403_FORBIDDEN)
-    
-    try:
-        class_id = request.GET.get('class_id')
-        start_date = request.GET.get('start_date')
-        end_date = request.GET.get('end_date')
-        format_type = request.GET.get('format', 'csv')  # csv or pdf
-        
-        if not all([class_id, start_date, end_date]):
-            return Response({
-                'success': False,
-                'error': 'Missing required parameters'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        class_obj = Class.objects.get(id=class_id)
-        start = datetime.strptime(start_date, '%Y-%m-%d').date()
-        end = datetime.strptime(end_date, '%Y-%m-%d').date()
-        
-        # Get all students in the class
-        students = Student.objects.filter(
-            current_class=class_obj,
-            status='active'
-        ).order_by('roll_number')
-        
-        # Get attendance records for the date range
-        attendances = Attendance.objects.filter(
-            class_obj=class_obj,
-            date__gte=start,
-            date__lte=end
-        ).order_by('date')
-        
-        if format_type == 'csv':
-            return generate_csv_attendance_report(class_obj, students, attendances, start, end)
-        else:
-            return generate_pdf_attendance_report(class_obj, students, attendances, start, end)
-            
-    except Class.DoesNotExist:
-        return Response({
-            'success': False,
-            'error': 'Class not found'
-        }, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': f'Error generating report: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-def generate_csv_attendance_report(class_obj, students, attendances, start_date, end_date):
-    """Generate CSV attendance report"""
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="attendance_report_{class_obj.name}_{start_date}_{end_date}.csv"'
-    
-    writer = csv.writer(response)
-    
-    # Header
-    writer.writerow(['Attendance Report'])
-    writer.writerow([f'Class: {class_obj.name}'])
-    writer.writerow([f'Period: {start_date} to {end_date}'])
-    writer.writerow([])
-    
-    # Get unique dates
-    dates = attendances.values_list('date', flat=True).distinct().order_by('date')
-    
-    # Column headers
-    headers = ['Roll No', 'Student Name'] + [date.strftime('%Y-%m-%d') for date in dates] + ['Present', 'Absent', 'Late', 'Attendance %']
-    writer.writerow(headers)
-    
-    # Student rows
-    for student in students:
-        row = [student.roll_number or 'N/A', f"{student.first_name} {student.last_name}"]
-        
-        present_count = 0
-        absent_count = 0
-        late_count = 0
-        
-        for date in dates:
-            attendance = attendances.filter(date=date).first()
-            if attendance:
-                record = AttendanceRecord.objects.filter(
-                    attendance=attendance,
-                    student=student
-                ).first()
-                
-                if record:
-                    row.append(record.status.upper()[0])  # P, A, L
-                    if record.status == 'present':
-                        present_count += 1
-                    elif record.status == 'absent':
-                        absent_count += 1
-                    elif record.status == 'late':
-                        late_count += 1
-                else:
-                    row.append('-')
-            else:
-                row.append('-')
-        
-        total_days = len(dates)
-        attendance_percentage = (present_count / total_days * 100) if total_days > 0 else 0
-        
-        row.extend([present_count, absent_count, late_count, f"{attendance_percentage:.1f}%"])
-        writer.writerow(row)
-    
-    return response
-
-
-def generate_pdf_attendance_report(class_obj, students, attendances, start_date, end_date):
-    """Generate PDF attendance report"""
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
-    elements = []
-    styles = getSampleStyleSheet()
-    
-    # Title
-    title = Paragraph(f"<b>Attendance Report - {class_obj.name}</b>", styles['Title'])
-    elements.append(title)
-    elements.append(Spacer(1, 12))
-    
-    # Period
-    period = Paragraph(f"Period: {start_date} to {end_date}", styles['Normal'])
-    elements.append(period)
-    elements.append(Spacer(1, 20))
-    
-    # Summary statistics
-    total_students = students.count()
-    dates = attendances.values_list('date', flat=True).distinct()
-    total_days = len(dates)
-    
-    summary_data = [
-        ['Total Students', str(total_students)],
-        ['Total Days', str(total_days)],
-        ['Report Generated', timezone.now().strftime('%Y-%m-%d %H:%M')]
-    ]
-    
-    summary_table = Table(summary_data, colWidths=[150, 150])
-    summary_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, -1), colors.lightgrey),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-    ]))
-    elements.append(summary_table)
-    elements.append(Spacer(1, 20))
-    
-    # Student attendance table
-    table_data = [['Roll No', 'Student Name', 'Present', 'Absent', 'Late', 'Attendance %']]
-    
-    for student in students:
-        present = AttendanceRecord.objects.filter(
-            attendance__in=attendances,
-            student=student,
-            status='present'
-        ).count()
-        
-        absent = AttendanceRecord.objects.filter(
-            attendance__in=attendances,
-            student=student,
-            status='absent'
-        ).count()
-        
-        late = AttendanceRecord.objects.filter(
-            attendance__in=attendances,
-            student=student,
-            status='late'
-        ).count()
-        
-        percentage = (present / total_days * 100) if total_days > 0 else 0
-        
-        table_data.append([
-            student.roll_number or 'N/A',
-            f"{student.first_name} {student.last_name}",
-            str(present),
-            str(absent),
-            str(late),
-            f"{percentage:.1f}%"
-        ])
-    
-    attendance_table = Table(table_data, colWidths=[60, 150, 50, 50, 50, 80])
-    attendance_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-    ]))
-    
-    elements.append(attendance_table)
-    
-    doc.build(elements)
-    buffer.seek(0)
-    
-    response = HttpResponse(buffer, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="attendance_report_{class_obj.name}_{start_date}_{end_date}.pdf"'
-    
-    return response
-
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def download_performance_report(request):
-    """
-    Download class performance report
-    """
-    user = request.user
-    
-    if user.role != 'teacher' and not user.is_superuser:
-        return Response({
-            'success': False,
-            'error': 'Teacher access required'
-        }, status=status.HTTP_403_FORBIDDEN)
-    
-    try:
-        class_id = request.GET.get('class_id')
-        report_type = request.GET.get('report_type', 'midterm')  # midterm, final, term
-        format_type = request.GET.get('format', 'pdf')
-        
-        if not class_id:
-            return Response({
-                'success': False,
-                'error': 'Class ID is required'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        class_obj = Class.objects.get(id=class_id)
-        students = Student.objects.filter(
-            current_class=class_obj,
-            status='active'
-        ).order_by('roll_number')
-        
-        # Get exam results based on report type
-        exams = Exam.objects.filter(
-            class_obj=class_obj,
-            exam_type=report_type
-        )
-        
-        if format_type == 'csv':
-            return generate_csv_performance_report(class_obj, students, exams, report_type)
-        else:
-            return generate_pdf_performance_report(class_obj, students, exams, report_type)
-            
-    except Class.DoesNotExist:
-        return Response({
-            'success': False,
-            'error': 'Class not found'
-        }, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({
-            'success': False,
-            'error': f'Error generating report: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-def generate_csv_performance_report(class_obj, students, exams, report_type):
-    """Generate CSV performance report"""
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="performance_report_{class_obj.name}_{report_type}.csv"'
-    
-    writer = csv.writer(response)
-    
-    # Header
-    writer.writerow(['Performance Report'])
-    writer.writerow([f'Class: {class_obj.name}'])
-    writer.writerow([f'Report Type: {report_type.title()}'])
-    writer.writerow([])
-    
-    # Get subjects from exams
-    subjects = exams.values_list('subject__name', flat=True).distinct()
-    
-    # Column headers
-    headers = ['Roll No', 'Student Name'] + list(subjects) + ['Average', 'Grade', 'Rank']
-    writer.writerow(headers)
-    
-    # Calculate student performance
-    student_data = []
-    
-    for student in students:
-        row = [student.roll_number or 'N/A', f"{student.first_name} {student.last_name}"]
-        
-        subject_scores = []
-        for subject in subjects:
-            exam = exams.filter(subject__name=subject).first()
-            if exam:
-                result = ExamResult.objects.filter(exam=exam, student=student).first()
-                if result:
-                    percentage = result.percentage
-                    row.append(f"{percentage:.1f}%")
-                    subject_scores.append(percentage)
-                else:
-                    row.append('-')
-            else:
-                row.append('-')
-        
-        # Calculate average
-        average = sum(subject_scores) / len(subject_scores) if subject_scores else 0
-        
-        # Determine grade
-        if average >= 90:
-            grade = 'A+'
-        elif average >= 80:
-            grade = 'A'
-        elif average >= 70:
-            grade = 'B+'
-        elif average >= 60:
-            grade = 'B'
-        elif average >= 50:
-            grade = 'C+'
-        elif average >= 40:
-            grade = 'C'
-        elif average >= 33:
-            grade = 'D'
-        else:
-            grade = 'F'
-        
-        row.extend([f"{average:.1f}%", grade, ''])  # Rank will be calculated
-        student_data.append((average, row))
-    
-    # Sort by average and assign ranks
-    student_data.sort(key=lambda x: x[0], reverse=True)
-    
-    for rank, (avg, row) in enumerate(student_data, 1):
-        row[-1] = rank
-        writer.writerow(row)
-    
-    return response
-
-
-def generate_pdf_performance_report(class_obj, students, exams, report_type):
-    """Generate PDF performance report"""
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4)
-    elements = []
-    styles = getSampleStyleSheet()
-    
-    # Title
-    title = Paragraph(f"<b>Performance Report - {class_obj.name}</b>", styles['Title'])
-    elements.append(title)
-    elements.append(Spacer(1, 12))
-    
-    # Report type
-    report_info = Paragraph(f"Report Type: {report_type.title()}", styles['Normal'])
-    elements.append(report_info)
-    elements.append(Spacer(1, 20))
-    
-    # Get subjects
-    subjects = exams.values_list('subject__name', flat=True).distinct()
-    
-    # Build table data
-    table_data = [['Roll No', 'Student Name'] + list(subjects) + ['Avg', 'Grade']]
-    
-    for student in students:
-        row = [student.roll_number or 'N/A', f"{student.first_name} {student.last_name}"[:20]]
-        
-        subject_scores = []
-        for subject in subjects:
-            exam = exams.filter(subject__name=subject).first()
-            if exam:
-                result = ExamResult.objects.filter(exam=exam, student=student).first()
-                if result:
-                    percentage = result.percentage
-                    row.append(f"{percentage:.0f}%")
-                    subject_scores.append(percentage)
-                else:
-                    row.append('-')
-            else:
-                row.append('-')
-        
-        average = sum(subject_scores) / len(subject_scores) if subject_scores else 0
-        
-        if average >= 90:
-            grade = 'A+'
-        elif average >= 80:
-            grade = 'A'
-        elif average >= 70:
-            grade = 'B+'
-        elif average >= 60:
-            grade = 'B'
-        elif average >= 50:
-            grade = 'C+'
-        elif average >= 40:
-            grade = 'C'
-        elif average >= 33:
-            grade = 'D'
-        else:
-            grade = 'F'
-        
-        row.extend([f"{average:.0f}%", grade])
-        table_data.append(row)
-    
-    # Create table
-    performance_table = Table(table_data)
-    performance_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 8),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('FONTSIZE', (0, 1), (-1, -1), 7),
-    ]))
-    
-    elements.append(performance_table)
-    
-    doc.build(elements)
-    buffer.seek(0)
-    
-    response = HttpResponse(buffer, content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="performance_report_{class_obj.name}_{report_type}.pdf"'
-    
-    return response
-
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def upload_resource(request):
-    """
-    Upload teaching resources (PDFs, videos, links)
-    """
+    """Upload teaching resource"""
     user = request.user
     
     if user.role != 'teacher' and not user.is_superuser:
@@ -1836,7 +1235,7 @@ def upload_resource(request):
         description = request.data.get('description', '')
         class_id = request.data.get('class_id')
         subject_id = request.data.get('subject_id')
-        resource_type = request.data.get('resource_type')  # pdf, video, link
+        resource_type = request.data.get('resource_type')
         
         if not all([title, class_id, resource_type]):
             return Response({
@@ -1847,7 +1246,6 @@ def upload_resource(request):
         class_obj = Class.objects.get(id=class_id)
         subject_obj = Subject.objects.get(id=subject_id) if subject_id else None
         
-        # Handle different resource types
         file_upload = None
         external_link = None
         
@@ -1866,7 +1264,6 @@ def upload_resource(request):
                     'error': 'Link is required for this resource type'
                 }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Create resource (you'll need to create this model)
         from apps.academics.models import TeachingResource
         
         resource = TeachingResource.objects.create(
@@ -1947,12 +1344,11 @@ def get_teacher_resources(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['POST'])
+# ✅ NEW: Delete resource endpoint
+@api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
-def save_grades(request):
-    """
-    Save exam/test grades for students
-    """
+def delete_resource(request, resource_id):
+    """Delete a teaching resource"""
     user = request.user
     
     if user.role != 'teacher' and not user.is_superuser:
@@ -1962,78 +1358,467 @@ def save_grades(request):
         }, status=status.HTTP_403_FORBIDDEN)
     
     try:
-        class_id = request.data.get('class_id')
-        subject_id = request.data.get('subject_id')
-        exam_type = request.data.get('exam_type')
-        exam_name = request.data.get('exam_name')
-        exam_date = request.data.get('exam_date')
-        total_marks = request.data.get('total_marks', 100)
-        grades_data = request.data.get('grades', [])
+        from apps.academics.models import TeachingResource
         
-        if not all([class_id, subject_id, exam_name, exam_date, grades_data]):
+        resource = TeachingResource.objects.get(id=resource_id)
+        
+        if resource.teacher != user and not user.is_superuser:
             return Response({
                 'success': False,
-                'error': 'Missing required fields'
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        class_obj = Class.objects.get(id=class_id)
-        subject_obj = Subject.objects.get(id=subject_id)
-        
-        # Verify teacher has access
-        has_access = ClassSubject.objects.filter(
-            class_obj=class_obj,
-            subject=subject_obj,
-            teacher=user
-        ).exists()
-        
-        if not has_access and not user.is_superuser:
-            return Response({
-                'success': False,
-                'error': 'You do not have permission to grade this class/subject'
+                'error': 'You can only delete your own resources'
             }, status=status.HTTP_403_FORBIDDEN)
         
-        # Create or get exam
-        exam, created = Exam.objects.get_or_create(
-            name=exam_name,
-            class_obj=class_obj,
-            subject=subject_obj,
-            date=exam_date,
-            defaults={
-                'exam_type': exam_type,
-                'total_marks': total_marks,
-                'created_by': user
-            }
-        )
-        
-        # Save individual student grades
-        for grade in grades_data:
-            student_id = grade.get('student_id')
-            score = grade.get('score')
-            
-            if student_id and score is not None:
-                student = Student.objects.get(id=student_id)
-                
-                ExamResult.objects.update_or_create(
-                    exam=exam,
-                    student=student,
-                    defaults={
-                        'score': score,
-                        'entered_by': user
-                    }
-                )
+        resource.delete()
         
         return Response({
             'success': True,
-            'message': f'Grades saved successfully for {len(grades_data)} students'
+            'message': 'Resource deleted successfully'
         })
         
-    except (Class.DoesNotExist, Subject.DoesNotExist):
+    except Exception as e:
         return Response({
             'success': False,
-            'error': 'Class or Subject not found'
+            'error': f'Error deleting resource: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def download_attendance_report(request):
+    """Download attendance report"""
+    user = request.user
+    
+    if user.role != 'teacher' and not user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Teacher access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        class_id = request.GET.get('class_id')
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        format_type = request.GET.get('format', 'csv')
+        
+        if not all([class_id, start_date, end_date]):
+            return Response({
+                'success': False,
+                'error': 'Missing required parameters'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        class_obj = Class.objects.get(id=class_id)
+        start = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end = datetime.strptime(end_date, '%Y-%m-%d').date()
+        
+        students = Student.objects.filter(
+            current_class=class_obj,
+            status='active'
+        ).order_by('roll_number')
+        
+        attendances = Attendance.objects.filter(
+            class_obj=class_obj,
+            date__gte=start,
+            date__lte=end
+        ).order_by('date')
+        
+        if format_type == 'csv':
+            return generate_csv_attendance_report(class_obj, students, attendances, start, end)
+        else:
+            return generate_pdf_attendance_report(class_obj, students, attendances, start, end)
+            
+    except Class.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Class not found'
         }, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({
             'success': False,
-            'error': f'Error saving grades: {str(e)}'
+            'error': f'Error generating report: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def generate_csv_attendance_report(class_obj, students, attendances, start_date, end_date):
+    """Generate CSV attendance report"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="attendance_report_{class_obj.name}_{start_date}_{end_date}.csv"'
+    
+    writer = csv.writer(response)
+    
+    writer.writerow(['Attendance Report'])
+    writer.writerow([f'Class: {class_obj.name}'])
+    writer.writerow([f'Period: {start_date} to {end_date}'])
+    writer.writerow([])
+    
+    dates = attendances.values_list('date', flat=True).distinct().order_by('date')
+    
+    headers = ['Roll No', 'Student Name'] + [date.strftime('%Y-%m-%d') for date in dates] + ['Present', 'Absent', 'Late', 'Attendance %']
+    writer.writerow(headers)
+    
+    for student in students:
+        row = [student.roll_number or 'N/A', f"{student.first_name} {student.last_name}"]
+        
+        present_count = 0
+        absent_count = 0
+        late_count = 0
+        
+        for date in dates:
+            attendance = attendances.filter(date=date).first()
+            if attendance:
+                record = AttendanceRecord.objects.filter(
+                    attendance=attendance,
+                    student=student
+                ).first()
+                
+                if record:
+                    row.append(record.status.upper()[0])
+                    if record.status == 'present':
+                        present_count += 1
+                    elif record.status == 'absent':
+                        absent_count += 1
+                    elif record.status == 'late':
+                        late_count += 1
+                else:
+                    row.append('-')
+            else:
+                row.append('-')
+        
+        total_days = len(dates)
+        attendance_percentage = (present_count / total_days * 100) if total_days > 0 else 0
+        
+        row.extend([present_count, absent_count, late_count, f"{attendance_percentage:.1f}%"])
+        writer.writerow(row)
+    
+    return response
+
+
+def generate_pdf_attendance_report(class_obj, students, attendances, start_date, end_date):
+    """Generate PDF attendance report"""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    title = Paragraph(f"<b>Attendance Report - {class_obj.name}</b>", styles['Title'])
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+    
+    period = Paragraph(f"Period: {start_date} to {end_date}", styles['Normal'])
+    elements.append(period)
+    elements.append(Spacer(1, 20))
+    
+    total_students = students.count()
+    dates = attendances.values_list('date', flat=True).distinct()
+    total_days = len(dates)
+    
+    summary_data = [
+        ['Total Students', str(total_students)],
+        ['Total Days', str(total_days)],
+        ['Report Generated', timezone.now().strftime('%Y-%m-%d %H:%M')]
+    ]
+    
+    summary_table = Table(summary_data, colWidths=[150, 150])
+    summary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.lightgrey),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+    ]))
+    elements.append(summary_table)
+    elements.append(Spacer(1, 20))
+    
+    table_data = [['Roll No', 'Student Name', 'Present', 'Absent', 'Late', 'Attendance %']]
+    
+    for student in students:
+        present = AttendanceRecord.objects.filter(
+            attendance__in=attendances,
+            student=student,
+            status='present'
+        ).count()
+        
+        absent = AttendanceRecord.objects.filter(
+            attendance__in=attendances,
+            student=student,
+            status='absent'
+        ).count()
+        
+        late = AttendanceRecord.objects.filter(
+            attendance__in=attendances,
+            student=student,
+            status='late'
+        ).count()
+        
+        percentage = (present / total_days * 100) if total_days > 0 else 0
+        
+        table_data.append([
+            student.roll_number or 'N/A',
+            f"{student.first_name} {student.last_name}",
+            str(present),
+            str(absent),
+            str(late),
+            f"{percentage:.1f}%"
+        ])
+    
+    attendance_table = Table(table_data, colWidths=[60, 150, 50, 50, 50, 80])
+    attendance_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    
+    elements.append(attendance_table)
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="attendance_report_{class_obj.name}_{start_date}_{end_date}.pdf"'
+    
+    return response
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def download_performance_report(request):
+    """Download performance report"""
+    user = request.user
+    
+    if user.role != 'teacher' and not user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Teacher access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        class_id = request.GET.get('class_id')
+        report_type = request.GET.get('report_type', 'midterm')
+        format_type = request.GET.get('format', 'pdf')
+        
+        if not class_id:
+            return Response({
+                'success': False,
+                'error': 'Class ID is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        class_obj = Class.objects.get(id=class_id)
+        students = Student.objects.filter(
+            current_class=class_obj,
+            status='active'
+        ).order_by('roll_number')
+        
+        exams = Exam.objects.filter(
+            class_obj=class_obj,
+            exam_type=report_type
+        )
+        
+        if format_type == 'csv':
+            return generate_csv_performance_report(class_obj, students, exams, report_type)
+        else:
+            return generate_pdf_performance_report(class_obj, students, exams, report_type)
+            
+    except Class.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Class not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': f'Error generating report: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def generate_csv_performance_report(class_obj, students, exams, report_type):
+    """Generate CSV performance report"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="performance_report_{class_obj.name}_{report_type}.csv"'
+    
+    writer = csv.writer(response)
+    
+    writer.writerow(['Performance Report'])
+    writer.writerow([f'Class: {class_obj.name}'])
+    writer.writerow([f'Report Type: {report_type.title()}'])
+    writer.writerow([])
+    
+    subjects = exams.values_list('subject__name', flat=True).distinct()
+    
+    headers = ['Roll No', 'Student Name'] + list(subjects) + ['Average', 'Grade', 'Rank']
+    writer.writerow(headers)
+    
+    student_data = []
+    
+    for student in students:
+        row = [student.roll_number or 'N/A', f"{student.first_name} {student.last_name}"]
+        
+        subject_scores = []
+        for subject in subjects:
+            exam = exams.filter(subject__name=subject).first()
+            if exam:
+                result = ExamResult.objects.filter(exam=exam, student=student).first()
+                if result:
+                    percentage = result.percentage
+                    row.append(f"{percentage:.1f}%")
+                    subject_scores.append(percentage)
+                else:
+                    row.append('-')
+            else:
+                row.append('-')
+        
+        average = sum(subject_scores) / len(subject_scores) if subject_scores else 0
+        
+        if average >= 90:
+            grade = 'A+'
+        elif average >= 80:
+            grade = 'A'
+        elif average >= 70:
+            grade = 'B+'
+        elif average >= 60:
+            grade = 'B'
+        elif average >= 50:
+            grade = 'C+'
+        elif average >= 40:
+            grade = 'C'
+        elif average >= 33:
+            grade = 'D'
+        else:
+            grade = 'F'
+        
+        row.extend([f"{average:.1f}%", grade, ''])
+        student_data.append((average, row))
+    
+    student_data.sort(key=lambda x: x[0], reverse=True)
+    
+    for rank, (avg, row) in enumerate(student_data, 1):
+        row[-1] = rank
+        writer.writerow(row)
+    
+    return response
+
+
+def generate_pdf_performance_report(class_obj, students, exams, report_type):
+    """Generate PDF performance report"""
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    title = Paragraph(f"<b>Performance Report - {class_obj.name}</b>", styles['Title'])
+    elements.append(title)
+    elements.append(Spacer(1, 12))
+    
+    report_info = Paragraph(f"Report Type: {report_type.title()}", styles['Normal'])
+    elements.append(report_info)
+    elements.append(Spacer(1, 20))
+    
+    subjects = exams.values_list('subject__name', flat=True).distinct()
+    
+    table_data = [['Roll No', 'Student Name'] + list(subjects) + ['Avg', 'Grade']]
+    
+    for student in students:
+        row = [student.roll_number or 'N/A', f"{student.first_name} {student.last_name}"[:20]]
+        
+        subject_scores = []
+        for subject in subjects:
+            exam = exams.filter(subject__name=subject).first()
+            if exam:
+                result = ExamResult.objects.filter(exam=exam, student=student).first()
+                if result:
+                    percentage = result.percentage
+                    row.append(f"{percentage:.0f}%")
+                    subject_scores.append(percentage)
+                else:
+                    row.append('-')
+            else:
+                row.append('-')
+        
+        average = sum(subject_scores) / len(subject_scores) if subject_scores else 0
+        
+        if average >= 90:
+            grade = 'A+'
+        elif average >= 80:
+            grade = 'A'
+        elif average >= 70:
+            grade = 'B+'
+        elif average >= 60:
+            grade = 'B'
+        elif average >= 50:
+            grade = 'C+'
+        elif average >= 40:
+            grade = 'C'
+        elif average >= 33:
+            grade = 'D'
+        else:
+            grade = 'F'
+        
+        row.extend([f"{average:.0f}%", grade])
+        table_data.append(row)
+    
+    performance_table = Table(table_data)
+    performance_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 8),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTSIZE', (0, 1), (-1, -1), 7),
+    ]))
+    
+    elements.append(performance_table)
+    
+    doc.build(elements)
+    buffer.seek(0)
+    
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="performance_report_{class_obj.name}_{report_type}.pdf"'
+    
+    return response
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_today_classes(request):
+    """Get today's classes for teacher"""
+    if request.user.role != 'teacher' and not request.user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Teacher access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        today = timezone.now().strftime('%A')
+        
+        entries = TimetableEntry.objects.filter(
+            teacher=request.user,
+            day_of_week=today.lower()
+        ).select_related('timetable__class_obj', 'subject', 'time_slot').order_by(
+            'time_slot__start_time'
+        )
+        
+        today_classes = []
+        for entry in entries:
+            today_classes.append({
+                'id': entry.id,
+                'time': f"{entry.time_slot.start_time.strftime('%H:%M')} - {entry.time_slot.end_time.strftime('%H:%M')}",
+                'class': entry.timetable.class_obj.name,
+                'subject': entry.subject.name if entry.subject else 'Break',
+                'room': entry.room_number or 'TBA',
+                'class_id': entry.timetable.class_obj.id
+            })
+        
+        return Response({
+            'success': True,
+            'data': today_classes
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'success': False,
+            'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

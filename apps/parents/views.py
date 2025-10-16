@@ -10,12 +10,13 @@ from django.db.models import Avg, Count, Q, Sum
 from datetime import datetime, timedelta
 from django.utils import timezone
 from apps.academics.models import TeacherClassAssignment, ClassSubject, Timetable, TimetableEntry
+import calendar
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def parent_dashboard_data(request):
-    """Get parent dashboard with all linked children data INCLUDING FEES"""
+    """Get parent dashboard with all linked children data"""
     if request.user.role != 'parent' and not request.user.is_superuser:
         return Response({
             'success': False,
@@ -30,12 +31,10 @@ def parent_dashboard_data(request):
             'error': 'Parent profile not found'
         }, status=status.HTTP_404_NOT_FOUND)
     
-    # Get all children
     children = parent.children.all()
     
     children_data = []
     for child in children:
-        # Calculate attendance
         from apps.attendance.models import AttendanceRecord
         thirty_days_ago = timezone.now().date() - timedelta(days=30)
         attendance_records = AttendanceRecord.objects.filter(
@@ -47,8 +46,9 @@ def parent_dashboard_data(request):
         present_days = attendance_records.filter(status='present').count()
         attendance_rate = (present_days / total_days * 100) if total_days > 0 else 0
         
-        # Calculate grades
+        # ✅ FIXED: Get grades with proper query
         grades = Grade.objects.filter(student=child)
+        
         if grades.exists():
             avg_percentage = 0
             total_score = 0
@@ -60,7 +60,6 @@ def parent_dashboard_data(request):
             
             avg_percentage = (total_score / total_marks * 100) if total_marks > 0 else 0
             
-            # Determine letter grade
             if avg_percentage >= 90:
                 overall_grade = 'A+'
             elif avg_percentage >= 80:
@@ -81,14 +80,12 @@ def parent_dashboard_data(request):
             avg_percentage = 0
             overall_grade = 'N/A'
         
-        # ====== CALCULATE PENDING FEES ======
         student_fees = StudentFee.objects.filter(
             student=child,
             status__in=['pending', 'partial', 'overdue']
         )
         pending_fees = sum([fee.balance for fee in student_fees])
         
-        # Class rank
         class_rank = 0
         total_students = 0
         if child.current_class:
@@ -97,7 +94,6 @@ def parent_dashboard_data(request):
                 status='active'
             )
             
-            # Calculate average for each student
             student_averages = []
             for student in class_students:
                 student_grades = Grade.objects.filter(student=student)
@@ -107,7 +103,6 @@ def parent_dashboard_data(request):
                     avg = (total_s / total_m * 100) if total_m > 0 else 0
                     student_averages.append({'id': student.id, 'avg': avg})
             
-            # Sort and find rank
             student_averages.sort(key=lambda x: x['avg'], reverse=True)
             total_students = len(student_averages)
             
@@ -128,7 +123,7 @@ def parent_dashboard_data(request):
             'attendance_rate': round(attendance_rate, 1),
             'overall_grade': overall_grade,
             'average_percentage': round(avg_percentage, 1),
-            'pending_fees': float(pending_fees),  # NOW SHOWING REAL DATA
+            'pending_fees': float(pending_fees),
             'class_rank': class_rank,
             'total_students': total_students,
         }
@@ -154,9 +149,7 @@ def parent_dashboard_data(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_child_details(request, student_id):
-    """
-    Get detailed information about a specific child including FEES
-    """
+    """Get detailed information about a specific child"""
     if request.user.role != 'parent' and not request.user.is_superuser:
         return Response({
             'success': False,
@@ -167,7 +160,6 @@ def get_child_details(request, student_id):
         parent = Parent.objects.get(user=request.user)
         child = Student.objects.get(id=student_id)
         
-        # Verify this child belongs to this parent
         if child not in parent.children.all():
             return Response({
                 'success': False,
@@ -176,7 +168,6 @@ def get_child_details(request, student_id):
         
         current_class = child.current_class
         
-        # Get class teacher
         class_teacher = "Not Assigned"
         if current_class:
             class_teacher_assignment = TeacherClassAssignment.objects.filter(
@@ -189,7 +180,6 @@ def get_child_details(request, student_id):
                 teacher = class_teacher_assignment.teacher
                 class_teacher = f"{teacher.first_name} {teacher.last_name}"
         
-        # Get courses/subjects
         class_subjects = ClassSubject.objects.filter(
             class_obj=current_class
         ).select_related('subject', 'teacher')
@@ -206,7 +196,6 @@ def get_child_details(request, student_id):
             }
             courses.append(course_data)
             
-            # Add to teachers list (for contact)
             if cs.teacher:
                 teachers_list.append({
                     'id': cs.teacher.id,
@@ -215,7 +204,6 @@ def get_child_details(request, student_id):
                     'email': cs.teacher.email
                 })
         
-        # Remove duplicates from teachers list
         unique_teachers = []
         seen_ids = set()
         for teacher in teachers_list:
@@ -224,7 +212,7 @@ def get_child_details(request, student_id):
                 seen_ids.add(teacher['id'])
         teachers_list = unique_teachers
         
-        # Get recent test results
+        # ✅ FIXED: Get recent grades properly
         recent_results = Grade.objects.filter(
             student=child
         ).select_related('subject').order_by('-exam_date')[:10]
@@ -242,27 +230,65 @@ def get_child_details(request, student_id):
                 'grade': result.grade
             })
         
-        # Get timetable
         timetable_data = get_timetable_for_class(current_class)
         
-        # Get attendance calendar (last 30 days)
+        # ✅ FIXED: Attendance calendar with proper date alignment
         from apps.attendance.models import AttendanceRecord
         
         thirty_days_ago = timezone.now().date() - timedelta(days=30)
+        today = timezone.now().date()
+        
         attendance_records = AttendanceRecord.objects.filter(
             student=child,
-            attendance__date__gte=thirty_days_ago
+            attendance__date__gte=thirty_days_ago,
+            attendance__date__lte=today
         ).select_related('attendance').order_by('attendance__date')
         
-        attendance_calendar = []
+        # Create a dictionary of dates with their attendance
+        attendance_dict = {}
         for record in attendance_records:
+            date = record.attendance.date
+            attendance_dict[date] = record.status
+        
+        # Build calendar for current month
+        now = timezone.now()
+        year = now.year
+        month = now.month
+        
+        # Get first day of month and number of days
+        first_day_weekday = calendar.monthrange(year, month)[0]  # 0=Monday, 6=Sunday
+        num_days = calendar.monthrange(year, month)[1]
+        
+        attendance_calendar = []
+        
+        # Add empty cells for days before the 1st
+        for _ in range(first_day_weekday):
             attendance_calendar.append({
-                'date': record.attendance.date.isoformat(),
-                'day': record.attendance.date.day,
-                'status': record.status
+                'date': '',
+                'day': '',
+                'status': 'empty'
             })
         
-        # ====== GET DETAILED FEE INFORMATION ======
+        # Add actual days of the month
+        for day in range(1, num_days + 1):
+            date = datetime(year, month, day).date()
+            
+            # Check if date is in the past
+            if date > today:
+                status = 'future'
+            elif date in attendance_dict:
+                status = attendance_dict[date]
+            elif date.weekday() >= 5:  # Saturday or Sunday
+                status = 'holiday'
+            else:
+                status = 'no_record'
+            
+            attendance_calendar.append({
+                'date': date.isoformat(),
+                'day': day,
+                'status': status
+            })
+        
         student_fees = StudentFee.objects.filter(
             student=child
         ).select_related('fee_structure').order_by('-due_date')
@@ -302,7 +328,6 @@ def get_child_details(request, student_id):
             total_paid += fee.amount_paid
             total_balance += fee.balance
         
-        # Get payment history
         payments = Payment.objects.filter(
             student_fee__student=child,
             status='completed'
@@ -332,7 +357,6 @@ def get_child_details(request, student_id):
             'timetable': timetable_data,
             'attendance_calendar': attendance_calendar,
             'teachers': teachers_list,
-            # ====== FINANCE DATA ======
             'fees': fees_data,
             'fee_summary': {
                 'total_fees': float(total_fees),

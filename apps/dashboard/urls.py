@@ -61,4 +61,10 @@ urlpatterns = [
     path('api/v1/admin/timetable/entry/<int:entry_id>/', timetable_views.delete_timetable_entry, name='delete_timetable_entry'),
     path('admin/timetable/entry/<int:entry_id>/', timetable_views.delete_timetable_entry, name='delete_timetable_entry'),
     path('api/v1/admin/timetable/class/<int:class_id>/resources/', timetable_views.get_subjects_and_teachers, name='get_subjects_and_teachers'),
+
+   # Notification endpoints 
+    path('notifications/', views.get_notifications, name='get-notifications'),
+    path('notifications/<int:notification_id>/read/', views.mark_notification_read, name='mark-notification-read'),
+    path('notifications/mark-all-read/', views.mark_all_notifications_read, name='mark-all-read'),
+
 ]

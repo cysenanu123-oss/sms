@@ -8,6 +8,7 @@ urlpatterns = [
     path('students/', complete_admin_views.get_students_list, name='admin-students'),
     path('students/<int:student_id>/',
          complete_admin_views.get_student_details, name='admin-student-detail'),
+   
 
     # Class Management
     path('classes/', complete_admin_views.get_classes_list,
