@@ -125,7 +125,6 @@ def manage_teachers(request):
                     last_name=last_name,
                     phone=phone,
                     role='teacher',
-                    is_teacher=True,
                     must_change_password=True,
                     is_active=True
                 )
@@ -165,6 +164,12 @@ def manage_teachers(request):
                             )
                         except (Class.DoesNotExist, Subject.DoesNotExist):
                             pass
+                
+                # Send email with credentials
+                from apps.admissions.email_utils import send_teacher_credentials_email
+                subject_names = [Subject.objects.get(id=s_id).name for s_id in subjects]
+                class_names = [Class.objects.get(id=c_id).name for c_id in classes]
+                send_teacher_credentials_email(teacher, username, temp_password, subject_names, class_names)
 
                 return Response({
                     'success': True,
@@ -261,6 +266,10 @@ def delete_teacher(request, teacher_id):
         teacher = User.objects.get(id=teacher_id, role='teacher')
         teacher.is_active = False  # Soft delete
         teacher.save()
+
+        # Unassign teacher from classes and subjects
+        TeacherClassAssignment.objects.filter(teacher=teacher).update(is_active=False)
+        ClassSubject.objects.filter(teacher=teacher).update(teacher=None)
 
         return Response({
             'success': True,

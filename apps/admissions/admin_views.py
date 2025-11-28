@@ -326,3 +326,45 @@ def accept_and_enroll(request, application_number):
             'success': False,
             'error': f'Enrollment failed: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def schedule_exam(request, application_number):
+    """Schedule an entrance exam for an applicant and send an invitation email."""
+    if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
+        return Response({'success': False, 'error': 'Admin access required'},
+                       status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        application = StudentApplication.objects.get(application_number=application_number)
+    except StudentApplication.DoesNotExist:
+        return Response({'success': False, 'error': 'Application not found'},
+                       status=status.HTTP_404_NOT_FOUND)
+
+    exam_schedule_id = request.data.get('exam_schedule_id')
+    custom_message = request.data.get('custom_message')
+
+    if not exam_schedule_id and not custom_message:
+        return Response({'success': False, 'error': 'Exam schedule or custom message is required.'},
+                       status=status.HTTP_400_BAD_REQUEST)
+
+    with transaction.atomic():
+        application.status = 'exam_scheduled'
+        application.save()
+
+        # Send email
+        from django.core.mail import send_mail
+        from django.template.loader import render_to_string
+        
+        subject = 'Invitation for Entrance Exam at Unique Success Academy'
+        context = {
+            'applicant_name': application.learner_name,
+            'exam_details': custom_message or f"Your entrance exam has been scheduled. We will contact you shortly with the details.",
+            'school_name': "Unique Success Academy"
+        }
+        html_message = render_to_string('emails/exam_invitation.html', context)
+        plain_message = custom_message
+        
+        send_mail(subject, plain_message, 'from@excellenceacademy.com', [application.parent_email], html_message=html_message)
+
+    return Response({'success': True, 'message': 'Exam scheduled and invitation sent successfully.'})

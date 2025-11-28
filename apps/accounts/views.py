@@ -20,8 +20,6 @@ def login_view(request):
             'errors': {'general': ['Email/username and password are required']}
         }, status=status.HTTP_400_BAD_REQUEST)
 
-    from .models import User
-
     try:
         # Find user by email or username
         if '@' in email_or_username:
@@ -45,7 +43,8 @@ def login_view(request):
                     'username': user.username,
                     'first_name': user.first_name,
                     'last_name': user.last_name,
-                    'role': user.role
+                    'role': user.role,
+                    'must_change_password': user.must_change_password
                 },
                 'tokens': {
                     'refresh': str(refresh),
@@ -137,7 +136,7 @@ def password_reset_request(request):
         reset_url = f"{settings.FRONTEND_URL or 'http://127.0.0.1:8000'}/reset-password/?uid={uid}&token={token}"
         
         # Send email
-        subject = 'Password Reset Request - Excellence Academy'
+        subject = 'Password Reset Request - Unique Success Academy'
         html_message = render_to_string('emails/password_reset.html', {
             'user_name': user.get_full_name() or user.username,
             'reset_url': reset_url,
@@ -282,6 +281,7 @@ def change_password(request):
     
     # Set new password
     user.set_password(new_password)
+    user.must_change_password = False
     user.save()
     
     return Response({

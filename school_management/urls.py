@@ -45,6 +45,6 @@ if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL,
                           document_root=settings.MEDIA_ROOT)
 
-admin.site.site_header = "Excellence Academy Management"
+admin.site.site_header = "Unique Success Academy Management"
 admin.site.site_title = "School Admin"
 admin.site.index_title = "Welcome to School Management System"

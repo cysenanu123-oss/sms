@@ -10,7 +10,7 @@ from datetime import timedelta
 
 from apps.admissions.models import Student
 from apps.academics.models import ClassSubject, Timetable, TimetableEntry
-from apps.grades.models import Assignment, Grade
+from apps.grades.models import Assignment, Grade, AssignmentSubmission
 
 
 @api_view(['GET'])
@@ -97,39 +97,53 @@ def student_dashboard(request):
     # Get pending assignments
     pending_assignments = Assignment.objects.filter(
         class_obj=current_class,
-        due_date__gte=timezone.now().date()
+        status='active'
     ).select_related('subject').order_by('due_date')
     
     assignments_data = []
     for assignment in pending_assignments:
-        # Calculate days until due
-        days_until_due = (assignment.due_date - timezone.now().date()).days
-        
-        if days_until_due == 0:
-            due_status = 'Due Today'
-            status_color = 'red'
-        elif days_until_due == 1:
-            due_status = 'Due Tomorrow'
-            status_color = 'red'
-        elif days_until_due <= 3:
-            due_status = f'Due in {days_until_due} days'
-            status_color = 'yellow'
+        # Check if submitted
+        submission = AssignmentSubmission.objects.filter(assignment=assignment, student=student).first()
+
+        if assignment.due_date:
+            # Calculate days until due
+            days_until_due = (assignment.due_date - timezone.now().date()).days
+            
+            if assignment.due_date < timezone.now().date():
+                due_status = 'Overdue'
+                status_color = 'red'
+            elif days_until_due == 0:
+                due_status = 'Due Today'
+                status_color = 'red'
+            elif days_until_due == 1:
+                due_status = 'Due Tomorrow'
+                status_color = 'red'
+            elif days_until_due <= 3:
+                due_status = f'Due in {days_until_due} days'
+                status_color = 'yellow'
+            else:
+                due_status = f'Due in {days_until_due} days'
+                status_color = 'blue'
+            
+            due_date_iso = assignment.due_date.isoformat()
         else:
-            due_status = f'Due in {days_until_due} days'
-            status_color = 'blue'
-        
+            due_status = 'No due date'
+            status_color = 'gray'
+            due_date_iso = None
+
         assignments_data.append({
             'id': assignment.id,
             'title': assignment.title,
             'description': assignment.description,
             'subject': assignment.subject.name if assignment.subject else 'General',
-            'due_date': assignment.due_date.isoformat(),
+            'due_date': due_date_iso,
             'due_status': due_status,
             'status_color': status_color,
             'total_marks': assignment.total_marks,
-            'submitted': False,  # You can implement submission tracking later
-            'submission_date': None,
-            'submission_status': None
+            'submitted': submission is not None,
+            'submission_date': submission.submitted_at.isoformat() if submission else None,
+            'submission_status': submission.status if submission else None,
+            'status': assignment.status,
         })
     
     # Get recent test results
@@ -198,6 +212,27 @@ def student_dashboard(request):
         'pending_assignments': pending_count
     }
     
+    # Get resources
+    from apps.academics.models import TeachingResource
+    resources = TeachingResource.objects.filter(
+        class_obj=current_class,
+        is_active=True
+    ).select_related('subject', 'teacher').order_by('-created_at')
+    
+    resources_data = []
+    for resource in resources:
+        resources_data.append({
+            'id': resource.id,
+            'title': resource.title,
+            'description': resource.description,
+            'subject': resource.subject.name if resource.subject else 'General',
+            'teacher': resource.teacher.get_full_name() if resource.teacher else 'N/A',
+            'resource_type': resource.resource_type,
+            'file_url': resource.file.url if resource.file else None,
+            'external_link': resource.external_link,
+            'created_at': resource.created_at.isoformat()
+        })
+    
     return Response({
         'success': True,
         'data': {
@@ -206,7 +241,8 @@ def student_dashboard(request):
             'assignments': assignments_data,
             'recent_results': results_data,
             'timetable': timetable_data,
-            'stats': stats
+            'stats': stats,
+            'resources': resources_data
         }
     })
 
@@ -386,46 +422,44 @@ def submit_assignment(request):
     """
     Submit an assignment file
     """
-    if request.user.role != 'student' and not request.user.is_superuser:
-        return Response({
-            'success': False,
-            'error': 'Student access required'
-        }, status=status.HTTP_403_FORBIDDEN)
+    if request.user.role != 'student':
+        return Response({'success': False, 'error': 'Student access required'}, status=status.HTTP_403_FORBIDDEN)
     
     try:
         student = Student.objects.get(user=request.user)
         assignment_id = request.data.get('assignment_id')
-        
+        file = request.FILES.get('file')
+
         if not assignment_id:
-            return Response({
-                'success': False,
-                'error': 'Assignment ID is required'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'success': False, 'error': 'Assignment ID is required'}, status=status.HTTP_400_BAD_REQUEST)
         
+        if not file:
+            return Response({'success': False, 'error': 'File is required'}, status=status.HTTP_400_BAD_REQUEST)
+
         assignment = Assignment.objects.get(id=assignment_id)
-        
-        # For now, just return success
-        # You can implement file upload and submission tracking later
-        return Response({
-            'success': True,
-            'message': 'Assignment submission functionality coming soon'
-        })
-        
+
+        # Check if assignment is closed
+        if assignment.due_date is None:
+            return Response({'success': False, 'error': 'Assignment has no due date.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if assignment.status == 'closed' or assignment.due_date < timezone.now().date():
+            return Response({'success': False, 'error': 'Assignment submission is closed.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create or update submission
+        submission, created = AssignmentSubmission.objects.update_or_create(
+            student=student,
+            assignment=assignment,
+            defaults={'file': file}
+        )
+
+        return Response({'success': True, 'message': 'Assignment submitted successfully!'})
+
     except Student.DoesNotExist:
-        return Response({
-            'success': False,
-            'error': 'Student profile not found'
-        }, status=status.HTTP_404_NOT_FOUND)
+        return Response({'success': False, 'error': 'Student profile not found'}, status=status.HTTP_404_NOT_FOUND)
     except Assignment.DoesNotExist:
-        return Response({
-            'success': False,
-            'error': 'Assignment not found'
-        }, status=status.HTTP_404_NOT_FOUND)
+        return Response({'success': False, 'error': 'Assignment not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response({
-            'success': False,
-            'error': f'Error submitting assignment: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'success': False, 'error': f'Error submitting assignment: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 

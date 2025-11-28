@@ -26,7 +26,8 @@
                 <div class="flex items-center space-x-4">
                     <!-- REAL NOTIFICATIONS DROPDOWN -->
                     <div class="relative" x-data="{ open: false }">
-                        <button @click="open = !open; loadNotifications()" class="relative p-2 text-gray-600 hover:text-indigo-600">
+                        <button @click="open = !open; loadNotifications()"
+                            class="relative p-2 text-gray-600 hover:text-indigo-600">
                             <i class="fas fa-bell text-xl"></i>
                             <span x-show="unreadCount > 0"
                                 class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
@@ -44,9 +45,9 @@
                             </div>
                             <div>
                                 <template x-for="notif in notifications" :key="notif.id">
-                                    <div @click="markAsRead(notif.id)" 
-                                         :class="notif.is_read ? 'bg-white' : 'bg-blue-50'"
-                                         class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
+                                    <div @click="markAsRead(notif.id)"
+                                        :class="notif.is_read ? 'bg-white' : 'bg-blue-50'"
+                                        class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
                                         <div class="flex items-start">
                                             <i :class="notif.icon" class="text-indigo-600 mr-3 mt-1"></i>
                                             <div class="flex-1">
@@ -138,7 +139,7 @@
                 <a @click="currentView = 'reports'"
                     :class="currentView === 'reports' ? 'bg-indigo-50 text-indigo-600' : 'text-gray-600 hover:bg-gray-50'"
                     class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg cursor-pointer mb-1">
-                    <i class="fas fa-chart-bar mr-3"></i>
+                    <i class="fas fa-file-download mr-3"></i>
                     Reports
                 </a>
 
@@ -632,21 +633,21 @@
                     </button>
                 </div>
 
-                <!-- Upload Resource Form -->
+                <!-- FIXED UPLOAD RESOURCE FORM SECTION -->
                 <div x-show="showUploadResource" class="bg-white rounded-lg shadow p-6 mb-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Upload New Resource</h3>
                     <form @submit.prevent="uploadResource()">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
-                                <input type="text" x-model="newResource.title" required
+                                <input type="text" x-model="newResource.title" required name="resourceTitle"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                     placeholder="e.g., Chapter 5 Notes">
                             </div>
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Class</label>
-                                <select x-model="newResource.class_id" required
+                                <select x-model="newResource.class_id" required name="resourceClass"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                                     <option value="">Select class</option>
                                     <template x-for="cls in myClasses" :key="cls.id">
@@ -657,7 +658,7 @@
 
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Subject (Optional)</label>
-                                <select x-model="newResource.subject_id"
+                                <select x-model="newResource.subject_id" name="resourceSubject"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                                     <option value="">Select subject</option>
                                     <template x-for="subject in availableSubjects" :key="subject.id">
@@ -670,6 +671,7 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Resource Type</label>
                                 <select x-model="newResource.resource_type"
                                     @change="newResource.file = null; newResource.link = ''" required
+                                    name="resourceType"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                                     <option value="">Select type</option>
                                     <option value="pdf">PDF Document</option>
@@ -679,10 +681,11 @@
                                 </select>
                             </div>
 
+                            <!-- ✅ FIXED: File input - NO required attribute, validation in JS -->
                             <div x-show="newResource.resource_type && newResource.resource_type !== 'link'"
                                 class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Upload File</label>
-                                <input type="file" @change="handleResourceFile($event)" required
+                                <input type="file" @change="handleResourceFile($event)" name="resourceFile"
                                     :accept="newResource.resource_type === 'pdf' ? '.pdf' : newResource.resource_type === 'video' ? 'video/*' : '*'"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                                 <p class="text-xs text-gray-500 mt-1">
@@ -693,9 +696,10 @@
                                 </p>
                             </div>
 
+                            <!-- ✅ FIXED: Link input - NO required attribute, validation in JS -->
                             <div x-show="newResource.resource_type === 'link'" class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">External Link</label>
-                                <input type="url" x-model="newResource.link" required
+                                <input type="url" x-model="newResource.link" name="resourceLink"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                     placeholder="https://youtube.com/watch?v=...">
                                 <p class="text-xs text-gray-500 mt-1">YouTube, Google Drive, or any external link</p>
@@ -704,7 +708,7 @@
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Description
                                     (Optional)</label>
-                                <textarea x-model="newResource.description" rows="2"
+                                <textarea x-model="newResource.description" rows="2" name="resourceDescription"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                                     placeholder="Brief description of the resource..."></textarea>
                             </div>
@@ -1020,7 +1024,7 @@
                     </div>
                 </div>
             </div>
-             <!-- PROMOTE STUDENTS SECTION - NEW -->
+            <!-- PROMOTE STUDENTS SECTION - NEW -->
             <div x-show="currentView === 'promote' && !loading">
                 <div class="mb-6">
                     <h2 class="text-2xl font-bold text-gray-900">Promote Students</h2>
@@ -1059,19 +1063,19 @@
                 </div>
 
                 <!-- Students List for Promotion -->
-                <div x-show="promotion.from_class_id && !promotion.promote_all && promotionStudents.length > 0" 
-                     class="bg-white rounded-lg shadow p-6">
+                <div x-show="promotion.from_class_id && !promotion.promote_all && promotionStudents.length > 0"
+                    class="bg-white rounded-lg shadow p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Select Students to Promote</h3>
                     <div class="space-y-2">
                         <template x-for="student in promotionStudents" :key="student.id">
-                            <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                                <input type="checkbox" :value="student.id" 
-                                       @change="toggleStudentSelection(student.id)"
-                                       :checked="promotion.student_ids.includes(student.id)"
-                                       class="mr-3">
+                            <label
+                                class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" :value="student.id" @change="toggleStudentSelection(student.id)"
+                                    :checked="promotion.student_ids.includes(student.id)" class="mr-3">
                                 <div class="flex-1">
                                     <p class="font-medium text-gray-900" x-text="student.name"></p>
-                                    <p class="text-sm text-gray-600">Roll No: <span x-text="student.roll_number"></span></p>
+                                    <p class="text-sm text-gray-600">Roll No: <span x-text="student.roll_number"></span>
+                                    </p>
                                 </div>
                             </label>
                         </template>
@@ -1135,10 +1139,121 @@
                     </table>
                 </div>
             </div>
+
+            <!-- Submissions Modal -->
+            <div x-show="showSubmissionsModal"
+                class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+                <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-3xl">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold">Submissions for <span
+                                x-text="submissions.assignment.title"></span></h3>
+                        <button @click="showSubmissionsModal = false" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student
+                                        Name</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Roll No
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        Submitted</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <template x-for="submission in submissions.submissions" :key="submission.student_id">
+                                    <tr>
+                                        <td class="px-4 py-3 text-sm" x-text="submission.student_name"></td>
+                                        <td class="px-4 py-3 text-sm" x-text="submission.roll_number"></td>
+                                        <td class="px-4 py-3 text-sm"
+                                            x-text="submission.submission_date ? new Date(submission.submission_date).toLocaleString() : '-'">
+                                        </td>
+                                        <td class="px-4 py-3 text-sm">
+                                            <span :class="{
+                                            'bg-green-100 text-green-800': submission.status === 'graded',
+                                            'bg-yellow-100 text-yellow-800': submission.status === 'submitted',
+                                            'bg-red-100 text-red-800': submission.status === 'pending'
+                                        }" class="px-3 py-1 rounded-full text-xs font-medium"
+                                                x-text="submission.status"></span>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm" x-text="submission.score || '-'"></td>
+                                        <td class="px-4 py-3 text-sm">
+                                            <a :href="submission.file_url" target="_blank" x-show="submission.file_url"
+                                                class="text-indigo-600 hover:underline">View File</a>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </main>
+        <!-- Submissions Modal -->
+        <div x-show="showSubmissionsModal"
+            class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-3xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">Submissions for <span x-text="submissions.assignment.title"></span>
+                    </h3>
+                    <button @click="showSubmissionsModal = false" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student Name
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Roll No</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Submitted
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <template x-for="submission in submissions.submissions" :key="submission.student_id">
+                                <tr>
+                                    <td class="px-4 py-3 text-sm" x-text="submission.student_name"></td>
+                                    <td class="px-4 py-3 text-sm" x-text="submission.roll_number"></td>
+                                    <td class="px-4 py-3 text-sm"
+                                        x-text="submission.submission_date ? new Date(submission.submission_date).toLocaleString() : '-'">
+                                    </td>
+                                    <td class="px-4 py-3 text-sm">
+                                        <span :class="{
+                                            'bg-green-100 text-green-800': submission.status === 'graded',
+                                            'bg-yellow-100 text-yellow-800': submission.status === 'submitted',
+                                            'bg-red-100 text-red-800': submission.status === 'pending'
+                                        }" class="px-3 py-1 rounded-full text-xs font-medium"
+                                            x-text="submission.status"></span>
+                                    </td>
+                                    <td class="px-4 py-3 text-sm" x-text="submission.score || '-'"></td>
+                                    <td class="px-4 py-3 text-sm">
+                                        <a :href="submission.file_url" target="_blank" x-show="submission.file_url"
+                                            class="text-indigo-600 hover:underline">View File</a>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
-   <script>
+    <script>
         function teacherDashboard() {
             return {
                 user: {},
@@ -1146,11 +1261,11 @@
                 currentDate: '',
                 currentTime: '',
                 loading: true,
-                
+
                 // Notifications - REAL
                 notifications: [],
                 unreadCount: 0,
-                
+
                 // Promotion
                 promotion: {
                     from_class_id: '',
@@ -1219,6 +1334,21 @@
                 },
                 gradesStudents: [],
                 savingGrades: false,
+
+                // ... (rest of the properties)
+                showSubmissionsModal: false,
+                submissions: {
+                    assignment: {},
+                    submissions: [],
+                    stats: {}
+                },
+
+                showSubmissionsModal: false,
+                submissions: {
+                    assignment: {},
+                    submissions: [],
+                    stats: {}
+                },
 
                 reportFilters: {
                     attendance: {
@@ -1365,7 +1495,7 @@
 
                 async loadStudentsForPromotion() {
                     if (!this.promotion.from_class_id) return;
-                    
+
                     const token = localStorage.getItem('access_token');
                     try {
                         const response = await fetch(`/api/v1/teachers/class/${this.promotion.from_class_id}/students/`, {
@@ -1403,10 +1533,10 @@
                         return;
                     }
 
-                    const confirmMessage = this.promotion.promote_all 
-                        ? 'Are you sure you want to promote ALL students from this class?' 
+                    const confirmMessage = this.promotion.promote_all
+                        ? 'Are you sure you want to promote ALL students from this class?'
                         : `Are you sure you want to promote ${this.promotion.student_ids.length} student(s)?`;
-                    
+
                     if (!confirm(confirmMessage)) {
                         return;
                     }
@@ -1848,6 +1978,14 @@
                         return;
                     }
 
+                    let newDueDate = null;
+                    if (action === 'reopen') {
+                        newDueDate = prompt('Enter the new due date (YYYY-MM-DD):');
+                        if (!newDueDate) {
+                            return;
+                        }
+                    }
+
                     const token = localStorage.getItem('access_token');
 
                     try {
@@ -1857,7 +1995,7 @@
                                 'Authorization': `Bearer ${token}`,
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({ status: newStatus })
+                            body: JSON.stringify({ status: newStatus, due_date: newDueDate })
                         });
 
                         const result = await response.json();
@@ -2015,7 +2153,7 @@
                 },
 
                 calculateGrade(student) {
-                    if (!student.score || !this.gradeInput.total_marks) {
+                    if ((!student.score && student.score !== 0) || !this.gradeInput.total_marks) {
                         student.grade = '';
                         return;
                     }
@@ -2084,6 +2222,50 @@
                     this.selectedClass = classId;
                     this.currentView = 'attendance';
                     this.loadStudents();
+                },
+
+                // ✅ VIEW SUBMISSIONS
+                async viewSubmissions(assignmentId) {
+                    const token = localStorage.getItem('access_token');
+                    try {
+                        const response = await fetch(`/api/v1/teachers/assignment/${assignmentId}/submissions/`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            this.submissions = result.data;
+                            this.showSubmissionsModal = true;
+                        } else {
+                            alert('Error loading submissions: ' + result.error);
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Error loading submissions');
+                    }
+                },
+
+                // ✅ VIEW SUBMISSIONS
+                async viewSubmissions(assignmentId) {
+                    const token = localStorage.getItem('access_token');
+                    try {
+                        const response = await fetch(`/api/v1/teachers/assignment/${assignmentId}/submissions/`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            this.submissions = result.data;
+                            this.showSubmissionsModal = true;
+                        } else {
+                            alert('Error loading submissions: ' + result.error);
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Error loading submissions');
+                    }
                 },
 
                 logout() {

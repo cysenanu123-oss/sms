@@ -72,7 +72,7 @@ class SchoolSettings(models.Model):
     """Global school settings - Only ONE record should exist"""
     
     # School Information
-    school_name = models.CharField(max_length=200, default="Excellence Academy")
+    school_name = models.CharField(max_length=200, default="Unique Success Academy")
     school_motto = models.CharField(max_length=200, blank=True)
     school_address = models.TextField()
     school_phone = models.CharField(max_length=20)
@@ -326,11 +326,11 @@ class TeachingResource(models.Model):
     
     resource_type = models.CharField(max_length=20, choices=RESOURCE_TYPE_CHOICES)
     file = models.FileField(upload_to='teaching_resources/', null=True, blank=True)
-    external_link = models.URLField(max_length=500, blank=True)
+    external_link = models.URLField(max_length=500, blank=True, null=True)
     
     # File metadata
     file_size = models.BigIntegerField(null=True, blank=True)  # in bytes
-    
+
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -361,40 +361,6 @@ class TeachingResource(models.Model):
         super().save(*args, **kwargs)
 
 
-class TeachingResource(models.Model):
-    """Resources uploaded by teachers for students"""
-    RESOURCE_TYPE_CHOICES = (
-        ('pdf', 'PDF Document'),
-        ('video', 'Video File'),
-        ('link', 'External Link'),
-        ('document', 'Document'),
-    )
-    
-    title = models.CharField(max_length=200)
-    description = models.TextField(blank=True)
-    
-    class_obj = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='resources')
-    subject = models.ForeignKey(Subject, on_delete=models.SET_NULL, null=True, blank=True, related_name='resources')
-    teacher = models.ForeignKey('accounts.User', on_delete=models.SET_NULL, null=True, related_name='uploaded_resources')
-    
-    resource_type = models.CharField(max_length=20, choices=RESOURCE_TYPE_CHOICES)
-    file = models.FileField(upload_to='teaching_resources/', null=True, blank=True)
-    external_link = models.URLField(max_length=500, blank=True)
-    file_size = models.BigIntegerField(null=True, blank=True)
-    
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        ordering = ['-created_at']
-    
-    def __str__(self):
-        return f"{self.title} - {self.class_obj.name}"
-    
-    def save(self, *args, **kwargs):
-        if self.file:
-            self.file_size = self.file.size
-        super().save(*args, **kwargs)
+
 
 

@@ -10,9 +10,10 @@ import csv
 import io
 
 from apps.admissions.models import Student, StudentApplication
-from apps.academics.models import Class, Subject
+from apps.academics.models import Class, Subject, ClassSubject
 from apps.attendance.models import Attendance, AttendanceRecord
 from apps.finance.models import StudentFee, Payment, FeeStructure
+from apps.grades.models import Grade
 from apps.accounts.models import User
 
 
@@ -26,72 +27,78 @@ def is_admin(user):
 def download_academic_report(request):
     """
     Download academic performance report as CSV
-    Filters: class_id, academic_year, term
+    Filters: class_id, academic_year
     """
     if not is_admin(request.user):
         return Response({'success': False, 'error': 'Admin access required'}, status=403)
-    
+
     class_id = request.GET.get('class_id')
     academic_year = request.GET.get('academic_year', '2024-2025')
-    
+
     if not class_id:
         return Response({'success': False, 'error': 'class_id is required'}, status=400)
-    
+
     try:
         class_obj = Class.objects.get(id=class_id)
     except Class.DoesNotExist:
         return Response({'success': False, 'error': 'Class not found'}, status=404)
-    
+
     # Get all students in the class
     students = Student.objects.filter(
         current_class=class_obj,
         status='active'
-    ).select_related('user')
-    
+    ).select_related('user').order_by('last_name', 'first_name')
+
+    # Get subjects for the class
+    class_subjects = ClassSubject.objects.filter(class_obj=class_obj).select_related('subject')
+    subject_headers = [cs.subject.name for cs in class_subjects]
+
     # Create CSV
     output = io.StringIO()
     writer = csv.writer(output)
-    
+
     # Headers
-    writer.writerow([
-        'Student ID',
-        'Student Name',
-        'Class',
-        'Gender',
-        'Date of Birth',
-        'Attendance Rate (%)',
-        'Total Days Present',
-        'Total Days Absent',
-        'Academic Status'
-    ])
-    
+    headers = ['Student ID', 'Student Name'] + subject_headers
+    writer.writerow(headers)
+
+    # Get all grades for the class in one query
+    grades = Grade.objects.filter(
+        class_obj=class_obj,
+        academic_year=academic_year,
+        student__in=students
+    ).values('student_id', 'subject__name').annotate(avg_score=Avg('score'), avg_total=Avg('total_marks'))
+
+    # Process grades into a dictionary for quick lookup
+    student_grades = {}
+    for grade in grades:
+        student_id = grade['student_id']
+        subject_name = grade['subject__name']
+        if student_id not in student_grades:
+            student_grades[student_id] = {}
+        
+        if grade['avg_score'] is not None and grade['avg_total'] and grade['avg_total'] > 0:
+            percentage = (grade['avg_score'] / grade['avg_total']) * 100
+            student_grades[student_id][subject_name] = f"{percentage:.2f}%"
+        else:
+            student_grades[student_id][subject_name] = "N/A"
+
+
     # Data rows
     for student in students:
-        # Calculate attendance
-        total_attendance = AttendanceRecord.objects.filter(student=student)
-        present_count = total_attendance.filter(status='present').count()
-        absent_count = total_attendance.filter(status='absent').count()
-        total_days = total_attendance.count()
+        row = [student.student_id, f"{student.first_name} {student.last_name}"]
+        student_grade_data = student_grades.get(student.id, {})
         
-        attendance_rate = (present_count / total_days * 100) if total_days > 0 else 0
-        
-        writer.writerow([
-            student.student_id,
-            f"{student.first_name} {student.last_name}",
-            class_obj.name,
-            student.gender or 'N/A',
-            student.date_of_birth.strftime('%Y-%m-%d') if student.date_of_birth else 'N/A',
-            f"{attendance_rate:.2f}",
-            present_count,
-            absent_count,
-            student.status.upper()
-        ])
-    
+        for subject_name in subject_headers:
+            grade = student_grade_data.get(subject_name, 'N/A')
+            row.append(grade)
+            
+        writer.writerow(row)
+
     # Prepare response
     output.seek(0)
     response = HttpResponse(output.getvalue(), content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="academic_report_{class_obj.name}_{academic_year}.csv"'
-    
+    response['Content-Disposition'] = f'attachment; filename="academic_performance_{class_obj.name}_{academic_year}.csv"'
+
     return response
 
 

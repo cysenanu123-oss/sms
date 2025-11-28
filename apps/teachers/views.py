@@ -1,4 +1,5 @@
 # apps/teachers/views.py 
+from django.shortcuts import render
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -11,7 +12,6 @@ from apps.accounts.models import User
 from apps.academics.models import Class, Subject, ClassSubject, TeacherClassAssignment, Timetable, TimetableEntry
 from apps.admissions.models import Student
 from apps.attendance.models import Attendance, AttendanceRecord
-from apps.grades.models import Assignment, Grade
 from apps.admissions.email_utils import send_teacher_credentials_email
 import secrets
 from django.http import HttpResponse
@@ -21,12 +21,13 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
-from apps.grades.models import AssignmentSubmission, Exam, ExamResult
-
+from apps.dashboard.views import create_grade_notifications
+from apps.grades import models as grades_models
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_teacher_dashboard_data(request):
+    from apps.grades.models import Assignment
     """Get complete teacher dashboard data"""
     user = request.user
     
@@ -82,7 +83,7 @@ def get_teacher_dashboard_data(request):
                 'is_class_teacher': assignment.is_class_teacher
             })
         
-        pending_assignments = Assignment.objects.filter(
+        pending_assignments = grades_models.Assignment.objects.filter(
             teacher=user,
             due_date__gte=timezone.now().date()
         ).count()
@@ -94,32 +95,47 @@ def get_teacher_dashboard_data(request):
             'avg_attendance': round(sum([c['avg_attendance'] for c in my_classes]) / len(my_classes), 1) if my_classes else 0
         }
         
+        # ✅ FIX: Get today's day name and try multiple formats
         today = timezone.now().date()
-        day_name = today.strftime('%A').lower()
+        day_name_lower = today.strftime('%A').lower()  # 'thursday'
+        day_name_title = today.strftime('%A')  # 'Thursday'
+        
+        print(f"🔍 DEBUG: Current day (lowercase): {day_name_lower}")
+        print(f"🔍 DEBUG: Current day (titlecase): {day_name_title}")
+        
+        # ✅ FIX: Check what format is actually in the database
+        sample_entry = TimetableEntry.objects.filter(teacher=user).first()
+        if sample_entry:
+            print(f"🔍 DEBUG: Sample day_of_week from DB: '{sample_entry.day_of_week}'")
+        
+        # ✅ FIX: Try querying with both lowercase and titlecase
+        entries = TimetableEntry.objects.filter(
+            teacher=user,
+            timetable__is_active=True
+        ).filter(
+            Q(day_of_week__iexact=day_name_lower) | Q(day_of_week__iexact=day_name_title)
+        ).select_related('subject', 'time_slot', 'timetable__class_obj').order_by('time_slot__slot_order')
+        
+        print(f"✅ DEBUG: Found {entries.count()} entries for today")
+        
+        # ✅ DEBUGGING: Print all entries for this teacher
+        all_teacher_entries = TimetableEntry.objects.filter(
+            teacher=user,
+            timetable__is_active=True
+        ).values_list('day_of_week', flat=True).distinct()
+        print(f"🔍 DEBUG: All day_of_week values for this teacher: {list(all_teacher_entries)}")
         
         today_schedule = []
-        for assignment in class_assignments:
-            timetable = Timetable.objects.filter(
-                class_obj=assignment.class_obj,
-                is_active=True
-            ).first()
-            
-            if timetable:
-                entries = TimetableEntry.objects.filter(
-                    timetable=timetable,
-                    day_of_week=day_name,
-                    teacher=user
-                ).select_related('subject', 'time_slot').order_by('time_slot__slot_order')
-                
-                for entry in entries:
-                    today_schedule.append({
-                        'id': entry.id,
-                        'time': f"{entry.time_slot.start_time.strftime('%H:%M')} - {entry.time_slot.end_time.strftime('%H:%M')}",
-                        'class': assignment.class_obj.name,
-                        'subject': entry.subject.name,
-                        'class_id': assignment.class_obj.id,
-                        'room': entry.room_number or 'TBA'
-                    })
+        for entry in entries:
+            print(f"✅ Found entry: {entry.subject.name if entry.subject else 'Break'} at {entry.time_slot.start_time}")
+            today_schedule.append({
+                'id': entry.id,
+                'time': f"{entry.time_slot.start_time.strftime('%H:%M')} - {entry.time_slot.end_time.strftime('%H:%M')}",
+                'class': entry.timetable.class_obj.name,
+                'subject': entry.subject.name,
+                'class_id': entry.timetable.class_obj.id,
+                'room': entry.room_number or 'TBA'
+            })
         
         today_schedule.sort(key=lambda x: x['time'])
         
@@ -133,11 +149,12 @@ def get_teacher_dashboard_data(request):
         })
         
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return Response({
             'success': False,
             'error': f'Error fetching dashboard data: {str(e)}'
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR) 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -278,19 +295,23 @@ def get_teacher_assignments(request):
             'error': 'Teacher access required'
         }, status=status.HTTP_403_FORBIDDEN)
     
-    assignments = Assignment.objects.filter(
+    assignments = grades_models.Assignment.objects.filter(
         teacher=user
     ).select_related('class_obj', 'subject').prefetch_related('submissions')
     
     assignments_data = []
     for assignment in assignments:
+        if assignment.due_date < timezone.now().date() and assignment.status == 'active':
+            assignment.status = 'closed'
+            assignment.save()
+
         total_students = Student.objects.filter(
             current_class=assignment.class_obj,
             status='active'
         ).count()
         
         submissions_count = assignment.submissions.count()
-        status_value = 'active' if assignment.due_date >= timezone.now().date() else 'closed'
+        status_value = assignment.status
         
         assignments_data.append({
             'id': assignment.id,
@@ -313,8 +334,9 @@ def get_teacher_assignments(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def save_grades(request):
+    from apps.grades.models import Grade
     """
-    ✅ FIXED: Save grades with proper academic_year handling
+    ✅ FIXED: Save grades with proper validation and error handling
     """
     user = request.user
     
@@ -325,27 +347,67 @@ def save_grades(request):
         }, status=status.HTTP_403_FORBIDDEN)
     
     try:
+        # Get request data
         class_id = request.data.get('class_id')
         subject_id = request.data.get('subject_id')
         exam_type = request.data.get('exam_type')
         exam_name = request.data.get('exam_name')
         exam_date_str = request.data.get('exam_date')
         total_marks = request.data.get('total_marks')
-        grades_data = request.data.get('grades', [])
+        grades_data = request.data.get('grades', [])  # ✅ Changed from 'grades' to match frontend
         
-        if not all([class_id, subject_id, exam_type, exam_name, exam_date_str, total_marks]):
+        # ✅ Enhanced validation
+        if not class_id:
             return Response({
                 'success': False,
-                'error': 'Missing required fields'
+                'error': 'Class ID is required'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
-        if not grades_data:
+            
+        if not subject_id:
             return Response({
                 'success': False,
-                'error': 'No grades provided'
+                'error': 'Subject ID is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        if not exam_type:
+            return Response({
+                'success': False,
+                'error': 'Exam type is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        if not exam_name:
+            return Response({
+                'success': False,
+                'error': 'Exam name is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        if not exam_date_str:
+            return Response({
+                'success': False,
+                'error': 'Exam date is required'
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        if not total_marks:
+            return Response({
+                'success': False,
+                'error': 'Total marks is required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        class_obj = Class.objects.get(id=class_id)
+        if not grades_data or len(grades_data) == 0:
+            return Response({
+                'success': False,
+                'error': 'No grades provided. Please enter at least one score.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # ✅ Verify class exists and teacher has access
+        try:
+            class_obj = Class.objects.get(id=class_id)
+        except Class.DoesNotExist:
+            return Response({
+                'success': False,
+                'error': 'Class not found'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
         has_access = TeacherClassAssignment.objects.filter(
             teacher=user,
             class_obj=class_obj,
@@ -358,32 +420,76 @@ def save_grades(request):
                 'error': 'You do not have access to this class'
             }, status=status.HTTP_403_FORBIDDEN)
         
-        subject = Subject.objects.get(id=subject_id)
-        exam_date = datetime.strptime(exam_date_str, '%Y-%m-%d').date()
+        # ✅ Verify subject exists
+        try:
+            subject = Subject.objects.get(id=subject_id)
+        except Subject.DoesNotExist:
+            return Response({
+                'success': False,
+                'error': 'Subject not found'
+            }, status=status.HTTP_404_NOT_FOUND)
         
-        # ✅ Get academic year from class or use current year
+        # ✅ Parse exam date
+        try:
+            exam_date = datetime.strptime(exam_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return Response({
+                'success': False,
+                'error': 'Invalid date format. Use YYYY-MM-DD'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # ✅ Get or create academic year
         academic_year = getattr(class_obj, 'academic_year', f"{timezone.now().year}-{timezone.now().year + 1}")
         
         saved_count = 0
         errors = []
         
+        # ✅ Process each grade with proper validation
         for grade_entry in grades_data:
             try:
                 student_id = grade_entry.get('student_id')
                 score = grade_entry.get('score')
                 grade_letter = grade_entry.get('grade')
                 
-                if not all([student_id, score is not None, grade_letter]):
+                # ✅ FIXED: Proper validation that allows score=0
+                if student_id is None:
+                    errors.append("Missing student ID in grade entry")
+                    continue
+                    
+                if score is None or score == '':
+                    errors.append(f"Missing score for student ID {student_id}")
+                    continue
+                    
+                if not grade_letter:
+                    errors.append(f"Missing grade letter for student ID {student_id}")
                     continue
                 
-                student = Student.objects.get(id=student_id)
+                # ✅ Convert score to float
+                try:
+                    score_float = float(score)
+                except (ValueError, TypeError):
+                    errors.append(f"Invalid score '{score}' for student ID {student_id}")
+                    continue
                 
+                # ✅ Validate score range
+                if score_float < 0 or score_float > float(total_marks):
+                    errors.append(f"Score {score_float} is out of range (0-{total_marks}) for student ID {student_id}")
+                    continue
+                
+                # ✅ Get student
+                try:
+                    student = Student.objects.get(id=student_id)
+                except Student.DoesNotExist:
+                    errors.append(f"Student with ID {student_id} not found")
+                    continue
+                
+                # ✅ Verify student is in the class
                 if student.current_class != class_obj:
-                    errors.append(f"Student {student.first_name} is not in this class")
+                    errors.append(f"Student {student.first_name} {student.last_name} is not in this class")
                     continue
                 
-                # ✅ FIXED: Create or update grade with proper fields
-                grade, created = Grade.objects.update_or_create(
+                # ✅ Create or update grade (handles unique_together constraint)
+                grade, created = grades_models.Grade.objects.update_or_create(
                     student=student,
                     subject=subject,
                     class_obj=class_obj,
@@ -391,50 +497,51 @@ def save_grades(request):
                     exam_name=exam_name,
                     exam_date=exam_date,
                     defaults={
-                        'score': float(score),
+                        'score': score_float,
                         'total_marks': float(total_marks),
                         'grade': grade_letter,
                         'teacher': user,
                         'academic_year': academic_year
                     }
                 )
+                
                 saved_count += 1
                 
-                print(f"✅ Saved grade for {student.first_name}: {score}/{total_marks} = {grade_letter}")
+                # ✅ Create notifications
+                try:
+                    from apps.dashboard.views import create_grade_notifications
+                    create_grade_notifications(student, subject.name, exam_name, grade_letter)
+                except Exception as notif_error:
+                    print(f"⚠️ Notification error: {str(notif_error)}")
                 
-            except Student.DoesNotExist:
-                errors.append(f"Student with ID {student_id} not found")
+                action = "Created" if created else "Updated"
+                print(f"✅ {action} grade for {student.first_name} {student.last_name}: {score_float}/{total_marks} = {grade_letter}")
+                
             except Exception as e:
+                import traceback
+                traceback.print_exc()
                 errors.append(f"Error saving grade for student {student_id}: {str(e)}")
+        
+        # ✅ Build response
+        if saved_count == 0:
+            return Response({
+                'success': False,
+                'error': 'No grades were saved. Please check the errors.',
+                'errors': errors
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         response_data = {
             'success': True,
-            'message': f'Successfully saved {saved_count} grade(s)',
-            'saved_count': saved_count
+            'message': f'Successfully saved {saved_count} grade(s) out of {len(grades_data)} entries',
+            'saved_count': saved_count,
+            'total_entries': len(grades_data)
         }
         
         if errors:
             response_data['warnings'] = errors
+            response_data['message'] += f'. {len(errors)} error(s) occurred.'
         
         return Response(response_data, status=status.HTTP_201_CREATED)
-        
-    except Class.DoesNotExist:
-        return Response({
-            'success': False,
-            'error': 'Class not found'
-        }, status=status.HTTP_404_NOT_FOUND)
-        
-    except Subject.DoesNotExist:
-        return Response({
-            'success': False,
-            'error': 'Subject not found'
-        }, status=status.HTTP_404_NOT_FOUND)
-        
-    except ValueError as e:
-        return Response({
-            'success': False,
-            'error': f'Invalid data format: {str(e)}'
-        }, status=status.HTTP_400_BAD_REQUEST)
         
     except Exception as e:
         import traceback
@@ -696,17 +803,17 @@ def get_teacher_timetable(request):
         timetable_periods = list(time_slots.values())
         
         today = timezone.now().strftime('%A')
-        today_schedule = []
         
-        for period in timetable_periods:
-            if period.get(today):
-                today_schedule.append({
-                    'time': period['time'],
-                    'class': period[today]['class'],
-                    'subject': period[today]['subject'],
-                    'room': period[today]['room'],
-                    'class_id': period[today].get('class_id')
-                })
+        today_entries = entries.filter(day_of_week=today.lower())
+        today_schedule = []
+        for entry in today_entries:
+            today_schedule.append({
+                'time': f"{entry.time_slot.start_time.strftime('%H:%M')} - {entry.time_slot.end_time.strftime('%H:%M')}",
+                'class': entry.timetable.class_obj.name,
+                'subject': entry.subject.name if entry.subject else 'Break',
+                'room': entry.room_number or 'TBA',
+                'class_id': entry.timetable.class_obj.id
+            })
         
         return Response({
             'success': True,
@@ -837,6 +944,7 @@ def promote_students(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_promotion_eligible_students(request, class_id):
+    from apps.grades.models import Grade
     """Get list of students eligible for promotion"""
     user = request.user
     
@@ -869,7 +977,7 @@ def get_promotion_eligible_students(request, class_id):
         
         students_data = []
         for student in students:
-            grades = Grade.objects.filter(student=student)
+            grades = grades_models.Grade.objects.filter(student=student)
             
             if grades.exists():
                 total_score = sum(g.score for g in grades)
@@ -1017,7 +1125,7 @@ def create_assignment(request):
                 'error': 'Invalid date format'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        assignment = Assignment.objects.create(
+        assignment = grades_models.Assignment.objects.create(
             title=title,
             description=description,
             instructions=instructions,
@@ -1076,7 +1184,7 @@ def delete_assignment(request, assignment_id):
         }, status=status.HTTP_403_FORBIDDEN)
     
     try:
-        assignment = Assignment.objects.get(id=assignment_id)
+        assignment = grades_models.Assignment.objects.get(id=assignment_id)
         
         if assignment.teacher != user and not user.is_superuser:
             return Response({
@@ -1091,8 +1199,7 @@ def delete_assignment(request, assignment_id):
                 'error': f'Cannot delete assignment with {submissions_count} submissions'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        assignment.status = 'deleted'
-        assignment.save()
+        assignment.delete()
         
         return Response({
             'success': True,
@@ -1119,7 +1226,7 @@ def update_assignment_status(request, assignment_id):
         }, status=status.HTTP_403_FORBIDDEN)
     
     try:
-        assignment = Assignment.objects.get(id=assignment_id)
+        assignment = grades_models.Assignment.objects.get(id=assignment_id)
         
         if assignment.teacher != user and not user.is_superuser:
             return Response({
@@ -1128,6 +1235,8 @@ def update_assignment_status(request, assignment_id):
             }, status=status.HTTP_403_FORBIDDEN)
         
         new_status = request.data.get('status')
+        due_date_str = request.data.get('due_date')
+
         if new_status not in ['active', 'closed']:
             return Response({
                 'success': False,
@@ -1135,7 +1244,24 @@ def update_assignment_status(request, assignment_id):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         assignment.status = new_status
+
+        if due_date_str:
+            try:
+                assignment.due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return Response({
+                    'success': False,
+                    'error': 'Invalid date format. Use YYYY-MM-DD'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
         assignment.save()
+
+        if new_status == 'active':
+            try:
+                from apps.dashboard.views import create_assignment_notifications
+                create_assignment_notifications(assignment)
+            except Exception as notif_error:
+                print(f"⚠️ Notification error: {str(notif_error)}")
         
         return Response({
             'success': True,
@@ -1162,7 +1288,7 @@ def get_assignment_submissions(request, assignment_id):
         }, status=status.HTTP_403_FORBIDDEN)
     
     try:
-        assignment = Assignment.objects.select_related(
+        assignment = grades_models.Assignment.objects.select_related(
             'class_obj', 'subject', 'teacher'
         ).get(id=assignment_id)
         
@@ -1188,8 +1314,9 @@ def get_assignment_submissions(request, assignment_id):
                 'roll_number': student.roll_number or 'N/A',
                 'submitted': submission is not None,
                 'submission_date': submission.submitted_at.isoformat() if submission else None,
-                'score': submission.score if submission and submission.score else None,
-                'status': 'graded' if submission and submission.score else 'submitted' if submission else 'pending'
+                'score': submission.score if submission and submission.score is not None else None,
+                'status': 'graded' if submission and submission.score is not None else 'submitted' if submission else 'pending',
+                'file_url': submission.file.url if submission and submission.file else None
             })
         
         return Response({
@@ -1211,7 +1338,7 @@ def get_assignment_submissions(request, assignment_id):
             }
         })
         
-    except Assignment.DoesNotExist:
+    except grades_models.Assignment.DoesNotExist:
         return Response({
             'success': False,
             'error': 'Assignment not found'
@@ -1249,13 +1376,16 @@ def upload_resource(request):
         file_upload = None
         external_link = None
         
-        if resource_type in ['pdf', 'video']:
+        if resource_type in ['pdf', 'video', 'document']:
             file_upload = request.FILES.get('file')
             if not file_upload:
                 return Response({
                     'success': False,
                     'error': 'File is required for this resource type'
                 }, status=status.HTTP_400_BAD_REQUEST)
+            # ✅ FIX: Set external_link to empty string for file uploads
+            external_link = ''
+            
         elif resource_type == 'link':
             external_link = request.data.get('link')
             if not external_link:
@@ -1263,9 +1393,12 @@ def upload_resource(request):
                     'success': False,
                     'error': 'Link is required for this resource type'
                 }, status=status.HTTP_400_BAD_REQUEST)
+            # ✅ FIX: No file for link resources
+            file_upload = None
         
         from apps.academics.models import TeachingResource
         
+        # ✅ FIX: Create resource with proper field handling
         resource = TeachingResource.objects.create(
             title=title,
             description=description,
@@ -1274,8 +1407,14 @@ def upload_resource(request):
             teacher=user,
             resource_type=resource_type,
             file=file_upload,
-            external_link=external_link
+            external_link=external_link if external_link else ''  # ✅ CRITICAL FIX
         )
+        
+        try:
+            from apps.dashboard.views import create_resource_notifications
+            create_resource_notifications(resource)
+        except Exception as notif_error:
+            print(f"⚠️ Notification error: {str(notif_error)}")
         
         return Response({
             'success': True,
@@ -1293,6 +1432,8 @@ def upload_resource(request):
             'error': 'Class not found'
         }, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return Response({
             'success': False,
             'error': f'Error uploading resource: {str(e)}'
@@ -1609,10 +1750,10 @@ def download_performance_report(request):
             status='active'
         ).order_by('roll_number')
         
-        exams = Exam.objects.filter(
+        exams = grades_models.Exam.objects.filter(
             class_obj=class_obj,
             exam_type=report_type
-        )
+        ).select_related('subject')
         
         if format_type == 'csv':
             return generate_csv_performance_report(class_obj, students, exams, report_type)
@@ -1655,9 +1796,9 @@ def generate_csv_performance_report(class_obj, students, exams, report_type):
         
         subject_scores = []
         for subject in subjects:
-            exam = exams.filter(subject__name=subject).first()
+            exam = grades_models.Exam.objects.filter(subject__name=subject).first()
             if exam:
-                result = ExamResult.objects.filter(exam=exam, student=student).first()
+                result = grades_models.ExamResult.objects.filter(exam=exam, student=student).first()
                 if result:
                     percentage = result.percentage
                     row.append(f"{percentage:.1f}%")
@@ -1722,9 +1863,9 @@ def generate_pdf_performance_report(class_obj, students, exams, report_type):
         
         subject_scores = []
         for subject in subjects:
-            exam = exams.filter(subject__name=subject).first()
+            exam = grades_models.Exam.objects.filter(subject__name=subject).first()
             if exam:
-                result = ExamResult.objects.filter(exam=exam, student=student).first()
+                result = grades_models.ExamResult.objects.filter(exam=exam, student=student).first()
                 if result:
                     percentage = result.percentage
                     row.append(f"{percentage:.0f}%")
@@ -1783,18 +1924,18 @@ def generate_pdf_performance_report(class_obj, students, exams, report_type):
 @permission_classes([IsAuthenticated])
 def get_today_classes(request):
     """Get today's classes for teacher"""
-    if request.user.role != 'teacher' and not request.user.is_superuser:
+    if request.user.role != 'teacher' and not user.is_superuser:
         return Response({
             'success': False,
             'error': 'Teacher access required'
         }, status=status.HTTP_403_FORBIDDEN)
     
     try:
-        today = timezone.now().strftime('%A')
+        today = timezone.now().strftime('%A').lower()
         
         entries = TimetableEntry.objects.filter(
             teacher=request.user,
-            day_of_week=today.lower()
+            day_of_week=today
         ).select_related('timetable__class_obj', 'subject', 'time_slot').order_by(
             'time_slot__start_time'
         )
@@ -1822,3 +1963,50 @@ def get_today_classes(request):
             'success': False,
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def grade_assignments(request):
+    """
+    Grade assignments
+    """
+    user = request.user
+    
+    if user.role != 'teacher' and not user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Teacher access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    if request.method == 'GET':
+        assignments = grades_models.Assignment.objects.filter(teacher=user)
+        return render(request, 'grade_assignments.html', {'assignments': assignments})
+    
+    elif request.method == 'POST':
+        assignment_id = request.data.get('assignment_id')
+        student_id = request.data.get('student_id')
+        score = request.data.get('score')
+
+        if not all([assignment_id, student_id, score]):
+            return Response({
+                'success': False,
+                'error': 'Missing required fields'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            assignment = grades_models.Assignment.objects.get(id=assignment_id, teacher=user)
+            student = Student.objects.get(id=student_id)
+            submission = grades_models.AssignmentSubmission.objects.get(assignment=assignment, student=student)
+            submission.score = score
+            submission.status = 'graded'
+            submission.save()
+            return Response({'success': True, 'message': 'Grade saved successfully!'})
+        except grades_models.Assignment.DoesNotExist:
+            return Response({'success': False, 'error': 'Assignment not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Student.DoesNotExist:
+            return Response({'success': False, 'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
+        except grades_models.AssignmentSubmission.DoesNotExist:
+            return Response({'success': False, 'error': 'Submission not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

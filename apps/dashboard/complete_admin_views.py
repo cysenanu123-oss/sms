@@ -381,7 +381,7 @@ def manage_school_settings(request):
             return Response({
                 'success': True,
                 'data': {
-                    'school_name': 'Excellence Academy',
+                    'school_name': 'Unique Success Academy',
                     'current_academic_year': '2024-2025',
                     'current_term': 'first',
                     'grading_system': 'percentage'

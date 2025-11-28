@@ -112,9 +112,16 @@ def verify_parent_access(request):
 @permission_classes([IsAuthenticated])
 def get_notifications(request):
     """Get notifications for current user"""
-    notifications = Notification.objects.filter(
+    # ✅ FIX: Don't slice yet - we need to count first
+    notifications_qs = Notification.objects.filter(
         user=request.user
-    ).order_by('-created_at')[:50]
+    ).order_by('-created_at')
+    
+    # ✅ Count BEFORE slicing
+    unread_count = notifications_qs.filter(is_read=False).count()
+    
+    # ✅ NOW we can slice
+    notifications = notifications_qs[:50]
     
     data = [{
         'id': n.id,
@@ -127,8 +134,6 @@ def get_notifications(request):
         'related_type': n.related_object_type,
         'related_id': n.related_object_id,
     } for n in notifications]
-    
-    unread_count = notifications.filter(is_read=False).count()
     
     return Response({
         'success': True,

@@ -93,18 +93,20 @@ def parent_dashboard_data(request):
                 current_class=child.current_class,
                 status='active'
             )
+            total_students = class_students.count()
             
             student_averages = []
             for student in class_students:
                 student_grades = Grade.objects.filter(student=student)
+                avg = 0
                 if student_grades.exists():
                     total_s = sum(g.score for g in student_grades)
                     total_m = sum(g.total_marks for g in student_grades)
-                    avg = (total_s / total_m * 100) if total_m > 0 else 0
-                    student_averages.append({'id': student.id, 'avg': avg})
+                    if total_m > 0:
+                        avg = (total_s / total_m * 100)
+                student_averages.append({'id': student.id, 'avg': avg})
             
             student_averages.sort(key=lambda x: x['avg'], reverse=True)
-            total_students = len(student_averages)
             
             for idx, sa in enumerate(student_averages, 1):
                 if sa['id'] == child.id:
@@ -212,10 +214,49 @@ def get_child_details(request, student_id):
                 seen_ids.add(teacher['id'])
         teachers_list = unique_teachers
         
+        # ACADEMIC PERFORMANCE DATA
+        # 1. Performance Trend (monthly average)
+        from django.db.models.functions import TruncMonth
+        
+        monthly_performance = Grade.objects.filter(
+            student=child,
+            academic_year=child.academic_year
+        ).annotate(month=TruncMonth('exam_date')).values('month').annotate(
+            avg_score=Sum('score'),
+            avg_total=Sum('total_marks')
+        ).order_by('month')
+
+        performance_chart_data = {
+            'labels': [],
+            'data': []
+        }
+        for monthly_data in monthly_performance:
+            if monthly_data['avg_total'] and monthly_data['avg_total'] > 0:
+                percentage = (monthly_data['avg_score'] / monthly_data['avg_total']) * 100
+                performance_chart_data['labels'].append(monthly_data['month'].strftime('%b %Y'))
+                performance_chart_data['data'].append(round(percentage, 1))
+
+        # 2. Subject-wise average
+        subject_performance = Grade.objects.filter(
+            student=child
+        ).values('subject__name').annotate(
+            avg_score=Sum('score'),
+            avg_total=Sum('total_marks')
+        ).order_by('subject__name')
+
+        subject_averages = []
+        for subject_data in subject_performance:
+            if subject_data['avg_total'] and subject_data['avg_total'] > 0:
+                percentage = (subject_data['avg_score'] / subject_data['avg_total']) * 100
+                subject_averages.append({
+                    'subject': subject_data['subject__name'],
+                    'average': round(percentage, 1)
+                })
+        
         # ✅ FIXED: Get recent grades properly
         recent_results = Grade.objects.filter(
             student=child
-        ).select_related('subject').order_by('-exam_date')[:10]
+        ).select_related('subject').order_by('-exam_date')[:3]
         
         results_data = []
         for result in recent_results:
@@ -262,9 +303,9 @@ def get_child_details(request, student_id):
         attendance_calendar = []
         
         # Add empty cells for days before the 1st
-        for _ in range(first_day_weekday):
+        for i in range(first_day_weekday):
             attendance_calendar.append({
-                'date': '',
+                'date': f'empty-{i}',
                 'day': '',
                 'status': 'empty'
             })
@@ -353,6 +394,8 @@ def get_child_details(request, student_id):
             'class_teacher': class_teacher,
             'blood_group': child.blood_group or 'Not Specified',
             'courses': courses,
+            'performance_chart': performance_chart_data,
+            'subject_averages': subject_averages,
             'recent_results': results_data,
             'timetable': timetable_data,
             'attendance_calendar': attendance_calendar,
@@ -383,6 +426,7 @@ def get_child_details(request, student_id):
         }, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         import traceback
+        from rest_framework import status
         traceback.print_exc()
         return Response({
             'success': False,
@@ -445,3 +489,53 @@ def get_timetable_for_class(class_obj):
         'periods': list(periods_dict.values()),
         'days': days
     }
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_all_child_results(request, student_id):
+    """Get all results for a specific child, grouped by year and term."""
+    if request.user.role != 'parent' and not request.user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Parent access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        parent = Parent.objects.get(user=request.user)
+        child = Student.objects.get(id=student_id)
+        
+        if child not in parent.children.all():
+            return Response({
+                'success': False,
+                'error': 'Access denied'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        grades = Grade.objects.filter(student_id=student_id).order_by('-academic_year', '-exam_date')
+        
+        results_by_year = {}
+        for grade in grades:
+            year = grade.academic_year
+            if year not in results_by_year:
+                results_by_year[year] = []
+            
+            results_by_year[year].append({
+                'id': grade.id,
+                'subject': grade.subject.name,
+                'test_name': grade.exam_name,
+                'date': grade.exam_date.strftime('%b %d, %Y'),
+                'score': grade.score,
+                'total': grade.total_marks,
+                'percentage': grade.percentage,
+                'grade': grade.grade,
+            })
+
+        return Response({'success': True, 'data': results_by_year})
+    except Parent.DoesNotExist:
+        return Response({'success': False, 'error': 'Parent profile not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Student.DoesNotExist:
+        return Response({'success': False, 'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        import traceback
+        from rest_framework import status
+        traceback.print_exc()
+        return Response({'success': False, 'error': f'Error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

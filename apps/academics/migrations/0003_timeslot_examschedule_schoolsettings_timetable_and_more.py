@@ -53,7 +53,7 @@ class Migration(migrations.Migration):
             name='SchoolSettings',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('school_name', models.CharField(default='Excellence Academy', max_length=200)),
+                ('school_name', models.CharField(default='Unique Success Academy', max_length=200)),
                 ('school_motto', models.CharField(blank=True, max_length=200)),
                 ('school_address', models.TextField()),
                 ('school_phone', models.CharField(max_length=20)),

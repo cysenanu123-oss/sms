@@ -74,6 +74,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',  # ✅ required
+    'apps.accounts.middleware.ForcePasswordChangeMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',    # ✅ required
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -178,4 +179,4 @@ EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=False, cast=bool)
 EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Excellence Academy <noreply@excellenceacademy.edu.gh>')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='Unique Success Academy <noreply@excellenceacademy.edu.gh>')

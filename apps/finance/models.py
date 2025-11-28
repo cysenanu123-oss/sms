@@ -104,10 +104,13 @@ class StudentFee(models.Model):
         🔥 CRITICAL FIX: Always calculate from actual payments
         This prevents the multiplication bug!
         """
-        actual_paid = Payment.objects.filter(
-            student_fee=self,
-            status='completed'
-        ).aggregate(total=Sum('amount'))['total'] or 0
+        if not self.pk:
+            actual_paid = 0
+        else:
+            actual_paid = Payment.objects.filter(
+                student_fee=self,
+                status='completed'
+            ).aggregate(total=Sum('amount'))['total'] or 0
         
         # Only update if different
         if self.amount_paid != actual_paid:

@@ -106,11 +106,11 @@ def teacher_list_create(request):
                     # Send welcome email with credentials
                     try:
                         send_mail(
-                            subject='Welcome to Excellence Academy - Teacher Account Created',
+                            subject='Welcome to Unique Success Academy - Teacher Account Created',
                             message=f"""
 Dear {result['user'].get_full_name()},
 
-Welcome to Excellence Academy! Your teacher account has been created.
+Welcome to Unique Success Academy! Your teacher account has been created.
 
 Login Credentials:
 Username: {result['username']}
@@ -123,7 +123,7 @@ IMPORTANT: You will be required to change your password upon first login.
 If you have any questions, please contact the administration.
 
 Best regards,
-Excellence Academy Administration
+Unique Success Academy Administration
                             """,
                             from_email=settings.DEFAULT_FROM_EMAIL,
                             recipient_list=[result['user'].email],

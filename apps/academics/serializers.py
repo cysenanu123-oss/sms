@@ -101,7 +101,6 @@ class CreateTeacherSerializer(serializers.Serializer):
             phone=validated_data.get('phone', ''),
             password=make_password(temp_password),
             role='teacher',
-            is_teacher=True,
             must_change_password=True,
             is_active=True
         )

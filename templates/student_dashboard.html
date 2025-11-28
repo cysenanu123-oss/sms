@@ -4,112 +4,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Dashboard - School Management System</title>
+    <title>Student Dashboard - Unique Success Academy</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js" defer></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        /* Custom Scrollbar for the modal/lists */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
 </head>
 
-<body class="bg-gray-50" x-data="studentDashboard()" x-init="init()">
-    <!-- Header -->
-    <nav class="bg-white shadow-lg">
+<body class="bg-gray-50 font-sans" x-data="studentDashboard()" x-init="init()">
+
+    <nav class="bg-white shadow-lg sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
+            <div class="flex justify-between items-center py-3">
                 <div class="flex items-center">
-                    <i class="fas fa-graduation-cap text-2xl text-blue-600 mr-3"></i>
+                    <i class="fas fa-graduation-cap text-3xl text-blue-600 mr-3"></i>
                     <div>
-                        <h1 class="text-xl font-bold text-gray-900">Excellence Academy</h1>
-                        <p class="text-xs text-gray-600">Student Portal</p>
+                        <h1 class="text-xl font-bold text-gray-900 leading-tight">Unique Success Academy</h1>
+                        <p class="text-xs text-gray-500 font-medium tracking-wide">STUDENT PORTAL</p>
                     </div>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <!-- ✅ REAL NOTIFICATIONS -->
+
+                <div class="flex items-center space-x-6">
+
                     <div class="relative" x-data="{ open: false }">
-                        <button @click="open = !open; loadNotifications()" class="relative p-2 text-gray-600 hover:text-blue-600">
+                        <button @click="open = !open; if(open) loadNotifications()"
+                            class="relative text-gray-500 hover:text-blue-600 transition">
                             <i class="fas fa-bell text-xl"></i>
                             <span x-show="unreadCount > 0"
-                                class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                                class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white"
                                 x-text="unreadCount"></span>
                         </button>
 
-                        <div x-show="open" @click.away="open = false"
-                            class="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 max-h-96 overflow-y-auto z-50"
-                            x-transition>
-                            <div class="p-4 border-b border-gray-200 flex justify-between items-center">
-                                <h3 class="font-semibold text-gray-900">Notifications</h3>
-                                <button @click="markAllRead()" class="text-xs text-blue-600 hover:underline">
-                                    Mark all read
-                                </button>
+                        <div x-show="open" @click.away="open = false" x-cloak
+                            x-transition:enter="transition ease-out duration-100"
+                            x-transition:enter-start="transform opacity-0 scale-95"
+                            x-transition:enter-end="transform opacity-100 scale-100"
+                            class="absolute right-0 mt-3 w-80 bg-white rounded-lg shadow-xl border border-gray-100 z-50 overflow-hidden">
+
+                            <div class="p-3 border-b bg-gray-50 flex justify-between items-center">
+                                <h3 class="font-semibold text-gray-800 text-sm">Notifications</h3>
+                                <button @click="markAllRead()"
+                                    class="text-xs text-blue-600 hover:text-blue-800 font-medium">Mark all read</button>
                             </div>
-                            <div>
+
+                            <div class="max-h-80 overflow-y-auto">
                                 <template x-for="notif in notifications" :key="notif.id">
-                                    <div @click="markAsRead(notif.id)" 
-                                         :class="notif.is_read ? 'bg-white' : 'bg-blue-50'"
-                                         class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer">
-                                        <div class="flex items-start">
-                                            <i :class="notif.icon" class="mr-3 mt-1"></i>
-                                            <div class="flex-1">
+                                    <div @click="markAsRead(notif.id)"
+                                        :class="notif.is_read ? 'bg-white opacity-70' : 'bg-blue-50'"
+                                        class="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition">
+                                        <div class="flex items-start gap-3">
+                                            <div class="mt-1"><i :class="notif.icon || 'fas fa-info-circle'"
+                                                    class="text-blue-500 text-sm"></i></div>
+                                            <div>
                                                 <p class="text-sm font-medium text-gray-800" x-text="notif.title"></p>
-                                                <p class="text-xs text-gray-600 mt-1" x-text="notif.message"></p>
-                                                <p class="text-xs text-gray-500 mt-1" x-text="notif.time"></p>
+                                                <p class="text-xs text-gray-600 mt-0.5" x-text="notif.message"></p>
+                                                <p class="text-[10px] text-gray-400 mt-1" x-text="notif.time"></p>
                                             </div>
                                         </div>
                                     </div>
                                 </template>
-                                <div x-show="notifications.length === 0" class="p-8 text-center text-gray-500">
-                                    <i class="fas fa-bell-slash text-4xl mb-2"></i>
-                                    <p>No notifications</p>
+                                <div x-show="notifications.length === 0" class="p-6 text-center text-gray-400">
+                                    <p class="text-sm">No notifications</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Profile Dropdown -->
                     <div class="relative" x-data="{ open: false }">
                         <button @click="open = !open" class="flex items-center space-x-2 focus:outline-none">
                             <div
-                                class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                <span x-text="user?.first_name?.charAt(0) + user?.last_name?.charAt(0)"></span>
+                                class="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
+                                <span x-text="(user?.first_name?.[0] || '') + (user?.last_name?.[0] || '')"></span>
                             </div>
-                            <i class="fas fa-chevron-down text-gray-600 text-sm"></i>
+                            <span class="hidden md:block text-sm font-medium text-gray-700"
+                                x-text="user?.first_name"></span>
+                            <i class="fas fa-chevron-down text-gray-400 text-xs"></i>
                         </button>
 
-                        <div x-show="open" @click.away="open = false"
-                            x-transition
-                            class="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-xl z-50 border border-gray-200">
-
-                            <div class="p-4 border-b">
-                                <div class="flex items-center space-x-3">
-                                    <div
-                                        class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                                        <span x-text="user?.first_name?.charAt(0) + user?.last_name?.charAt(0)"></span>
-                                    </div>
-                                    <div>
-                                        <p class="font-semibold text-gray-900"
-                                            x-text="user?.first_name + ' ' + user?.last_name"></p>
-                                        <p class="text-sm text-gray-600" x-text="user?.email"></p>
-                                    </div>
+                        <div x-show="open" @click.away="open = false" x-cloak x-transition
+                            class="absolute right-0 mt-3 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50">
+                            <div class="p-4 border-b border-gray-100">
+                                <p class="font-bold text-gray-800"
+                                    x-text="(user?.first_name || '') + ' ' + (user?.last_name || '')"></p>
+                                <p class="text-xs text-gray-500 truncate" x-text="user?.email"></p>
+                            </div>
+                            <div class="p-4 space-y-2 bg-gray-50">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Student ID</span>
+                                    <span class="font-mono font-medium text-gray-700"
+                                        x-text="studentInfo.student_id || '---'"></span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-500">Class</span>
+                                    <span class="font-medium text-gray-700" x-text="studentInfo.class || '---'"></span>
                                 </div>
                             </div>
-
-                            <div class="p-4 space-y-3">
-                                <div class="flex items-center text-sm">
-                                    <i class="fas fa-id-card w-6 text-gray-500"></i>
-                                    <span class="text-gray-600">Student ID:</span>
-                                    <span class="ml-auto font-semibold" x-text="studentInfo.student_id"></span>
-                                </div>
-                                <div class="flex items-center text-sm">
-                                    <i class="fas fa-chalkboard w-6 text-gray-500"></i>
-                                    <span class="text-gray-600">Class:</span>
-                                    <span class="ml-auto font-semibold" x-text="studentInfo.class"></span>
-                                </div>
-                            </div>
-
-                            <div class="border-t p-2">
+                            <div class="p-2">
                                 <button @click="logout()"
-                                    class="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded flex items-center">
-                                    <i class="fas fa-sign-out-alt mr-2"></i>
-                                    <span>Logout</span>
+                                    class="w-full text-left px-3 py-2 text-red-600 hover:bg-red-50 rounded-md text-sm transition flex items-center">
+                                    <i class="fas fa-sign-out-alt mr-2"></i> Sign Out
                                 </button>
                             </div>
                         </div>
@@ -119,344 +136,434 @@
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Welcome Section -->
-        <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl shadow-lg p-8 text-white mb-8">
-            <h2 class="text-3xl font-bold mb-2">
-                Welcome back, <span x-text="user?.first_name"></span>! 👋
-            </h2>
-            <p class="text-blue-100">Here's your academic overview</p>
-        </div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600">Total Courses</p>
-                        <p class="text-2xl font-bold text-gray-900" x-text="stats.total_courses || 0"></p>
-                    </div>
-                    <i class="fas fa-book text-3xl text-blue-500"></i>
-                </div>
+        <div
+            class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow-lg p-8 text-white relative overflow-hidden">
+            <div class="absolute right-0 top-0 h-full w-1/3 bg-white opacity-10 transform skew-x-12 translate-x-10">
             </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600">Average Grade</p>
-                        <p class="text-2xl font-bold text-green-600" x-text="stats.average_grade || 'N/A'"></p>
-                    </div>
-                    <i class="fas fa-chart-line text-3xl text-green-500"></i>
-                </div>
-            </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600">Attendance</p>
-                        <p class="text-2xl font-bold text-orange-600" x-text="stats.attendance_rate + '%' || 'N/A'"></p>
-                    </div>
-                    <i class="fas fa-calendar-check text-3xl text-orange-500"></i>
-                </div>
-            </div>
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600">Assignments</p>
-                        <p class="text-2xl font-bold text-purple-600"
-                            x-text="stats.pending_assignments + ' Pending' || 'None'"></p>
-                    </div>
-                    <i class="fas fa-tasks text-3xl text-purple-500"></i>
-                </div>
+            <div class="relative z-10">
+                <h2 class="text-3xl font-bold mb-2">Welcome back, <span x-text="user?.first_name">Student</span>! 👋
+                </h2>
+                <p class="text-blue-100 opacity-90">Here is what is happening with your academics today.</p>
             </div>
         </div>
 
-        <!-- Timetable Section -->
-        <div class="bg-white rounded-lg shadow mb-8">
-            <div class="p-6 border-b flex justify-between items-center">
-                <h3 class="text-lg font-bold text-gray-900">
-                    <i class="fas fa-calendar-alt mr-2 text-blue-600"></i>My Timetable
-                </h3>
-                <button @click="downloadTimetable()"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center">
-                    <i class="fas fa-download mr-2"></i>Download Timetable
-                </button>
-            </div>
-            <div class="p-6 overflow-x-auto">
-                <div x-show="timetable.periods.length === 0" class="text-center py-8 text-gray-500">
-                    <i class="fas fa-calendar-times text-4xl mb-4"></i>
-                    <p>Timetable not available yet. Please check back later.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Courses</p>
+                        <h3 class="text-2xl font-bold text-gray-800 mt-1" x-text="stats.total_courses || 0">0</h3>
+                    </div>
+                    <div class="p-3 bg-blue-50 rounded-lg text-blue-600">
+                        <i class="fas fa-book text-xl"></i>
+                    </div>
                 </div>
+            </div>
 
-                <table x-show="timetable.periods.length > 0" class="w-full">
-                    <thead>
-                        <tr class="border-b">
-                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Time</th>
-                            <template x-for="day in timetable.days" :key="day">
-                                <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700 capitalize"
-                                    x-text="day"></th>
-                            </template>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <template x-for="period in timetable.periods" :key="period.time">
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="py-3 px-4 text-sm font-medium" x-text="period.time"></td>
-                                <template x-for="day in timetable.days" :key="day">
-                                    <td class="py-3 px-4">
-                                        <span x-show="period[day]" :class="{
-                                    'bg-blue-100 text-blue-800': period[day]?.type === 'class',
-                                    'bg-gray-100 text-gray-800': period[day]?.type === 'break'
-                                }" class="px-2 py-1 rounded text-xs" x-text="period[day]?.subject || 'Break'"></span>
-                                    </td>
-                                </template>
-                            </tr>
-                        </template>
-                    </tbody>
-                </table>
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Avg. Grade</p>
+                        <h3 class="text-2xl font-bold text-green-600 mt-1" x-text="stats.average_grade || 'N/A'">-</h3>
+                    </div>
+                    <div class="p-3 bg-green-50 rounded-lg text-green-600">
+                        <i class="fas fa-chart-line text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Attendance</p>
+                        <h3 class="text-2xl font-bold text-orange-600 mt-1" x-text="(stats.attendance_rate || 0) + '%'">
+                            0%</h3>
+                    </div>
+                    <div class="p-3 bg-orange-50 rounded-lg text-orange-600">
+                        <i class="fas fa-calendar-check text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pending</p>
+                        <h3 class="text-2xl font-bold text-purple-600 mt-1" x-text="stats.pending_assignments || 0">0
+                        </h3>
+                    </div>
+                    <div class="p-3 bg-purple-50 rounded-lg text-purple-600">
+                        <i class="fas fa-tasks text-xl"></i>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <!-- My Courses Section -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-bold text-gray-900 mb-4">
-                    <i class="fas fa-book-open mr-2 text-blue-600"></i>My Courses & Marks
-                </h3>
-                <div class="space-y-4">
-                    <div x-show="courses.length === 0" class="text-center py-8 text-gray-500">
-                        <i class="fas fa-book text-4xl mb-4"></i>
-                        <p>No courses assigned yet.</p>
-                    </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                    <template x-for="course in courses" :key="course.id">
-                        <div class="border-l-4 border-blue-500 bg-blue-50 p-4 rounded cursor-pointer hover:bg-blue-100"
-                            @click="viewCourseDetails(course.name)">
-                            <div class="flex justify-between items-start mb-2">
-                                <div>
-                                    <h4 class="font-semibold text-gray-900" x-text="course.name"></h4>
-                                    <p class="text-sm text-gray-600" x-text="'Teacher: ' + course.teacher"></p>
-                                    <p class="text-xs text-gray-500" x-text="'Code: ' + course.code"></p>
-                                </div>
-                                <i class="fas fa-chevron-right text-blue-600"></i>
-                            </div>
+            <div class="lg:col-span-2 space-y-8">
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                        <h3 class="font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-calendar-alt text-blue-500 mr-2"></i> Weekly Timetable
+                        </h3>
+                        <button @click="downloadTimetable()"
+                            class="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center">
+                            <i class="fas fa-download mr-1"></i> Download
+                        </button>
+                    </div>
+                    <div class="p-6 overflow-x-auto">
+                        <div x-show="!timetable.periods || timetable.periods.length === 0"
+                            class="text-center py-10 text-gray-400">
+                            <i class="fas fa-calendar-times text-3xl mb-3 opacity-50"></i>
+                            <p>No timetable available yet.</p>
                         </div>
-                    </template>
-                </div>
-            </div>
-        </div>
 
-        <!-- Assignments Upload -->
-        <div class="bg-white rounded-lg shadow">
-            <div class="p-6 border-b">
-                <h3 class="text-lg font-bold text-gray-900">
-                    <i class="fas fa-clipboard-list mr-2 text-purple-600"></i>Submit Assignments
-                </h3>
-            </div>
-            <div class="p-6">
-                <div x-show="assignments.length === 0" class="text-center py-8 text-gray-500">
-                    <i class="fas fa-clipboard-list text-4xl mb-4"></i>
-                    <p>No pending assignments</p>
+                        <table x-show="timetable.periods && timetable.periods.length > 0" class="w-full text-sm">
+                            <thead>
+                                <tr class="text-left text-gray-500 border-b">
+                                    <th class="pb-3 font-medium">Time</th>
+                                    <template x-for="day in timetable.days" :key="day">
+                                        <th class="pb-3 font-medium capitalize px-2" x-text="day"></th>
+                                    </template>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="period in timetable.periods" :key="period.time">
+                                    <tr class="border-b last:border-0 hover:bg-gray-50 transition">
+                                        <td class="py-3 font-medium text-gray-600 whitespace-nowrap pr-4"
+                                            x-text="period.time"></td>
+                                        <template x-for="day in timetable.days" :key="day">
+                                            <td class="py-2 px-2">
+                                                <div x-show="period[day]"
+                                                    :class="period[day]?.type === 'class' ? 'bg-blue-100 text-blue-800 border-l-2 border-blue-500' : 'bg-gray-100 text-gray-500 text-center italic'"
+                                                    class="p-2 rounded text-xs min-h-[40px] flex flex-col justify-center">
+                                                    <span class="font-semibold block"
+                                                        x-text="period[day]?.subject || 'Break'"></span>
+                                                    <span x-show="period[day]?.type === 'class'"
+                                                        class="text-[10px] opacity-75 mt-0.5"
+                                                        x-text="period[day]?.teacher"></span>
+                                                </div>
+                                            </td>
+                                        </template>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <div class="space-y-4">
-                    <template x-for="assignment in assignments" :key="assignment.id">
-                        <div :class="{
-                'border-l-4 p-4 rounded': true,
-                'border-red-500 bg-red-50': assignment.status_color === 'red',
-                'border-yellow-500 bg-yellow-50': assignment.status_color === 'yellow',
-                'border-blue-500 bg-blue-50': assignment.status_color === 'blue'
-                }">
-                            <div class="flex justify-between items-start mb-3">
-                                <div>
-                                    <h4 class="font-semibold text-gray-900" x-text="assignment.title"></h4>
-                                    <p class="text-sm text-gray-600" x-text="assignment.description"></p>
-                                    <p class="text-xs text-gray-500 mt-1" x-text="assignment.subject"></p>
-                                </div>
-                                <span class="text-xs px-2 py-1 rounded" :class="{
-                              'bg-red-100 text-red-800': assignment.status_color === 'red',
-                              'bg-yellow-100 text-yellow-800': assignment.status_color === 'yellow',
-                              'bg-blue-100 text-blue-800': assignment.status_color === 'blue'
-                          }" x-text="assignment.due_status"></span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <template x-if="!assignment.submitted">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div class="p-6 border-b border-gray-100">
+                        <h3 class="font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-book-reader text-yellow-500 mr-2"></i> Learning Resources
+                        </h3>
+                    </div>
+                    <div class="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+                        <template x-for="resource in resources" :key="resource.id">
+                            <a :href="resource.file_url || resource.external_link" target="_blank"
+                                class="p-4 hover:bg-gray-50 cursor-pointer transition group block">
+                                <div class="flex justify-between items-start">
                                     <div>
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span
+                                                class="text-[10px] uppercase font-bold px-2 py-0.5 rounded"
+                                                :class="{
+                                                    'bg-red-100 text-red-700': resource.resource_type === 'pdf',
+                                                    'bg-blue-100 text-blue-700': resource.resource_type === 'video',
+                                                    'bg-green-100 text-green-700': resource.resource_type === 'link',
+                                                    'bg-gray-100 text-gray-700': resource.resource_type === 'document'
+                                                }"
+                                                x-text="resource.resource_type"></span>
+                                            <h4 class="font-semibold text-gray-800 text-sm group-hover:text-blue-600 transition"
+                                                x-text="resource.title"></h4>
+                                        </div>
+                                        <p class="text-xs text-gray-500"
+                                            x-text="`Shared by: ${resource.teacher} for ${resource.subject}`"></p>
+                                    </div>
+                                    <i class="fas fa-external-link-alt text-gray-300 text-xs group-hover:text-blue-500 transition-all"></i>
+                                </div>
+                            </a>
+                        </template>
+                        <div x-show="!resources || resources.length === 0" class="p-6 text-center text-gray-400 text-sm">
+                            No learning resources available yet.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div class="p-6 border-b border-gray-100">
+                        <h3 class="font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-chart-bar text-green-500 mr-2"></i> Recent Results
+                        </h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-gray-50 text-gray-500">
+                                <tr>
+                                    <th class="px-6 py-3 font-medium">Subject</th>
+                                    <th class="px-6 py-3 font-medium">Test Name</th>
+                                    <th class="px-6 py-3 font-medium">Date</th>
+                                    <th class="px-6 py-3 font-medium text-center">Score</th>
+                                    <th class="px-6 py-3 font-medium text-center">Grade</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <template x-for="result in recentResults" :key="result.id">
+                                    <tr class="hover:bg-gray-50 transition">
+                                        <td class="px-6 py-4 font-medium text-gray-800" x-text="result.subject"></td>
+                                        <td class="px-6 py-4 text-gray-600" x-text="result.test_name"></td>
+                                        <td class="px-6 py-4 text-gray-500 text-xs" x-text="result.date"></td>
+                                        <td class="px-6 py-4 text-center font-bold text-blue-600" x-text="result.score">
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span :class="{
+                                                'bg-green-100 text-green-700': result.grade.startsWith('A'),
+                                                'bg-blue-100 text-blue-700': result.grade.startsWith('B'),
+                                                'bg-yellow-100 text-yellow-700': result.grade.startsWith('C'),
+                                                'bg-red-100 text-red-700': ['D', 'F'].includes(result.grade)
+                                            }" class="px-2.5 py-1 rounded text-xs font-bold"
+                                                x-text="result.grade"></span>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <tr x-show="!recentResults || recentResults.length === 0">
+                                    <td colspan="5" class="px-6 py-8 text-center text-gray-500">No recent results found.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-8">
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
+                        <h3 class="font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-clipboard-list text-purple-600 mr-2"></i> Assignments
+                        </h3>
+                        <span class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full"
+                            x-text="assignments.length"></span>
+                    </div>
+
+                    <div class="p-4 max-h-[500px] overflow-y-auto">
+                        <div x-show="!assignments || assignments.length === 0" class="text-center py-8 text-gray-400">
+                            <i class="fas fa-check-circle text-4xl mb-3 opacity-30"></i>
+                            <p class="text-sm">All caught up! No pending assignments.</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <template x-for="assignment in assignments" :key="assignment.id">
+                                <div class="bg-white rounded-lg border p-4 transition hover:shadow-md" :class="{
+                                        'border-red-200 bg-red-50': assignment.status_color === 'red',
+                                        'border-yellow-200 bg-yellow-50': assignment.status_color === 'yellow',
+                                        'border-blue-200 bg-blue-50': assignment.status_color === 'blue',
+                                        'border-gray-200 bg-gray-50': assignment.status === 'closed'
+                                     }">
+
+                                    <div class="flex justify-between items-start mb-2">
+                                        <h4 class="font-semibold text-gray-800 text-sm" x-text="assignment.title"></h4>
+                                        <span class="text-[10px] px-2 py-1 rounded font-bold uppercase tracking-wider"
+                                            :class="{
+                                                  'bg-red-100 text-red-700': assignment.status_color === 'red',
+                                                  'bg-yellow-100 text-yellow-700': assignment.status_color === 'yellow',
+                                                  'bg-blue-100 text-blue-700': assignment.status_color === 'blue',
+                                                  'bg-gray-200 text-gray-600': assignment.status === 'closed'
+                                              }" x-text="assignment.due_status"></span>
+                                    </div>
+
+                                    <p class="text-xs text-gray-600 mb-2 line-clamp-2" x-text="assignment.description">
+                                    </p>
+                                    <div class="flex justify-between items-center text-xs text-gray-500 mb-3">
+                                        <span x-text="assignment.subject"></span>
+                                        <span>Due: <span x-text="new Date(assignment.due_date).toLocaleDateString()"
+                                                class="font-medium"></span></span>
+                                    </div>
+
+                                    <div class="pt-2 border-t border-gray-200/50 flex justify-end">
                                         <input type="file" :id="'file-' + assignment.id" class="hidden"
                                             @change="handleFileUpload($event, assignment)">
-                                        <button @click="document.getElementById('file-' + assignment.id).click()"
-                                            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center">
-                                            <i class="fas fa-upload mr-1"></i>Upload
-                                        </button>
-                                    </div>
-                                </template>
-                                <template x-if="assignment.submitted">
-                                    <span class="text-xs text-green-600">✓ Submitted</span>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Test Marks Section -->
-    <div class="bg-white rounded-lg shadow mb-8">
-        <div class="p-6 border-b">
-            <h3 class="text-lg font-bold text-gray-900">
-                <i class="fas fa-chart-bar mr-2 text-green-600"></i>Recent Test Results
-            </h3>
-        </div>
-        <div class="p-6 overflow-x-auto">
-            <table class="w-full">
-                <thead>
-                    <tr class="border-b bg-gray-50">
-                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Subject</th>
-                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Test Name</th>
-                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date</th>
-                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Score</th>
-                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Grade</th>
-                        <th class="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <template x-for="result in recentResults" :key="result.id">
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="py-3 px-4 font-medium text-gray-900" x-text="result.subject"></td>
-                            <td class="py-3 px-4 text-gray-600" x-text="result.test_name"></td>
-                            <td class="py-3 px-4 text-gray-600" x-text="result.date"></td>
-                            <td class="py-3 px-4 font-semibold text-blue-600" x-text="result.score"></td>
-                            <td class="py-3 px-4">
-                                <span :class="{
-                    'bg-green-100 text-green-800': result.grade.includes('A'),
-                    'bg-blue-100 text-blue-800': result.grade.includes('B'),
-                    'bg-yellow-100 text-yellow-800': result.grade.includes('C'),
-                    'bg-red-100 text-red-800': ['D', 'F'].includes(result.grade)
-                }" class="px-2 py-1 rounded text-xs font-semibold" x-text="result.grade"></span>
-                            </td>
-                            <td class="py-3 px-4">
-                                <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs"
-                                    x-text="result.status"></span>
-                            </td>
-                        </tr>
-                    </template>
-                    <tr x-show="!recentResults || recentResults.length === 0">
-                        <td colspan="6" class="py-8 text-center text-gray-500">
-                            No test results available
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-    </div>
+                                        <template x-if="assignment.status === 'closed'">
+                                            <span class="text-xs text-gray-500 flex items-center">
+                                                <i class="fas fa-lock mr-1"></i> Submission Closed
+                                            </span>
+                                        </template>
 
-    <!-- Course Details Modal -->
-    <div x-show="showCourseModal" x-cloak
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-        @click.self="showCourseModal = false">
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b flex justify-between items-center">
-                <h3 class="text-xl font-bold text-gray-900" x-text="selectedCourse + ' - Course Details'"></h3>
-                <button @click="showCourseModal = false" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times text-xl"></i>
-                </button>
-            </div>
-            <div class="p-6">
-                <div class="space-y-6">
-                    <div>
-                        <h4 class="font-semibold text-gray-900 mb-2">Course Information</h4>
-                        <div class="bg-gray-50 rounded p-4 space-y-2">
-                            <p class="text-sm"><span class="font-medium">Teacher:</span>
-                                <span x-text="selectedCourse.teacher?.name"></span>
-                            </p>
-                            <p class="text-sm"><span class="font-medium">Email:</span>
-                                <span x-text="selectedCourse.teacher?.email"></span>
-                            </p>
-                            <p class="text-sm"><span class="font-medium">Credits:</span>
-                                <span x-text="selectedCourse.credits"></span>
-                            </p>
-                            <p class="text-sm"><span class="font-medium">Schedule:</span></p>
-                            <template x-for="schedule in selectedCourse.schedule" :key="schedule.day">
-                                <p class="text-sm ml-4">
-                                    <span x-text="schedule.day"></span>:
-                                    <span x-text="schedule.time"></span> -
-                                    Room <span x-text="schedule.room"></span>
-                                </p>
-                            </template>
-                        </div>
-                    </div>
+                                        <template x-if="assignment.status === 'active'">
+                                            <div class="w-full">
+                                                <template x-if="!assignment.submitted">
+                                                    <button
+                                                        @click="document.getElementById('file-' + assignment.id).click()"
+                                                        class="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium transition flex items-center justify-center">
+                                                        <i class="fas fa-upload mr-2"></i> Upload File
+                                                    </button>
+                                                </template>
 
-                    <div>
-                        <h4 class="font-semibold text-gray-900 mb-2">Grade Breakdown</h4>
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm">Tests & Quizzes (40%)</span>
-                                <span class="font-semibold text-blue-600"
-                                    x-text="selectedCourse.grade_breakdown?.tests + '%'"></span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm">Assignments (30%)</span>
-                                <span class="font-semibold text-green-600"
-                                    x-text="selectedCourse.grade_breakdown?.assignments + '%'"></span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm">Mid-Term (20%)</span>
-                                <span class="font-semibold text-purple-600"
-                                    x-text="selectedCourse.grade_breakdown?.midterm + '%'"></span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm">Participation (10%)</span>
-                                <span class="font-semibold text-orange-600"
-                                    x-text="selectedCourse.grade_breakdown?.participation + '%'"></span>
-                            </div>
-                            <div class="border-t pt-2 mt-2 flex justify-between items-center">
-                                <span class="font-semibold">Overall Grade</span>
-                                <span class="font-bold text-lg text-blue-600"
-                                    x-text="selectedCourse.grade_breakdown?.overall + '%'"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <h4 class="font-semibold text-gray-900 mb-2">Recent Grades</h4>
-                        <div class="space-y-2">
-                            <template x-for="grade in selectedCourse.recent_grades" :key="grade.exam_name">
-                                <div class="flex justify-between items-center bg-gray-50 p-2 rounded">
-                                    <div>
-                                        <p class="text-sm font-medium" x-text="grade.exam_name"></p>
-                                        <p class="text-xs text-gray-600" x-text="grade.date"></p>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="text-sm font-semibold" x-text="grade.score + '/' + grade.total"></p>
-                                        <p class="text-xs" x-text="grade.percentage + '%'"></p>
+                                                <template x-if="assignment.submitted">
+                                                    <div class="flex items-center justify-between w-full">
+                                                        <span
+                                                            class="text-green-600 text-xs font-bold flex items-center">
+                                                            <i class="fas fa-check-circle mr-1"></i> Submitted
+                                                        </span>
+                                                        <template x-if="!assignment.is_past_due">
+                                                            <button
+                                                                @click="document.getElementById('file-' + assignment.id).click()"
+                                                                class="text-yellow-600 hover:text-yellow-700 text-xs font-medium underline">
+                                                                Edit
+                                                            </button>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </template>
                                     </div>
                                 </div>
                             </template>
                         </div>
                     </div>
                 </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div class="p-6 border-b border-gray-100">
+                        <h3 class="font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-book-open text-indigo-600 mr-2"></i> My Courses
+                        </h3>
+                    </div>
+                    <div class="divide-y divide-gray-100">
+                        <template x-for="course in courses" :key="course.id">
+                            <div @click="viewCourseDetails(course.name)"
+                                class="p-4 hover:bg-gray-50 cursor-pointer transition group">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800 text-sm group-hover:text-blue-600 transition"
+                                            x-text="course.name"></h4>
+                                        <p class="text-xs text-gray-500 mt-1" x-text="course.teacher"></p>
+                                    </div>
+                                    <i
+                                        class="fas fa-chevron-right text-gray-300 text-xs group-hover:text-blue-500 group-hover:translate-x-1 transition-all"></i>
+                                </div>
+                            </div>
+                        </template>
+                        <div x-show="!courses || courses.length === 0" class="p-6 text-center text-gray-500 text-sm">
+                            No courses enrolled.
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
 
-    <style>
-        [x-cloak] {
-            display: none !important;
-        }
-    </style>
+    <div x-show="showCourseModal" x-cloak class="relative z-50" aria-labelledby="modal-title" role="dialog"
+        aria-modal="true">
+        <div x-show="showCourseModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+            class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+
+        <div class="fixed inset-0 z-10 overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div x-show="showCourseModal" @click.away="showCourseModal = false"
+                    x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl">
+
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="flex justify-between items-center border-b pb-3 mb-4">
+                            <h3 class="text-xl font-bold leading-6 text-gray-900"
+                                x-text="selectedCourse?.name || 'Course Details'"></h3>
+                            <button @click="showCourseModal = false" class="text-gray-400 hover:text-gray-500">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <div class="space-y-6" x-show="selectedCourse">
+                            <div class="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase">Teacher</p>
+                                    <p class="font-medium text-gray-800" x-text="selectedCourse?.teacher?.name"></p>
+                                    <p class="text-xs text-blue-600" x-text="selectedCourse?.teacher?.email"></p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase">Credits</p>
+                                    <p class="font-medium text-gray-800" x-text="selectedCourse?.credits"></p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 class="font-semibold text-gray-900 mb-2 text-sm">Weekly Schedule</h4>
+                                <div class="space-y-1">
+                                    <template x-for="schedule in selectedCourse?.schedule" :key="schedule.day">
+                                        <div class="flex items-center text-sm">
+                                            <span class="w-24 font-medium text-gray-600 capitalize"
+                                                x-text="schedule.day"></span>
+                                            <span class="text-gray-800 mr-2" x-text="schedule.time"></span>
+                                            <span class="text-xs bg-gray-200 px-2 py-0.5 rounded text-gray-600"
+                                                x-text="'Room ' + schedule.room"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 class="font-semibold text-gray-900 mb-2 text-sm">Grade Distribution</h4>
+                                <div class="w-full bg-gray-200 rounded-full h-2.5 mb-2 flex overflow-hidden">
+                                    <div class="bg-blue-600 h-2.5"
+                                        :style="'width: ' + selectedCourse?.grade_breakdown?.tests + '%'"></div>
+                                    <div class="bg-green-500 h-2.5"
+                                        :style="'width: ' + selectedCourse?.grade_breakdown?.assignments + '%'"></div>
+                                    <div class="bg-purple-500 h-2.5"
+                                        :style="'width: ' + selectedCourse?.grade_breakdown?.midterm + '%'"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-600">
+                                    <span class="flex items-center"><span
+                                            class="w-2 h-2 bg-blue-600 rounded-full mr-1"></span> Tests (<span
+                                            x-text="selectedCourse?.grade_breakdown?.tests"></span>%)</span>
+                                    <span class="flex items-center"><span
+                                            class="w-2 h-2 bg-green-500 rounded-full mr-1"></span> Assignments (<span
+                                            x-text="selectedCourse?.grade_breakdown?.assignments"></span>%)</span>
+                                    <span class="flex items-center"><span
+                                            class="w-2 h-2 bg-purple-500 rounded-full mr-1"></span> Midterm (<span
+                                            x-text="selectedCourse?.grade_breakdown?.midterm"></span>%)</span>
+                                </div>
+                                <div class="mt-4 pt-4 border-t flex justify-between items-center">
+                                    <span class="font-bold text-gray-700">Current Overall Grade</span>
+                                    <span class="text-2xl font-bold text-blue-600"
+                                        x-text="selectedCourse?.grade_breakdown?.overall + '%'"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
-
         function studentDashboard() {
             return {
                 user: null,
                 studentInfo: {},
                 courses: [],
-                assignments: [],  // ← Now dynamic
-                recentResults: [],  // ← Now dynamic
+                assignments: [],
+                recentResults: [],
                 timetable: { periods: [], days: [] },
                 stats: {},
+                notifications: [],
+                unreadCount: 0,
+                resources: [],
+
+                // Modal States
                 showCourseModal: false,
                 selectedCourse: null,
 
@@ -465,16 +572,16 @@
                     const userData = localStorage.getItem('user_data');
 
                     if (!token || !userData) {
-                        alert('Please login first');
+                        alert('Session expired. Please login again.');
                         window.location.href = '/auth/';
                         return;
                     }
 
                     this.user = JSON.parse(userData);
 
-                    // Verify student access
                     try {
-                        const response = await fetch('/api/v1/dashboard/verify-student/', {
+                        // 1. Verify Student Access
+                        const verifyResponse = await fetch('/api/v1/dashboard/verify-student/', {
                             method: 'GET',
                             headers: {
                                 'Authorization': `Bearer ${token}`,
@@ -482,20 +589,23 @@
                             }
                         });
 
-                        const data = await response.json();
+                        const verifyData = await verifyResponse.json();
 
-                        if (!data.success) {
+                        if (!verifyData.success) {
                             alert('Access Denied: Student privileges required');
                             window.location.href = '/auth/';
                             return;
                         }
 
-                        // Load student data
-                        await this.loadStudentData();
+                        // 2. Load Data in Parallel
+                        await Promise.all([
+                            this.loadStudentData(),
+                            this.loadNotifications()
+                        ]);
 
                     } catch (error) {
-                        console.error('Error:', error);
-                        alert('Error verifying access');
+                        console.error('Initialization Error:', error);
+                        alert('Error verifying access. Please login again.');
                         window.location.href = '/auth/';
                     }
                 },
@@ -514,68 +624,70 @@
                         if (data.success) {
                             this.studentInfo = data.data.student_info;
                             this.courses = data.data.courses;
-                            this.assignments = data.data.assignments;  // ← Real assignments
-                            this.recentResults = data.data.recent_results;  // ← Real results
+                            this.recentResults = data.data.recent_results;
                             this.timetable = data.data.timetable;
                             this.stats = data.data.stats;
+                            this.resources = data.data.resources || [];
+
+                            // Process assignments with custom logic for display
+                            this.assignments = this.processAssignments(data.data.assignments || []);
                         } else {
                             console.error('Error loading data:', data.error);
                         }
                     } catch (error) {
-                        console.error('Error loading student data:', error);
+                        console.error('Network Error loading student data:', error);
                     }
                 },
-                downloadTimetable() {
-                    if (!this.timetable.periods || this.timetable.periods.length === 0) {
-                        alert('No timetable available yet');
-                        return;
-                    }
 
-                    let timetableText = `
-EXCELLENCE ACADEMY
-STUDENT TIMETABLE
-Academic Year ${this.studentInfo.academic_year}
+                // --- Assignment Logic ---
+                processAssignments(assignments) {
+                    const now = new Date();
+                    return assignments.map(assignment => {
+                        const dueDate = new Date(assignment.due_date);
+                        const timeDiff = dueDate - now;
+                        const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+                        const is_past_due = timeDiff < 0;
 
-Student: ${this.studentInfo.full_name}
-Class: ${this.studentInfo.class}
-Student ID: ${this.studentInfo.student_id}
+                        let status_color, due_status;
 
-WEEKLY SCHEDULE
-================
+                        if (assignment.status === 'closed') {
+                            status_color = 'gray';
+                            due_status = 'Closed';
+                        } else if (is_past_due) {
+                            status_color = 'red';
+                            due_status = 'Overdue';
+                        } else if (daysDiff <= 1) {
+                            status_color = 'red';
+                            due_status = 'Due Today';
+                        } else if (daysDiff <= 3) {
+                            status_color = 'yellow';
+                            due_status = `${daysDiff} days left`;
+                        } else {
+                            status_color = 'blue';
+                            due_status = `${daysDiff} days left`;
+                        }
 
-`;
-
-                    this.timetable.periods.forEach(period => {
-                        timetableText += `\n${period.time}\n`;
-                        timetableText += `${'='.repeat(60)}\n`;
-
-                        this.timetable.days.forEach(day => {
-                            const dayData = period[day];
-                            if (dayData && dayData.type === 'class') {
-                                timetableText += `${day.toUpperCase().padEnd(12)} : ${dayData.subject.padEnd(20)} - ${dayData.teacher}\n`;
-                            } else if (dayData && dayData.type === 'break') {
-                                timetableText += `${day.toUpperCase().padEnd(12)} : BREAK\n`;
-                            }
-                        });
+                        return { ...assignment, is_past_due, status_color, due_status };
                     });
-
-                    timetableText += `\n\nGenerated on: ${new Date().toLocaleDateString()}\n`;
-
-                    const blob = new Blob([timetableText], { type: 'text/plain' });
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `Timetable_${this.studentInfo.first_name}_${this.studentInfo.last_name}.txt`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-
-                    alert('Timetable downloaded successfully!');
                 },
+
                 async handleFileUpload(event, assignment) {
                     const file = event.target.files[0];
                     if (!file) return;
+
+                    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                        alert('File size too large. Maximum 10MB allowed.');
+                        event.target.value = '';
+                        return;
+                    }
+
+                    // Confirmation for resubmission
+                    if (assignment.submitted) {
+                        if (!confirm(`Replace existing submission with "${file.name}"?`)) {
+                            event.target.value = '';
+                            return;
+                        }
+                    }
 
                     const formData = new FormData();
                     formData.append('assignment_id', assignment.id);
@@ -584,46 +696,140 @@ WEEKLY SCHEDULE
                     try {
                         const response = await fetch('/api/v1/students/assignments/submit/', {
                             method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-                            },
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` },
                             body: formData
                         });
 
                         const data = await response.json();
 
                         if (data.success) {
-                            alert(data.message);
-                            // Reload dashboard to show updated status
-                            await this.loadStudentData();
+                            alert('Assignment submitted successfully!');
+                            await this.loadStudentData(); // Refresh list
                         } else {
-                            alert('Error submitting assignment: ' + data.error);
+                            alert('Error: ' + (data.error || 'Submission failed'));
                         }
                     } catch (error) {
-                        console.error('Error:', error);
-                        alert('Error submitting assignment');
+                        console.error('Upload Error:', error);
+                        alert('Network error during upload.');
+                    } finally {
+                        event.target.value = ''; // Reset input
                     }
                 },
 
-                async viewCourseDetails(courseId) {
+                // --- Notifications ---
+                async loadNotifications() {
                     try {
-                        const response = await fetch(`/api/v1/students/courses/${courseId}/`, {
-                            headers: {
-                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-                                'Content-Type': 'application/json'
-                            }
+                        const response = await fetch('/api/v1/dashboard/notifications/', {
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
                         });
+                        const result = await response.json();
+                        if (result.success) {
+                            this.notifications = result.data.notifications;
+                            this.unreadCount = result.data.unread_count;
+                        }
+                    } catch (error) { console.error(error); }
+                },
 
+                async markAsRead(id) {
+                    try {
+                        await fetch(`/api/v1/dashboard/notifications/${id}/read/`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+                        });
+                        await this.loadNotifications();
+                    } catch (error) { console.error(error); }
+                },
+
+                async markAllRead() {
+                    try {
+                        await fetch('/api/v1/dashboard/notifications/mark-all-read/', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+                        });
+                        await this.loadNotifications();
+                    } catch (error) { console.error(error); }
+                },
+
+                // --- Utilities ---
+                async viewCourseDetails(courseName) {
+                    try {
+                        const response = await fetch(`/api/v1/students/courses/${courseName}/`, {
+                            headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+                        });
                         const data = await response.json();
-
                         if (data.success) {
                             this.selectedCourse = data.data;
                             this.showCourseModal = true;
                         }
                     } catch (error) {
-                        console.error('Error loading course details:', error);
-                        alert('Error loading course details');
+                        alert('Could not load course details');
                     }
+                },
+
+                downloadTimetable() {
+                    if (!this.timetable.periods || this.timetable.periods.length === 0) {
+                        alert('No timetable available yet');
+                        return;
+                    }
+
+                    // Build the timetable text content
+                    let timetableText = `
+UNIQUE SUCCESS ACADEMY
+STUDENT TIMETABLE
+Academic Year ${this.studentInfo.academic_year || 'Current'}
+
+Student: ${this.studentInfo.full_name || 'Student'}
+Class: ${this.studentInfo.class || 'N/A'}
+Student ID: ${this.studentInfo.student_id || 'N/A'}
+
+WEEKLY SCHEDULE
+================
+
+`;
+
+                    // Add each period
+                    this.timetable.periods.forEach(period => {
+                        timetableText += `\n${period.time}\n`;
+                        timetableText += `-`.repeat(50) + '\n';
+                        
+                        this.timetable.days.forEach(day => {
+                            const dayCapitalized = day.charAt(0).toUpperCase() + day.slice(1);
+                            const classInfo = period[day];
+                            
+                            if (classInfo && classInfo.subject) {
+                                if (classInfo.type === 'break') {
+                                    timetableText += `${dayCapitalized.padEnd(12)}: Break\n`;
+                                } else {
+                                    timetableText += `${dayCapitalized.padEnd(12)}: ${classInfo.subject}`;
+                                    if (classInfo.teacher) {
+                                        timetableText += ` (${classInfo.teacher})`;
+                                    }
+                                    if (classInfo.room) {
+                                        timetableText += ` - Room: ${classInfo.room}`;
+                                    }
+                                    timetableText += '\n';
+                                }
+                            } else {
+                                timetableText += `${dayCapitalized.padEnd(12)}: Free Period\n`;
+                            }
+                        });
+                        
+                        timetableText += '\n';
+                    });
+
+                    timetableText += `\n\nGenerated on: ${new Date().toLocaleString()}\n`;
+                    timetableText += `Unique Success Academy - Student Portal\n`;
+
+                    // Create and download the file
+                    const blob = new Blob([timetableText], { type: 'text/plain' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Timetable_${this.studentInfo.student_id || 'Student'}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
                 },
 
                 logout() {
@@ -634,7 +840,6 @@ WEEKLY SCHEDULE
                 }
             }
         }
-
     </script>
 </body>
 

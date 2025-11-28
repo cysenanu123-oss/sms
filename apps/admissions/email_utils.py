@@ -14,12 +14,12 @@ def send_student_credentials_email(student, username, password, parent_email):
         password: Student's temporary password
         parent_email: Parent's email to send credentials to
     """
-    subject = f'Welcome to Excellence Academy - Student Login Credentials for {student.first_name}'
+    subject = f'Welcome to Unique Success Academy - Student Login Credentials for {student.first_name}'
     
     message = f"""
 Dear Parent/Guardian,
 
-Congratulations! {student.first_name} {student.last_name} has been successfully enrolled at Excellence Academy.
+Congratulations! {student.first_name} {student.last_name} has been successfully enrolled at Unique Success Academy.
 
 STUDENT LOGIN CREDENTIALS:
 
@@ -45,8 +45,7 @@ Through the student portal, your child can:
 If you have any questions, please contact the school administration.
 
 Best regards,
-Excellence Academy Administration
-Email: {settings.EMAIL_HOST_USER}
+Unique Success Academy Administration
     """
     
     try:
@@ -76,7 +75,7 @@ def send_parent_credentials_email(parent, username, password, student_name):
         password: Parent's temporary password
         student_name: Name of the student (for context)
     """
-    subject = 'Excellence Academy - Parent Portal Access Credentials'
+    subject = 'Unique Success Academy - Parent Portal Access Credentials'
     
     # Get all children names
     student_names = ', '.join([
@@ -87,7 +86,7 @@ def send_parent_credentials_email(parent, username, password, student_name):
     message = f"""
 Dear {parent.full_name},
 
-Welcome to Excellence Academy! Your child/children have been successfully enrolled.
+Welcome to Unique Success Academy! Your child/children have been successfully enrolled.
 
 Your Children: {student_names}
 
@@ -113,7 +112,7 @@ Through the Parent Portal, you can:
 If you have any questions or need assistance logging in, please contact us at {settings.EMAIL_HOST_USER}
 
 Best regards,
-Excellence Academy Administration
+Unique Success Academy Administration
     """
     
     try:
@@ -137,12 +136,12 @@ def send_application_received_email(application):
     """
     Send confirmation email when application is received
     """
-    subject = 'Application Received - Excellence Academy'
+    subject = 'Application Received - Unique Success Academy'
     
     message = f"""
 Dear {application.parent_full_name},
 
-Thank you for submitting an application to Excellence Academy for {application.first_name} {application.last_name}.
+Thank you for submitting an application to Unique Success Academy for {application.first_name} {application.last_name}.
 
 APPLICATION DETAILS:
 
@@ -155,10 +154,10 @@ Your application is currently under review. We will contact you within 5-7 busin
 
 You can track your application status by contacting our admissions office or checking back with us using your application number: {application.application_number}
 
-Thank you for choosing Excellence Academy.
+Thank you for choosing Unique Success Academy.
 
 Best regards,
-Excellence Academy Admissions Team
+Unique Success Academy Admissions Team
 Email: {settings.EMAIL_HOST_USER}
 Phone: (School phone number)
     """
@@ -184,7 +183,7 @@ def send_exam_invitation_email(application):
     """
     Send entrance exam invitation to applicant
     """
-    subject = 'Entrance Examination Invitation - Excellence Academy'
+    subject = 'Entrance Examination Invitation - Unique Success Academy'
     
     message = f"""
 Dear {application.parent_full_name},
@@ -205,13 +204,13 @@ WHAT TO BRING:
 ✓ Valid ID
 ✓ Writing materials (pens, pencils, eraser)
 
-EXAM LOCATION: Excellence Academy Main Campus
+EXAM LOCATION: Unique Success Academy Main Campus
 CONTACT: {settings.EMAIL_HOST_USER}
 
 We look forward to meeting {application.first_name}!
 
 Best regards,
-Excellence Academy Admissions Team
+Unique Success Academy Admissions Team
     """
     
     try:
@@ -235,12 +234,12 @@ def send_application_rejection_email(application, reason=''):
     """
     Send rejection email to applicant
     """
-    subject = 'Application Status Update - Excellence Academy'
+    subject = 'Application Status Update - Unique Success Academy'
     
     message = f"""
 Dear {application.parent_full_name},
 
-Thank you for your interest in Excellence Academy.
+Thank you for your interest in Unique Success Academy.
 
 APPLICATION DETAILS:
 
@@ -254,10 +253,10 @@ After careful consideration, we regret to inform you that we are unable to offer
 
 We encourage you to reapply in the future. If you have any questions about this decision or would like feedback, please contact our admissions office.
 
-Thank you for considering Excellence Academy. We wish {application.first_name} all the best in their educational journey.
+Thank you for considering Unique Success Academy. We wish {application.first_name} all the best in their educational journey.
 
 Best regards,
-Excellence Academy Admissions Team
+Unique Success Academy Admissions Team
 Email: {settings.EMAIL_HOST_USER}
     """
     
@@ -290,7 +289,7 @@ def send_teacher_credentials_email(teacher_user, username, password, subjects, c
         subjects: List of subject names
         classes: List of class names
     """
-    subject = 'Welcome to Excellence Academy - Teacher Account Created'
+    subject = 'Welcome to Unique Success Academy - Teacher Account Created'
     
     subjects_list = ', '.join(subjects) if subjects else 'Not assigned yet'
     classes_list = ', '.join(classes) if classes else 'Not assigned yet'
@@ -298,7 +297,7 @@ def send_teacher_credentials_email(teacher_user, username, password, subjects, c
     message = f"""
 Dear {teacher_user.first_name} {teacher_user.last_name},
 
-Welcome to Excellence Academy! Your teacher account has been successfully created.
+Welcome to Unique Success Academy! Your teacher account has been successfully created.
 
 TEACHER LOGIN CREDENTIALS:
 
@@ -338,7 +337,7 @@ Phone: +233 XX XXX XXXX
 We're excited to have you join our teaching staff!
 
 Best regards,
-Excellence Academy Administration
+Unique Success Academy Administration
     """
     
     try:
