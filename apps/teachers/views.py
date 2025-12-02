@@ -9,7 +9,7 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 from django.db import transaction
 from apps.accounts.models import User
-from apps.academics.models import Class, Subject, ClassSubject, TeacherClassAssignment, Timetable, TimetableEntry
+from apps.academics.models import Class, Subject, ClassSubject, TeacherClassAssignment, Timetable, TimetableEntry, SchoolSettings
 from apps.admissions.models import Student
 from apps.attendance.models import Attendance, AttendanceRecord
 from apps.admissions.email_utils import send_teacher_credentials_email
@@ -21,8 +21,10 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
 from apps.dashboard.views import create_grade_notifications
 from apps.grades import models as grades_models
+from apps.grades.models import Grade
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -36,7 +38,18 @@ def get_teacher_dashboard_data(request):
             'success': False,
             'error': 'Teacher access required'
         }, status=status.HTTP_403_FORBIDDEN)
-    
+
+    # Get current term from school settings
+    school_settings = SchoolSettings.objects.first()
+    if not school_settings:
+        return Response({
+            'success': False,
+            'error': 'School settings not configured. Please contact admin.'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    current_term = school_settings.current_term
+    current_academic_year = school_settings.current_academic_year
+
     try:
         class_assignments = TeacherClassAssignment.objects.filter(
             teacher=user,
@@ -61,13 +74,14 @@ def get_teacher_dashboard_data(request):
             ).select_related('subject')
             
             subjects = [cs.subject.name for cs in class_subjects]
-            
-            thirty_days_ago = timezone.now().date() - timedelta(days=30)
+
+            # Get attendance for current term
             attendance_records = AttendanceRecord.objects.filter(
                 attendance__class_obj=class_obj,
-                attendance__date__gte=thirty_days_ago
+                attendance__academic_year=current_academic_year,
+                attendance__term=current_term
             )
-            
+
             total_records = attendance_records.count()
             present_records = attendance_records.filter(status='present').count()
             avg_attendance = (present_records / total_records * 100) if total_records > 0 else 0
@@ -83,9 +97,12 @@ def get_teacher_dashboard_data(request):
                 'is_class_teacher': assignment.is_class_teacher
             })
         
+        # Get pending assignments for current term
         pending_assignments = grades_models.Assignment.objects.filter(
             teacher=user,
-            due_date__gte=timezone.now().date()
+            due_date__gte=timezone.now().date(),
+            academic_year=current_academic_year,
+            term=current_term
         ).count()
         
         stats = {
@@ -144,7 +161,13 @@ def get_teacher_dashboard_data(request):
             'data': {
                 'my_classes': my_classes,
                 'stats': stats,
-                'today_schedule': today_schedule
+                'today_schedule': today_schedule,
+                'current_term': {
+                    'term': school_settings.get_current_term_display(),
+                    'academic_year': current_academic_year,
+                    'term_start': school_settings.term_start_date.isoformat() if school_settings.term_start_date else None,
+                    'term_end': school_settings.term_end_date.isoformat() if school_settings.term_end_date else None
+                }
             }
         })
         
@@ -856,9 +879,9 @@ def promote_students(request):
         from_class_id = request.data.get('from_class_id')
         to_class_id = request.data.get('to_class_id')
         academic_year = request.data.get('academic_year')
-        student_ids = request.data.get('student_ids', [])
+        student_ids = request.data.get('student_ids')
         
-        if not all([from_class_id, to_class_id, academic_year, student_ids]):
+        if not all([from_class_id, to_class_id, academic_year]) or student_ids is None:
             return Response({
                 'success': False,
                 'error': 'All fields are required'
@@ -2010,3 +2033,243 @@ def grade_assignments(request):
         except Exception as e:
             return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
+# ============================================
+# TEACHER REPORT DOWNLOAD FUNCTIONALITY
+# ============================================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def download_class_report(request, class_id):
+    """
+    Generate and download PDF report for a class
+    Query params:
+    - term: first/second/third
+    - academic_year: 2024/2025
+    - format: pdf/csv (default: pdf)
+    """
+    user = request.user
+
+    if user.role != 'teacher' and not user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Teacher access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        class_obj = Class.objects.get(id=class_id)
+
+        # Check access
+        has_access = TeacherClassAssignment.objects.filter(
+            teacher=user,
+            class_obj=class_obj,
+            is_active=True
+        ).exists()
+
+        if not has_access and not user.is_superuser:
+            return Response({
+                'success': False,
+                'error': 'You do not have access to this class'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        # Get query params
+        term = request.query_params.get('term', 'first')
+        academic_year = request.query_params.get('academic_year')
+        report_format = request.query_params.get('format', 'pdf')
+
+        if not academic_year:
+            settings = SchoolSettings.objects.first()
+            academic_year = settings.current_academic_year if settings else '2024/2025'
+
+        # Get students in class
+        students = Student.objects.filter(
+            current_class=class_obj,
+            status='active'
+        ).order_by('roll_number', 'first_name')
+
+        if report_format == 'csv':
+            return generate_csv_report(class_obj, students, term, academic_year)
+        else:
+            return generate_pdf_report(class_obj, students, term, academic_year)
+
+    except Class.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Class not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+
+
+def generate_csv_report(class_obj, students, term, academic_year):
+    """Generate CSV report"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{class_obj.name}_{term}_term_{academic_year.replace("/", "_")}.csv"'
+
+    writer = csv.writer(response)
+
+    # Header
+    writer.writerow([
+        f'{class_obj.name} - {term.capitalize()} Term {academic_year}'
+    ])
+    writer.writerow([])
+    writer.writerow([
+        'Roll No', 'Student ID', 'Name',
+        'Average Score', 'Attendance %', 'Status'
+    ])
+
+    # Get term display name
+    term_display = dict([
+        ('first', 'First Term'),
+        ('second', 'Second Term'),
+        ('third', 'Third Term')
+    ]).get(term, term)
+
+    # Student data
+    for student in students:
+        # Get grades for this term
+        grades = Grade.objects.filter(
+            student=student,
+            academic_year=academic_year,
+            term=term
+        )
+
+        if grades.exists():
+            total_score = sum(g.score for g in grades)
+            total_possible = sum(g.total_marks for g in grades)
+            avg_score = round((total_score / total_possible * 100), 1) if total_possible > 0 else 0
+        else:
+            avg_score = 'N/A'
+
+        # Get attendance for this term
+        try:
+            attendance_records = AttendanceRecord.objects.filter(
+                student=student,
+                attendance__academic_year=academic_year,
+                attendance__term=term
+            )
+            total_days = attendance_records.count()
+            present_days = attendance_records.filter(status='present').count()
+            attendance_rate = round((present_days / total_days * 100), 1) if total_days > 0 else 0
+        except:
+            attendance_rate = 'N/A'
+
+        writer.writerow([
+            student.roll_number or 'N/A',
+            student.student_id,
+            f"{student.first_name} {student.last_name}",
+            avg_score,
+            attendance_rate,
+            'Active'
+        ])
+
+    return response
+
+
+def generate_pdf_report(class_obj, students, term, academic_year):
+    """Generate PDF report"""
+    buffer = BytesIO()
+
+    # Create PDF
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    elements = []
+
+    # Styles
+    styles = getSampleStyleSheet()
+    title_style = styles['Title']
+    heading_style = styles['Heading2']
+
+    # Get term display name
+    term_display = dict([
+        ('first', 'First Term'),
+        ('second', 'Second Term'),
+        ('third', 'Third Term')
+    ]).get(term, term)
+
+    # Title
+    elements.append(Paragraph(f"{class_obj.name} - Class Report", title_style))
+    elements.append(Paragraph(f"{term_display} {academic_year}", heading_style))
+    elements.append(Spacer(1, 0.3*inch))
+
+    # Stats summary
+    stats_data = [
+        ['Total Students', str(students.count())],
+        ['Academic Year', academic_year],
+        ['Term', term_display],
+        ['Class Teacher', 'N/A'],
+    ]
+
+    stats_table = Table(stats_data, colWidths=[2*inch, 3*inch])
+    stats_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    elements.append(stats_table)
+    elements.append(Spacer(1, 0.5*inch))
+
+    # Student performance table
+    table_data = [['Roll No', 'Name', 'Avg Score', 'Attendance', 'Status']]
+
+    for student in students:
+        # Get grades for this term
+        grades = Grade.objects.filter(
+            student=student,
+            academic_year=academic_year,
+            term=term
+        )
+
+        if grades.exists():
+            total_score = sum(g.score for g in grades)
+            total_possible = sum(g.total_marks for g in grades)
+            avg_score = f"{round((total_score / total_possible * 100), 1)}%" if total_possible > 0 else 'N/A'
+        else:
+            avg_score = 'N/A'
+
+        # Get attendance for this term
+        try:
+            attendance_records = AttendanceRecord.objects.filter(
+                student=student,
+                attendance__academic_year=academic_year,
+                attendance__term=term
+            )
+            total_days = attendance_records.count()
+            present_days = attendance_records.filter(status='present').count()
+            attendance_rate = f"{round((present_days / total_days * 100), 1)}%" if total_days > 0 else 'N/A'
+        except:
+            attendance_rate = 'N/A'
+
+        table_data.append([
+            student.roll_number or 'N/A',
+            f"{student.first_name} {student.last_name}",
+            avg_score,
+            attendance_rate,
+            'Active'
+        ])
+
+    # Create table
+    table = Table(table_data, colWidths=[0.7*inch, 2.5*inch, 1*inch, 1*inch, 1*inch])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+
+    elements.append(table)
+
+    # Build PDF
+    doc.build(elements)
+
+    # Return response
+    buffer.seek(0)
+    response = HttpResponse(buffer, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{class_obj.name}_{term}_term_{academic_year.replace("/", "_")}.pdf"'
+
+    return response

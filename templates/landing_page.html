@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#E29B41">
     <title>Unique Success Academy - Welcome</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js" defer></script>
+    <link rel="icon" href="/static/images/logo1.png" type="image/png">
 </head>
+
 <body class="bg-gray-50">
     <!-- Navigation -->
     <nav class="bg-white shadow-lg fixed w-full top-0 z-50" x-data="{ mobileMenu: false }">
@@ -20,24 +24,25 @@
                         <p class="text-xs text-gray-600">Nurturing Future Leaders</p>
                     </div>
                 </div>
-                
+
                 <!-- Desktop Menu -->
                 <div class="hidden md:flex space-x-6 items-center">
                     <a href="#home" class="text-gray-700 hover:text-indigo-600">Home</a>
                     <a href="#about" class="text-gray-700 hover:text-indigo-600">About Us</a>
                     <a href="#programs" class="text-gray-700 hover:text-indigo-600">Programs</a>
-                    <a href="#apply" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">Apply Now</a>
+                    <a href="#apply" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">Apply
+                        Now</a>
                     <a href="/auth/" class="text-indigo-600 hover:text-indigo-800">
                         <i class="fas fa-sign-in-alt mr-2"></i>Login
                     </a>
                 </div>
-                
+
                 <!-- Mobile Menu Button -->
                 <button @click="mobileMenu = !mobileMenu" class="md:hidden text-gray-700">
                     <i class="fas fa-bars text-2xl"></i>
                 </button>
             </div>
-            
+
             <!-- Mobile Menu -->
             <div x-show="mobileMenu" class="md:hidden pb-4">
                 <a href="#home" class="block py-2 text-gray-700 hover:bg-gray-100 px-4">Home</a>
@@ -61,14 +66,16 @@
                         Empowering young minds through quality education and character development since 2010.
                     </p>
                     <div class="flex flex-wrap gap-4">
-                        <a href="#apply" class="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 text-lg font-semibold">
+                        <a href="#apply"
+                            class="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 text-lg font-semibold">
                             Apply Now
                         </a>
-                        <a href="#about" class="border-2 border-indigo-600 text-indigo-600 px-8 py-3 rounded-lg hover:bg-indigo-50 text-lg font-semibold">
+                        <a href="#about"
+                            class="border-2 border-indigo-600 text-indigo-600 px-8 py-3 rounded-lg hover:bg-indigo-50 text-lg font-semibold">
                             Learn More
                         </a>
                     </div>
-                    
+
                     <!-- Quick Stats -->
                     <div class="mt-12 grid grid-cols-3 gap-6">
                         <div class="text-center">
@@ -85,10 +92,11 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="hidden lg:block">
-                    <div class="bg-white rounded-2xl shadow-2xl p-8">
-                        <i class="fas fa-school text-indigo-600 text-9xl"></i>
+                    <div class="bg-white rounded-2xl shadow-2xl p-8 flex items-center justify-center">
+                        <img src="/static/images/logo.png" alt="Unique Success Academy Logo"
+                            class="w-150 h-auto max-w-md">
                     </div>
                 </div>
             </div>
@@ -101,33 +109,37 @@
             <div class="text-center mb-12">
                 <h2 class="text-4xl font-bold text-gray-900 mb-4">About Unique Success Academy</h2>
                 <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    We are committed to providing world-class education that prepares students for success in an ever-changing world.
+                    We are committed to providing world-class education that prepares students for success in an
+                    ever-changing world.
                 </p>
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="text-center p-6 bg-indigo-50 rounded-xl">
                     <div class="bg-indigo-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-book text-white text-2xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">Quality Education</h3>
-                    <p class="text-gray-700">Comprehensive curriculum designed to develop critical thinking and problem-solving skills.</p>
+                    <p class="text-gray-700">Comprehensive curriculum designed to develop critical thinking and
+                        problem-solving skills.</p>
                 </div>
-                
+
                 <div class="text-center p-6 bg-green-50 rounded-xl">
                     <div class="bg-green-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-users text-white text-2xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">Expert Teachers</h3>
-                    <p class="text-gray-700">Highly qualified and experienced educators dedicated to student success.</p>
+                    <p class="text-gray-700">Highly qualified and experienced educators dedicated to student success.
+                    </p>
                 </div>
-                
+
                 <div class="text-center p-6 bg-purple-50 rounded-xl">
                     <div class="bg-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                         <i class="fas fa-building text-white text-2xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">Modern Facilities</h3>
-                    <p class="text-gray-700">State-of-the-art classrooms, libraries, and laboratories for enhanced learning.</p>
+                    <p class="text-gray-700">State-of-the-art classrooms, libraries, and laboratories for enhanced
+                        learning.</p>
                 </div>
             </div>
         </div>
@@ -140,7 +152,7 @@
                 <h2 class="text-4xl font-bold text-gray-900 mb-4">Our Programs</h2>
                 <p class="text-xl text-gray-600">We offer comprehensive education across all levels</p>
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
                     <div class="bg-pink-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
@@ -150,16 +162,17 @@
                     <p class="text-gray-600 mb-4">Ages 1-3 years. Safe, nurturing environment for your little ones.</p>
                     <a href="#apply" class="text-indigo-600 hover:underline">Learn More →</a>
                 </div>
-                
+
                 <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
                     <div class="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
                         <i class="fas fa-child text-blue-600 text-xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">Pre-School</h3>
-                    <p class="text-gray-600 mb-4">Ages 3-5 years. Early childhood education through play-based learning.</p>
+                    <p class="text-gray-600 mb-4">Ages 3-5 years. Early childhood education through play-based learning.
+                    </p>
                     <a href="#apply" class="text-indigo-600 hover:underline">Learn More →</a>
                 </div>
-                
+
                 <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
                     <div class="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
                         <i class="fas fa-school text-green-600 text-xl"></i>
@@ -168,7 +181,7 @@
                     <p class="text-gray-600 mb-4">Grades 1-6. Building strong academic foundations.</p>
                     <a href="#apply" class="text-indigo-600 hover:underline">Learn More →</a>
                 </div>
-                
+
                 <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
                     <div class="bg-purple-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
                         <i class="fas fa-graduation-cap text-purple-600 text-xl"></i>
@@ -188,7 +201,8 @@
             <p class="text-xl text-indigo-100 mb-8">
                 Take the first step towards a brighter future. Apply now and become part of our learning community.
             </p>
-            <a href="/apply/" class="bg-white text-indigo-600 px-8 py-4 rounded-lg hover:bg-gray-100 text-lg font-semibold inline-block">
+            <a href="/apply/"
+                class="bg-white text-indigo-600 px-8 py-4 rounded-lg hover:bg-gray-100 text-lg font-semibold inline-block">
                 <i class="fas fa-file-alt mr-2"></i>Start Your Application
             </a>
         </div>
@@ -202,7 +216,7 @@
                     <h3 class="text-xl font-bold mb-4">Unique Success Academy</h3>
                     <p class="text-gray-400">Empowering minds, shaping futures.</p>
                 </div>
-                
+
                 <div>
                     <h3 class="text-xl font-bold mb-4">Quick Links</h3>
                     <ul class="space-y-2">
@@ -212,19 +226,21 @@
                         <li><a href="/auth/" class="text-gray-400 hover:text-white">Login</a></li>
                     </ul>
                 </div>
-                
+
                 <div>
                     <h3 class="text-xl font-bold mb-4">Contact Us</h3>
-                    <p class="text-gray-400 mb-2"><i class="fas fa-map-marker-alt mr-2"></i>123 Education Street, Accra</p>
+                    <p class="text-gray-400 mb-2"><i class="fas fa-map-marker-alt mr-2"></i>123 Education Street, Accra
+                    </p>
                     <p class="text-gray-400 mb-2"><i class="fas fa-phone mr-2"></i>0595554706 / 0595400367</p>
                     <p class="text-gray-400"><i class="fas fa-envelope mr-2"></i>info@excellenceacademy.edu.gh</p>
                 </div>
             </div>
-            
+
             <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
                 <p>© 2025 Unique Success Academy. All rights reserved.</p>
             </div>
         </div>
     </footer>
 </body>
+
 </html>

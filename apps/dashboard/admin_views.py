@@ -5,8 +5,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Count, Q, Avg
 from django.utils import timezone
+from django.db import transaction
 from datetime import timedelta
-from apps.admissions.models import StudentApplication, Student, Parent
+from apps.admissions.models import StudentApplication, Student, Parent, StudentPromotion
 from apps.academics.models import Class, Subject, SchoolSettings
 from apps.accounts.models import User
 
@@ -191,6 +192,203 @@ def promote_students_bulk(request):
             'error': 'Class not found'
         }, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ============================================
+# TERM MANAGEMENT ENDPOINTS
+# ============================================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_school_settings(request):
+    """Get school settings including current term"""
+    if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Admin access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        settings = SchoolSettings.objects.first()
+        if not settings:
+            return Response({
+                'success': False,
+                'error': 'School settings not found. Please configure school settings first.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        data = {
+            'school_name': settings.school_name,
+            'school_motto': settings.school_motto,
+            'school_address': settings.school_address,
+            'school_phone': settings.school_phone,
+            'school_email': settings.school_email,
+            'school_website': settings.school_website,
+            'current_academic_year': settings.current_academic_year,
+            'academic_year_start': settings.academic_year_start.isoformat() if settings.academic_year_start else None,
+            'academic_year_end': settings.academic_year_end.isoformat() if settings.academic_year_end else None,
+            'current_term': settings.current_term,
+            'current_term_display': settings.get_current_term_display(),
+            'term_start_date': settings.term_start_date.isoformat() if settings.term_start_date else None,
+            'term_end_date': settings.term_end_date.isoformat() if settings.term_end_date else None,
+            'grading_system': settings.grading_system,
+            'admission_fee': str(settings.admission_fee),
+            'application_fee': str(settings.application_fee),
+            'entrance_exam_required': settings.entrance_exam_required,
+            'exam_duration_minutes': settings.exam_duration_minutes,
+            'exam_pass_percentage': settings.exam_pass_percentage,
+        }
+
+        return Response({
+            'success': True,
+            'data': data
+        })
+
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_school_settings(request):
+    """Update school settings including term switching"""
+    if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Admin access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        settings = SchoolSettings.objects.first()
+        if not settings:
+            return Response({
+                'success': False,
+                'error': 'School settings not found. Please create school settings first.'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Update fields if provided
+        if 'current_term' in request.data:
+            old_term = settings.get_current_term_display()
+            settings.current_term = request.data['current_term']
+            new_term = settings.get_current_term_display()
+
+        if 'current_academic_year' in request.data:
+            settings.current_academic_year = request.data['current_academic_year']
+
+        if 'term_start_date' in request.data:
+            settings.term_start_date = request.data['term_start_date']
+
+        if 'term_end_date' in request.data:
+            settings.term_end_date = request.data['term_end_date']
+
+        if 'academic_year_start' in request.data:
+            settings.academic_year_start = request.data['academic_year_start']
+
+        if 'academic_year_end' in request.data:
+            settings.academic_year_end = request.data['academic_year_end']
+
+        # Update other fields
+        for field in ['school_name', 'school_motto', 'school_address', 'school_phone',
+                     'school_email', 'school_website', 'grading_system', 'admission_fee',
+                     'application_fee', 'entrance_exam_required', 'exam_duration_minutes',
+                     'exam_pass_percentage']:
+            if field in request.data:
+                setattr(settings, field, request.data[field])
+
+        settings.updated_by = request.user
+        settings.save()
+
+        return Response({
+            'success': True,
+            'message': 'School settings updated successfully',
+            'data': {
+                'current_term': settings.get_current_term_display(),
+                'current_academic_year': settings.current_academic_year
+            }
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_term_statistics(request):
+    """Get statistics for different terms"""
+    if request.user.role not in ['admin', 'super_admin'] and not request.user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Admin access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        from apps.grades.models import Grade, Assignment
+        from apps.attendance.models import Attendance
+
+        # Get all unique term/year combinations from existing data
+        terms_data = []
+
+        # Get unique term combinations from grades
+        grade_terms = Grade.objects.values('academic_year', 'term').distinct()
+
+        for item in grade_terms:
+            academic_year = item['academic_year']
+            term = item['term']
+
+            # Get statistics for this term
+            grades_count = Grade.objects.filter(
+                academic_year=academic_year,
+                term=term
+            ).count()
+
+            assignments_count = Assignment.objects.filter(
+                academic_year=academic_year,
+                term=term
+            ).count()
+
+            attendance_count = Attendance.objects.filter(
+                academic_year=academic_year,
+                term=term
+            ).count()
+
+            # Get term display name
+            term_display = dict([
+                ('first', 'First Term'),
+                ('second', 'Second Term'),
+                ('third', 'Third Term')
+            ]).get(term, term)
+
+            terms_data.append({
+                'academic_year': academic_year,
+                'term': term,
+                'term_display': term_display,
+                'grades_count': grades_count,
+                'assignments_count': assignments_count,
+                'attendance_records': attendance_count
+            })
+
+        # Sort by academic year and term
+        terms_data.sort(key=lambda x: (x['academic_year'], x['term']), reverse=True)
+
+        return Response({
+            'success': True,
+            'data': terms_data
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         return Response({
             'success': False,
             'error': str(e)

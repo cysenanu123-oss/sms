@@ -9,6 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" href="/static/images/logo1.png" type="image/png">
 </head>
 
 <body class="bg-gray-50" x-data="adminDashboard()" x-init="init()">
@@ -1270,12 +1271,31 @@
                     <!-- Academic Settings -->
                     <div class="bg-white rounded-lg shadow p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Academic Settings</h3>
+
+                        <!-- Current Term Status Banner -->
+                        <div class="mb-6 p-4 bg-indigo-50 border-l-4 border-indigo-500 rounded">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-indigo-900">Current Term</p>
+                                    <p class="text-lg font-bold text-indigo-600" x-text="settings.current_term_display || 'Not Set'"></p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-sm text-indigo-700">Academic Year</p>
+                                    <p class="text-lg font-bold text-indigo-900" x-text="settings.current_academic_year || 'Not Set'"></p>
+                                </div>
+                            </div>
+                            <div class="mt-2 text-sm text-indigo-700" x-show="settings.term_start_date && settings.term_end_date">
+                                <i class="fas fa-calendar mr-1"></i>
+                                <span x-text="settings.term_start_date"></span> to <span x-text="settings.term_end_date"></span>
+                            </div>
+                        </div>
+
                         <form @submit.prevent="saveAcademicSettings()">
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Current Academic
                                         Year</label>
-                                    <input type="text" x-model="settings.current_academic_year" placeholder="2024-2025"
+                                    <input type="text" x-model="settings.current_academic_year" placeholder="2024/2025"
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                                 </div>
                                 <div>
@@ -1286,6 +1306,16 @@
                                         <option value="second">Second Term</option>
                                         <option value="third">Third Term</option>
                                     </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Term Start Date</label>
+                                    <input type="date" x-model="settings.term_start_date"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Term End Date</label>
+                                    <input type="date" x-model="settings.term_end_date"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Grading System</label>
@@ -2256,12 +2286,29 @@
                     }
                 },
 
+                async loadSchoolSettings() {
+                    try {
+                        const response = await fetch('/dashboard/admin/settings/school/', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                            }
+                        });
+
+                        const data = await response.json();
+                        if (data.success) {
+                            this.settings = data.data;
+                        }
+                    } catch (error) {
+                        console.error('Error loading settings:', error);
+                    }
+                },
+
                 async saveSchoolSettings() {
                     this.savingSettings = true;
 
                     try {
-                        const response = await fetch('/api/v1/admin/settings/', {
-                            method: 'POST',
+                        const response = await fetch('/dashboard/admin/settings/school/update/', {
+                            method: 'PUT',
                             headers: {
                                 'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
                                 'Content-Type': 'application/json'
@@ -2272,13 +2319,17 @@
                         const data = await response.json();
 
                         if (data.success) {
-                            alert('Settings saved successfully!');
+                            alert('✅ Settings saved successfully!\n\n' +
+                                  'Current Term: ' + data.data.current_term + '\n' +
+                                  'Academic Year: ' + data.data.current_academic_year);
+                            // Reload to refresh all dashboards with new term
+                            await this.loadSchoolSettings();
                         } else {
                             alert('Error: ' + data.error);
                         }
                     } catch (error) {
                         console.error('Error saving settings:', error);
-                        alert('Error saving settings');
+                        alert('Error saving settings: ' + error.message);
                     } finally {
                         this.savingSettings = false;
                     }

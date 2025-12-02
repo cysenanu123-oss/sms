@@ -274,26 +274,178 @@ def create_resource_notifications(resource):
 
 
 def create_attendance_notification(student, date, status):
+
+
     """Notify parent about attendance"""
+
+
     try:
+
+
         from apps.admissions.models import Parent
+
+
         parent_relation = Parent.objects.filter(children=student).first()
+
+
         
+
+
         if parent_relation and parent_relation.user:
+
+
             status_text = {
+
+
                 'absent': 'was absent',
+
+
                 'late': 'arrived late',
+
+
                 'present': 'attended class'
+
+
             }.get(status, status)
+
+
             
+
+
             Notification.objects.create(
+
+
                 user=parent_relation.user,
+
+
                 title=f'Attendance - {student.first_name}',
+
+
                 message=f'Your child {status_text} on {date.strftime("%b %d, %Y")}',
+
+
                 notification_type='attendance',
+
+
                 icon='fas fa-calendar-check text-purple-600',
+
+
                 related_object_type='attendance',
+
+
                 related_object_id=None
+
+
             )
+
+
     except:
+
+
         pass
+
+
+
+
+
+@api_view(['GET'])
+
+
+@permission_classes([IsAuthenticated])
+
+
+def get_student_dashboard_data(request):
+
+
+    """Get student dashboard data"""
+
+
+    try:
+
+
+        student = Student.objects.get(user=request.user)
+
+
+        school_settings = SchoolSettings.objects.first()
+
+
+
+
+
+        # Check if the student has any results for the current term
+
+
+        results = ExamResult.objects.filter(
+
+
+            student=student,
+
+
+            exam__class_obj__academic_year=school_settings.current_academic_year,
+
+
+            exam__term=school_settings.current_term
+
+
+        )
+
+
+
+
+
+        if not results.exists():
+
+
+            return Response({
+
+
+                'success': True,
+
+
+                'message': f'Welcome to {school_settings.get_current_term_display()}',
+
+
+                'term_has_changed': True,
+
+
+            })
+
+
+
+
+
+        # If there are results, return the dashboard data
+
+
+        # (This part can be expanded to return more data)
+
+
+        return Response({
+
+
+            'success': True,
+
+
+            'data': {
+
+
+                'message': f'Welcome back to {school_settings.get_current_term_display()}',
+
+
+                'term_has_changed': False,
+
+
+            }
+
+
+        })
+
+
+
+
+
+    except Student.DoesNotExist:
+
+
+        return Response({'success': False, 'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
+

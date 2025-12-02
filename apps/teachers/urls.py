@@ -38,5 +38,6 @@ urlpatterns = [
     # Reports endpoints
     path('reports/attendance/', views.download_attendance_report, name='download-attendance-report'),
     path('reports/performance/', views.download_performance_report, name='download-performance-report'),
+    path('reports/class/<int:class_id>/download/', views.download_class_report, name='download-class-report'),
     path('assignments/grade/', views.grade_assignments, name='grade-assignments'),
 ]

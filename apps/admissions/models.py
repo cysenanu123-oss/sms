@@ -182,12 +182,13 @@ class Student(models.Model):
 
             max_attempts = 100
             for attempt in range(max_attempts):
-                random_digits = str(random.randint(10000, 99999))
+                random_digits = str(random.randint(100, 999))
+                year_suffix = str(timezone.now().year)[-2:]
 
                 if other_initial:
-                    potential_id = f"{first_initial}{other_initial}{last_initial}{random_digits}"
+                    potential_id = f"{first_initial}{other_initial}{last_initial}{random_digits}{year_suffix}"
                 else:
-                    potential_id = f"{first_initial}{last_initial}{random_digits}"
+                    potential_id = f"{first_initial}{last_initial}{random_digits}{year_suffix}"
 
                 if not Student.objects.filter(student_id=potential_id).exists():
                     self.student_id = potential_id

@@ -9,7 +9,7 @@ from django.db.models import Avg, Sum
 from datetime import timedelta
 
 from apps.admissions.models import Student
-from apps.academics.models import ClassSubject, Timetable, TimetableEntry
+from apps.academics.models import ClassSubject, Timetable, TimetableEntry, SchoolSettings
 from apps.grades.models import Assignment, Grade, AssignmentSubmission
 
 
@@ -38,9 +38,20 @@ def student_dashboard(request):
             'success': False,
             'error': 'Student profile not found'
         }, status=status.HTTP_404_NOT_FOUND)
-    
+
+    # Get current term from school settings
+    school_settings = SchoolSettings.objects.first()
+    if not school_settings:
+        return Response({
+            'success': False,
+            'error': 'School settings not configured. Please contact admin.'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    current_term = school_settings.current_term
+    current_academic_year = school_settings.current_academic_year
+
     current_class = student.current_class
-    
+
     if not current_class:
         return Response({
             'success': False,
@@ -56,7 +67,10 @@ def student_dashboard(request):
         'roll_number': student.roll_number or 'Not Assigned',
         'class': current_class.name,
         'class_id': current_class.id,
-        'academic_year': student.academic_year,
+        'academic_year': current_academic_year,
+        'current_term': school_settings.get_current_term_display(),
+        'term_start': school_settings.term_start_date.isoformat() if school_settings.term_start_date else None,
+        'term_end': school_settings.term_end_date.isoformat() if school_settings.term_end_date else None,
         'email': request.user.email,
         'phone': request.user.phone or 'Not Provided'
     }
@@ -68,10 +82,12 @@ def student_dashboard(request):
     
     courses = []
     for cs in class_subjects:
-        # Get average grade for this subject
+        # Get average grade for this subject (filtered by current term)
         subject_grades = Grade.objects.filter(
             student=student,
-            subject=cs.subject
+            subject=cs.subject,
+            academic_year=current_academic_year,
+            term=current_term
         )
         
         if subject_grades.exists():
@@ -94,10 +110,12 @@ def student_dashboard(request):
             'average_grade': avg_grade
         })
     
-    # Get pending assignments
+    # Get pending assignments (filtered by current term)
     pending_assignments = Assignment.objects.filter(
         class_obj=current_class,
-        status='active'
+        status='active',
+        academic_year=current_academic_year,
+        term=current_term
     ).select_related('subject').order_by('due_date')
     
     assignments_data = []
@@ -146,9 +164,11 @@ def student_dashboard(request):
             'status': assignment.status,
         })
     
-    # Get recent test results
+    # Get recent test results (filtered by current term)
     recent_results = Grade.objects.filter(
-        student=student
+        student=student,
+        academic_year=current_academic_year,
+        term=current_term
     ).select_related('subject').order_by('-exam_date')[:5]
     
     results_data = []
@@ -171,31 +191,35 @@ def student_dashboard(request):
     
     # Calculate stats
     total_courses = len(courses)
-    
-    # Average grade
-    all_grades = Grade.objects.filter(student=student)
+
+    # Average grade (for current term only)
+    all_grades = Grade.objects.filter(
+        student=student,
+        academic_year=current_academic_year,
+        term=current_term
+    )
     if all_grades.exists():
         total_score = 0
         total_possible = 0
         for grade in all_grades:
             total_score += grade.score
             total_possible += grade.total_marks
-        
+
         avg_percentage = (total_score / total_possible * 100) if total_possible > 0 else 0
         average_grade = f"{round(avg_percentage, 1)}%"
     else:
         average_grade = 'N/A'
     
-    # Attendance rate (last 30 days)
+    # Attendance rate (for current term)
     try:
         from apps.attendance.models import AttendanceRecord
-        thirty_days_ago = timezone.now().date() - timedelta(days=30)
-        
+
         attendance_records = AttendanceRecord.objects.filter(
             student=student,
-            attendance__date__gte=thirty_days_ago
+            attendance__academic_year=current_academic_year,
+            attendance__term=current_term
         )
-        
+
         total_days = attendance_records.count()
         present_days = attendance_records.filter(status='present').count()
         attendance_rate = round((present_days / total_days * 100), 1) if total_days > 0 else 0
@@ -461,6 +485,195 @@ def submit_assignment(request):
     except Exception as e:
         return Response({'success': False, 'error': f'Error submitting assignment: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_student_term_history(request):
+    """
+    Get list of all terms with data for this student
+    """
+    if request.user.role != 'student' and not request.user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Student access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        student = Student.objects.get(user=request.user)
+
+        # Get unique term/year combinations from student's grades
+        grade_terms = Grade.objects.filter(
+            student=student
+        ).values('academic_year', 'term').distinct().order_by('-academic_year', '-term')
+
+        terms_list = []
+        for item in grade_terms:
+            academic_year = item['academic_year']
+            term = item['term']
+
+            # Get term display name
+            term_display = dict([
+                ('first', 'First Term'),
+                ('second', 'Second Term'),
+                ('third', 'Third Term')
+            ]).get(term, term)
+
+            # Get counts for this term
+            grades_count = Grade.objects.filter(
+                student=student,
+                academic_year=academic_year,
+                term=term
+            ).count()
+
+            assignments_count = Assignment.objects.filter(
+                class_obj=student.current_class,
+                academic_year=academic_year,
+                term=term
+            ).count()
+
+            # Check if this is the current term
+            school_settings = SchoolSettings.objects.first()
+            is_current = (
+                school_settings and
+                school_settings.current_term == term and
+                school_settings.current_academic_year == academic_year
+            )
+
+            terms_list.append({
+                'academic_year': academic_year,
+                'term': term,
+                'term_display': term_display,
+                'grades_count': grades_count,
+                'assignments_count': assignments_count,
+                'is_current': is_current
+            })
+
+        return Response({
+            'success': True,
+            'data': terms_list
+        })
+
+    except Student.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Student profile not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_student_term_data(request):
+    """
+    Get student data for a specific term
+    Query params: academic_year, term
+    """
+    if request.user.role != 'student' and not request.user.is_superuser:
+        return Response({
+            'success': False,
+            'error': 'Student access required'
+        }, status=status.HTTP_403_FORBIDDEN)
+
+    academic_year = request.query_params.get('academic_year')
+    term = request.query_params.get('term')
+
+    if not academic_year or not term:
+        return Response({
+            'success': False,
+            'error': 'academic_year and term parameters are required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        student = Student.objects.get(user=request.user)
+
+        # Get grades for this term
+        grades = Grade.objects.filter(
+            student=student,
+            academic_year=academic_year,
+            term=term
+        ).select_related('subject').order_by('-exam_date')
+
+        grades_data = []
+        for grade in grades:
+            percentage = (grade.score / grade.total_marks * 100) if grade.total_marks > 0 else 0
+
+            grades_data.append({
+                'id': grade.id,
+                'subject': grade.subject.name if grade.subject else 'N/A',
+                'exam_name': grade.exam_name,
+                'exam_type': grade.exam_type,
+                'date': grade.exam_date.isoformat(),
+                'score': grade.score,
+                'total_marks': grade.total_marks,
+                'percentage': round(percentage, 1),
+                'grade': grade.grade,
+                'remarks': grade.remarks or ''
+            })
+
+        # Get assignments for this term
+        assignments = Assignment.objects.filter(
+            class_obj=student.current_class,
+            academic_year=academic_year,
+            term=term
+        ).select_related('subject').order_by('-due_date')
+
+        assignments_data = []
+        for assignment in assignments:
+            # Check if submitted
+            submission = AssignmentSubmission.objects.filter(
+                assignment=assignment,
+                student=student
+            ).first()
+
+            assignments_data.append({
+                'id': assignment.id,
+                'title': assignment.title,
+                'subject': assignment.subject.name if assignment.subject else 'General',
+                'due_date': assignment.due_date.isoformat() if assignment.due_date else None,
+                'total_marks': assignment.total_marks,
+                'submitted': submission is not None,
+                'score': submission.score if submission else None,
+                'status': submission.status if submission else 'Not Submitted'
+            })
+
+        # Calculate term average
+        if grades:
+            total_score = sum(g.score for g in grades)
+            total_possible = sum(g.total_marks for g in grades)
+            term_average = round((total_score / total_possible * 100), 1) if total_possible > 0 else 0
+        else:
+            term_average = 0
+
+        # Get term display name
+        term_display = dict([
+            ('first', 'First Term'),
+            ('second', 'Second Term'),
+            ('third', 'Third Term')
+        ]).get(term, term)
+
+        return Response({
+            'success': True,
+            'data': {
+                'term_info': {
+                    'academic_year': academic_year,
+                    'term': term,
+                    'term_display': term_display
+                },
+                'grades': grades_data,
+                'assignments': assignments_data,
+                'statistics': {
+                    'term_average': term_average,
+                    'total_grades': len(grades_data),
+                    'total_assignments': len(assignments_data)
+                }
+            }
+        })
+
+    except Student.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Student profile not found'
+        }, status=status.HTTP_404_NOT_FOUND)
 
 
 def get_student_timetable_helper(class_obj):

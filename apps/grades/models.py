@@ -29,6 +29,7 @@ class Grade(models.Model):
     grade = models.CharField(max_length=3)  # A+, A, B+, etc.
     
     academic_year = models.CharField(max_length=20)  # Changed to CharField to support "2024-2025" format
+    term = models.CharField(max_length=20, choices=(('first', 'First Term'), ('second', 'Second Term'), ('third', 'Third Term')), default='first')
     remarks = models.TextField(blank=True, null=True)  # Added remarks field
     
     created_at = models.DateTimeField(auto_now_add=True)
@@ -59,22 +60,32 @@ class Exam(models.Model):
         ('final', 'Final Exam'),
         ('assignment', 'Assignment'),
     )
-    
+
+    TERM_CHOICES = (
+        ('first', 'First Term'),
+        ('second', 'Second Term'),
+        ('third', 'Third Term'),
+    )
+
     name = models.CharField(max_length=200)
     exam_type = models.CharField(max_length=20, choices=EXAM_TYPE_CHOICES)
     class_obj = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='exams')
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='exams')
     date = models.DateField()
     total_marks = models.IntegerField(default=100)
-    
+
+    # Term tracking
+    academic_year = models.CharField(max_length=20, default='2024/2025')  # e.g., "2024/2025"
+    term = models.CharField(max_length=20, choices=TERM_CHOICES, default='first')
+
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_exams')
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         ordering = ['-date']
-    
+
     def __str__(self):
-        return f"{self.name} - {self.class_obj.name} - {self.subject.name}"
+        return f"{self.name} - {self.class_obj.name} - {self.subject.name} ({self.get_term_display()} {self.academic_year})"
 
 
 class ExamResult(models.Model):
@@ -129,35 +140,45 @@ class Assignment(models.Model):
         ('closed', 'Closed'),
         ('draft', 'Draft'),
     )
-    
+
+    TERM_CHOICES = (
+        ('first', 'First Term'),
+        ('second', 'Second Term'),
+        ('third', 'Third Term'),
+    )
+
     title = models.CharField(max_length=200)
     description = models.TextField()
     class_obj = models.ForeignKey(Class, on_delete=models.CASCADE, related_name='assignments')
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE, related_name='assignments', null=True, blank=True)
     teacher = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='given_assignments')
-    
+
     assigned_date = models.DateField(default=timezone.now)
     due_date = models.DateField()
     total_marks = models.IntegerField(default=100)
-    
+
     instructions = models.TextField(blank=True)
     attachment = models.FileField(upload_to='assignments/attachments/', null=True, blank=True)
-    
+
     # ✅ ADDED: Status field with default='active'
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
-    
+
+    # Term tracking
+    academic_year = models.CharField(max_length=20, default='2024/2025')  # e.g., "2024/2025"
+    term = models.CharField(max_length=20, choices=TERM_CHOICES, default='first')
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         ordering = ['-due_date']
         indexes = [
             models.Index(fields=['status', 'due_date']),
             models.Index(fields=['class_obj', 'status']),
         ]
-    
+
     def __str__(self):
-        return f"{self.title} - {self.class_obj.name}"
+        return f"{self.title} - {self.class_obj.name} ({self.get_term_display()} {self.academic_year})"
     
     @property
     def is_active(self):

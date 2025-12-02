@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from django.db.models import Count, Sum, Q
+from django.db.models import Count, Sum, Q, Avg, F
 from django.db import transaction
 
 from apps.accounts.models import User
@@ -11,6 +11,7 @@ from apps.admissions.models import Student, StudentApplication, Parent
 from apps.academics.models import Class, Subject, ClassSubject, TeacherClassAssignment, SchoolSettings
 from apps.finance.models import FeeStructure, StudentFee, Payment
 from apps.attendance.models import Attendance, AttendanceRecord
+from apps.grades.models import ExamResult
 
 
 @api_view(['GET'])
@@ -49,6 +50,9 @@ def get_students_list(request):
         present = AttendanceRecord.objects.filter(student=student, status='present').count()
         attendance_rate = (present / total_attendance * 100) if total_attendance > 0 else 0
         
+        # Calculate average grade
+        average_grade = ExamResult.objects.filter(student=student).aggregate(avg=Avg(F('score') * 100 / F('exam__total_marks')))['avg'] or 0
+
         students_data.append({
             'id': student.id,
             'student_id': student.student_id,
@@ -60,7 +64,7 @@ def get_students_list(request):
             'parent_name': parent.full_name if parent else 'N/A',
             'parent_contact': parent.phone if parent else 'N/A',
             'attendance_rate': round(attendance_rate, 1),
-            'average_grade': 87.3,  # TODO: Calculate from grades
+            'average_grade': round(average_grade, 1),
             'status': student.status,
             'date_of_birth': student.date_of_birth.isoformat() if student.date_of_birth else '',
             'blood_group': student.blood_group or 'Not specified',
@@ -91,6 +95,14 @@ def get_student_details(request, student_id):
         paid = sum([fee.amount_paid for fee in fees])
         balance = total_fees - paid
         
+        # Calculate attendance
+        total_attendance = AttendanceRecord.objects.filter(student=student).count()
+        present_attendance = AttendanceRecord.objects.filter(student=student, status='present').count()
+        attendance_rate = (present_attendance / total_attendance * 100) if total_attendance > 0 else 0
+        
+        # Calculate average grade
+        average_grade = ExamResult.objects.filter(student=student).aggregate(avg=Avg(F('score') * 100 / F('exam__total_marks')))['avg'] or 0
+
         student_data = {
             'id': student.id,
             'student_id': student.student_id,
@@ -110,8 +122,8 @@ def get_student_details(request, student_id):
             'status': student.status,
             'parent_name': parent.full_name if parent else '',
             'parent_contact': parent.phone if parent else '',
-            'attendance_rate': 95.5,  # Calculate actual
-            'average_grade': 87.3,  # Calculate actual
+            'attendance_rate': round(attendance_rate, 1),
+            'average_grade': round(average_grade, 1),
             'financial': {
                 'total_fees': float(total_fees),
                 'amount_paid': float(paid),
@@ -392,26 +404,26 @@ def manage_school_settings(request):
             'success': True,
             'data': {
                 'school_name': settings.school_name,
-                'school_email': settings.contact_email or '',
-                'school_phone': settings.contact_phone or '',
-                'school_address': settings.address or '',
+                'school_email': settings.school_email or '',
+                'school_phone': settings.school_phone or '',
+                'school_address': settings.school_address or '',
                 'current_academic_year': settings.current_academic_year,
                 'current_term': settings.current_term,
                 'grading_system': settings.grading_system or 'percentage'
             }
         })
-    
+
     elif request.method == 'POST':
         settings, created = SchoolSettings.objects.get_or_create(id=1)
-        
+
         settings.school_name = request.data.get('school_name', settings.school_name)
-        settings.contact_email = request.data.get('school_email', settings.contact_email)
-        settings.contact_phone = request.data.get('school_phone', settings.contact_phone)
-        settings.address = request.data.get('school_address', settings.address)
+        settings.school_email = request.data.get('school_email', settings.school_email)
+        settings.school_phone = request.data.get('school_phone', settings.school_phone)
+        settings.school_address = request.data.get('school_address', settings.school_address)
         settings.current_academic_year = request.data.get('current_academic_year', settings.current_academic_year)
         settings.current_term = request.data.get('current_term', settings.current_term)
         settings.grading_system = request.data.get('grading_system', 'percentage')
-        
+
         settings.save()
         
         return Response({

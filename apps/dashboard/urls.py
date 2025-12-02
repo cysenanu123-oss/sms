@@ -30,6 +30,12 @@ urlpatterns = [
     # Settings endpoints
     path('admin/settings/', complete_admin_views.manage_school_settings, name='admin-settings'),
 
+    # ========== TERM MANAGEMENT ENDPOINTS ==========
+    path('admin/settings/school/', admin_views.get_school_settings, name='get-school-settings'),
+    path('admin/settings/school/update/', admin_views.update_school_settings, name='update-school-settings'),
+    path('admin/settings/terms/statistics/', admin_views.get_term_statistics, name='get-term-statistics'),
+    path('admin/students/promote/', admin_views.promote_students_bulk, name='promote-students-bulk'),
+
     # ========== TIMETABLE MANAGEMENT ENDPOINTS ==========
     # Get time slots
     path('admin/timetable/time-slots/', timetable_views.get_time_slots, name='admin-time-slots'),
