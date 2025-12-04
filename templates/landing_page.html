@@ -4,239 +4,262 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#E29B41">
-    <title>Unique Success Academy - Welcome</title>
+    <meta name="theme-color" content="#800000">
+    <title>Unique Success Academy</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.3/cdn.min.js" defer></script>
     <link rel="icon" href="/static/images/logo1.png" type="image/png">
 </head>
 
-<body class="bg-gray-50">
-    <!-- Navigation -->
+<body class="bg-gray-50 font-sans antialiased">
     <nav class="bg-white shadow-lg fixed w-full top-0 z-50" x-data="{ mobileMenu: false }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-4">
+            <div class="flex justify-between items-center py-3 md:py-4">
                 <div class="flex items-center">
-                    <i class="fas fa-graduation-cap text-3xl text-indigo-600 mr-3"></i>
+                    <img src="/static/images/logo1.png" alt="Logo" class="w-10 h-10 md:w-12 md:h-12 mr-3">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Unique Success Academy</h1>
-                        <p class="text-xs text-gray-600">Nurturing Future Leaders</p>
+                        <h1 class="text-xl md:text-2xl font-bold text-gray-900 leading-tight">Unique Success Academy
+                        </h1>
+                        <p class="text-xs text-gray-600">Soli Deo Gloria</p>
                     </div>
                 </div>
 
-                <!-- Desktop Menu -->
-                <div class="hidden md:flex space-x-6 items-center">
-                    <a href="#home" class="text-gray-700 hover:text-indigo-600">Home</a>
-                    <a href="#about" class="text-gray-700 hover:text-indigo-600">About Us</a>
-                    <a href="#programs" class="text-gray-700 hover:text-indigo-600">Programs</a>
-                    <a href="#apply" class="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">Apply
-                        Now</a>
-                    <a href="/auth/" class="text-indigo-600 hover:text-indigo-800">
+                <div class="hidden md:flex space-x-8 items-center">
+                    <a href="#home" class="text-gray-700 hover:text-[#800000] font-medium transition">Home</a>
+                    <a href="#about" class="text-gray-700 hover:text-[#800000] font-medium transition">About Us</a>
+                    <a href="#programs" class="text-gray-700 hover:text-[#800000] font-medium transition">Programs</a>
+                    <a href="#apply"
+                        class="bg-[#800000] text-white px-6 py-2 rounded-lg hover:bg-[#600000] transition shadow-md">
+                        Apply Now
+                    </a>
+                    <a href="/auth/" class="text-[#800000] hover:text-[#600000] font-medium">
                         <i class="fas fa-sign-in-alt mr-2"></i>Login
                     </a>
                 </div>
 
-                <!-- Mobile Menu Button -->
-                <button @click="mobileMenu = !mobileMenu" class="md:hidden text-gray-700">
+                <button @click="mobileMenu = !mobileMenu" class="md:hidden text-gray-700 focus:outline-none p-2">
                     <i class="fas fa-bars text-2xl"></i>
                 </button>
             </div>
 
-            <!-- Mobile Menu -->
-            <div x-show="mobileMenu" class="md:hidden pb-4">
-                <a href="#home" class="block py-2 text-gray-700 hover:bg-gray-100 px-4">Home</a>
-                <a href="#about" class="block py-2 text-gray-700 hover:bg-gray-100 px-4">About Us</a>
-                <a href="#programs" class="block py-2 text-gray-700 hover:bg-gray-100 px-4">Programs</a>
-                <a href="#apply" class="block py-2 text-gray-700 hover:bg-gray-100 px-4">Apply Now</a>
-                <a href="/auth/" class="block py-2 text-indigo-600 hover:bg-gray-100 px-4">Login</a>
+            <div x-show="mobileMenu" x-transition.opacity class="md:hidden border-t border-gray-100 pb-4 bg-white">
+                <a href="#home"
+                    class="block py-3 text-gray-700 hover:bg-red-50 hover:text-[#800000] px-4 font-medium border-b border-gray-100">Home</a>
+                <a href="#about"
+                    class="block py-3 text-gray-700 hover:bg-red-50 hover:text-[#800000] px-4 font-medium border-b border-gray-100">About
+                    Us</a>
+                <a href="#programs"
+                    class="block py-3 text-gray-700 hover:bg-red-50 hover:text-[#800000] px-4 font-medium border-b border-gray-100">Programs</a>
+                <a href="#apply"
+                    class="block py-3 text-[#800000] font-bold hover:bg-red-50 px-4 border-b border-gray-100">Apply
+                    Now</a>
+                <a href="/auth/" class="block py-3 text-gray-600 hover:bg-gray-50 px-4">Login</a>
             </div>
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section id="home" class="pt-24 pb-16 bg-gradient-to-br from-indigo-50 to-purple-50">
+    <section id="home" class="pt-28 pb-12 md:pt-32 md:pb-20 bg-gradient-to-br from-red-50 via-white to-orange-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                <div>
-                    <h1 class="text-5xl font-bold text-gray-900 mb-6">
-                        Welcome to Unique Success Academy
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                <div class="text-center lg:text-left">
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-6 leading-tight">
+                        Welcome to <br class="hidden lg:block"><span class="text-[#800000]">Unique Success</span>
                     </h1>
-                    <p class="text-xl text-gray-700 mb-8">
+                    <p class="text-lg md:text-xl text-gray-700 mb-8 max-w-2xl mx-auto lg:mx-0">
                         Empowering young minds through quality education and character development since 2010.
                     </p>
-                    <div class="flex flex-wrap gap-4">
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                         <a href="#apply"
-                            class="bg-indigo-600 text-white px-8 py-3 rounded-lg hover:bg-indigo-700 text-lg font-semibold">
+                            class="bg-[#800000] text-white px-8 py-3.5 rounded-lg hover:bg-[#600000] text-lg font-semibold shadow-lg transition transform hover:-translate-y-0.5">
                             Apply Now
                         </a>
                         <a href="#about"
-                            class="border-2 border-indigo-600 text-indigo-600 px-8 py-3 rounded-lg hover:bg-indigo-50 text-lg font-semibold">
+                            class="border-2 border-[#800000] text-[#800000] px-8 py-3.5 rounded-lg hover:bg-red-50 text-lg font-semibold transition">
                             Learn More
                         </a>
                     </div>
 
-                    <!-- Quick Stats -->
-                    <div class="mt-12 grid grid-cols-3 gap-6">
-                        <div class="text-center">
-                            <p class="text-3xl font-bold text-indigo-600">500+</p>
-                            <p class="text-gray-600">Students</p>
+                    <div class="mt-12 grid grid-cols-3 gap-2 md:gap-6 divide-x divide-gray-200">
+                        <div class="text-center px-2">
+                            <p class="text-2xl md:text-3xl font-bold text-[#800000]">500+</p>
+                            <p class="text-sm md:text-base text-gray-600">Students</p>
                         </div>
-                        <div class="text-center">
-                            <p class="text-3xl font-bold text-indigo-600">50+</p>
-                            <p class="text-gray-600">Teachers</p>
+                        <div class="text-center px-2">
+                            <p class="text-2xl md:text-3xl font-bold text-[#800000]">50+</p>
+                            <p class="text-sm md:text-base text-gray-600">Teachers</p>
                         </div>
-                        <div class="text-center">
-                            <p class="text-3xl font-bold text-indigo-600">15+</p>
-                            <p class="text-gray-600">Years</p>
+                        <div class="text-center px-2">
+                            <p class="text-2xl md:text-3xl font-bold text-[#800000]">15+</p>
+                            <p class="text-sm md:text-base text-gray-600">Years</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="hidden lg:block">
-                    <div class="bg-white rounded-2xl shadow-2xl p-8 flex items-center justify-center">
-                        <img src="/static/images/logo.png" alt="Unique Success Academy Logo"
-                            class="w-150 h-auto max-w-md">
+                <div class="order-1 lg:order-2 relative px-4 lg:px-0">
+                    <div class="absolute -inset-4 bg-orange-100 rounded-full blur-3xl opacity-30"></div>
+
+                    <div
+                        class="bg-white rounded-2xl shadow-2xl overflow-hidden relative z-10 transform lg:rotate-2 hover:rotate-0 transition duration-500">
+
+                        <img src="/static/images/usa.png" alt="Unique Success Academy Banner"
+                            class="w-full h-auto mx-auto">
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- About Section -->
-    <section id="about" class="py-16 bg-white">
+    <section id="about" class="py-12 md:py-16 bg-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-12">
-                <h2 class="text-4xl font-bold text-gray-900 mb-4">About Unique Success Academy</h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    We are committed to providing world-class education that prepares students for success in an
-                    ever-changing world.
+            <div class="text-center mb-10 md:mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">About Us</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto px-2">
+                    Committed to providing world-class education that prepares students for an ever-changing world.
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="text-center p-6 bg-indigo-50 rounded-xl">
-                    <div class="bg-indigo-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-book text-white text-2xl"></i>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+                <div class="text-center p-6 bg-red-50 rounded-xl border border-red-100">
+                    <div
+                        class="bg-[#800000] w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                        <i class="fas fa-book text-white text-xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">Quality Education</h3>
-                    <p class="text-gray-700">Comprehensive curriculum designed to develop critical thinking and
-                        problem-solving skills.</p>
+                    <p class="text-gray-700 text-sm md:text-base">Comprehensive curriculum designed to develop critical
+                        thinking skills.</p>
                 </div>
 
-                <div class="text-center p-6 bg-green-50 rounded-xl">
-                    <div class="bg-green-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-users text-white text-2xl"></i>
+                <div class="text-center p-6 bg-orange-50 rounded-xl border border-orange-100">
+                    <div
+                        class="bg-yellow-600 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                        <i class="fas fa-users text-white text-xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">Expert Teachers</h3>
-                    <p class="text-gray-700">Highly qualified and experienced educators dedicated to student success.
-                    </p>
+                    <p class="text-gray-700 text-sm md:text-base">Highly qualified and experienced educators dedicated
+                        to student success.</p>
                 </div>
 
-                <div class="text-center p-6 bg-purple-50 rounded-xl">
-                    <div class="bg-purple-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-building text-white text-2xl"></i>
+                <div class="text-center p-6 bg-red-50 rounded-xl border border-red-100">
+                    <div
+                        class="bg-[#800000] w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                        <i class="fas fa-building text-white text-xl"></i>
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">Modern Facilities</h3>
-                    <p class="text-gray-700">State-of-the-art classrooms, libraries, and laboratories for enhanced
-                        learning.</p>
+                    <p class="text-gray-700 text-sm md:text-base">State-of-the-art classrooms, libraries, and
+                        laboratories.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Programs Section -->
-    <section id="programs" class="py-16 bg-gray-50">
+    <section id="programs" class="py-12 md:py-16 bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-12">
-                <h2 class="text-4xl font-bold text-gray-900 mb-4">Our Programs</h2>
-                <p class="text-xl text-gray-600">We offer comprehensive education across all levels</p>
+            <div class="text-center mb-10 md:mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Our Programs</h2>
+                <p class="text-lg text-gray-600">Comprehensive education across all levels</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
-                    <div class="bg-pink-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-baby text-pink-600 text-xl"></i>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+                <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden flex flex-col">
+                    <div class="h-48 w-full bg-gray-200 flex items-center justify-center">
+                        <i class="fas fa-baby text-4xl text-gray-400"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Baby Sitting</h3>
-                    <p class="text-gray-600 mb-4">Ages 1-3 years. Safe, nurturing environment for your little ones.</p>
-                    <a href="#apply" class="text-indigo-600 hover:underline">Learn More →</a>
+                    <div class="p-6 flex-grow">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Baby Sitting</h3>
+                        <p class="text-gray-600 text-sm mb-4">Ages 1-3 years. Safe, nurturing environment.</p>
+                        <a href="#apply"
+                            class="text-[#800000] font-semibold hover:underline text-sm uppercase tracking-wide">Learn
+                            More →</a>
+                    </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
-                    <div class="bg-blue-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-child text-blue-600 text-xl"></i>
+                <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden flex flex-col">
+                    <div class="h-48 w-full bg-gray-200 flex items-center justify-center">
+                        <i class="fas fa-child text-4xl text-gray-400"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Pre-School</h3>
-                    <p class="text-gray-600 mb-4">Ages 3-5 years. Early childhood education through play-based learning.
-                    </p>
-                    <a href="#apply" class="text-indigo-600 hover:underline">Learn More →</a>
+                    <div class="p-6 flex-grow">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Pre-School</h3>
+                        <p class="text-gray-600 text-sm mb-4">Ages 3-5 years. Early childhood play-based learning.</p>
+                        <a href="#apply"
+                            class="text-[#800000] font-semibold hover:underline text-sm uppercase tracking-wide">Learn
+                            More →</a>
+                    </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
-                    <div class="bg-green-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-school text-green-600 text-xl"></i>
+                <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden flex flex-col">
+                    <div class="h-48 w-full bg-gray-200 flex items-center justify-center">
+                        <i class="fas fa-school text-4xl text-gray-400"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Primary</h3>
-                    <p class="text-gray-600 mb-4">Grades 1-6. Building strong academic foundations.</p>
-                    <a href="#apply" class="text-indigo-600 hover:underline">Learn More →</a>
+                    <div class="p-6 flex-grow">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Primary</h3>
+                        <p class="text-gray-600 text-sm mb-4">Grades 1-6. Building strong academic foundations.</p>
+                        <a href="#apply"
+                            class="text-[#800000] font-semibold hover:underline text-sm uppercase tracking-wide">Learn
+                            More →</a>
+                    </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition">
-                    <div class="bg-purple-100 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-                        <i class="fas fa-graduation-cap text-purple-600 text-xl"></i>
+                <div class="bg-white rounded-xl shadow-md hover:shadow-xl transition overflow-hidden flex flex-col">
+                    <div class="h-48 w-full bg-gray-200 flex items-center justify-center">
+                        <i class="fas fa-graduation-cap text-4xl text-gray-400"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-2">Junior High</h3>
-                    <p class="text-gray-600 mb-4">JHS 1-3. Preparing students for secondary education.</p>
-                    <a href="#apply" class="text-indigo-600 hover:underline">Learn More →</a>
+                    <div class="p-6 flex-grow">
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Junior High</h3>
+                        <p class="text-gray-600 text-sm mb-4">JHS 1-3. Preparing students for secondary education.</p>
+                        <a href="#apply"
+                            class="text-[#800000] font-semibold hover:underline text-sm uppercase tracking-wide">Learn
+                            More →</a>
+                    </div>
                 </div>
+
             </div>
         </div>
     </section>
 
-    <!-- Application CTA -->
-    <section id="apply" class="py-16 bg-indigo-600">
+    <section id="apply" class="py-16 bg-[#800000]">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-4xl font-bold text-white mb-4">Ready to Join Unique Success Academy?</h2>
-            <p class="text-xl text-indigo-100 mb-8">
-                Take the first step towards a brighter future. Apply now and become part of our learning community.
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Ready to Join?</h2>
+            <p class="text-lg md:text-xl text-red-100 mb-8">
+                Take the first step towards a brighter future. Apply now.
             </p>
             <a href="/apply/"
-                class="bg-white text-indigo-600 px-8 py-4 rounded-lg hover:bg-gray-100 text-lg font-semibold inline-block">
-                <i class="fas fa-file-alt mr-2"></i>Start Your Application
+                class="bg-white text-[#800000] px-8 py-4 rounded-lg hover:bg-gray-100 text-lg font-semibold inline-block transition shadow-xl w-full sm:w-auto">
+                <i class="fas fa-file-alt mr-2"></i>Start Application
             </a>
         </div>
     </section>
 
-    <!-- Footer -->
     <footer class="bg-gray-900 text-white py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
                 <div>
                     <h3 class="text-xl font-bold mb-4">Unique Success Academy</h3>
-                    <p class="text-gray-400">Empowering minds, shaping futures.</p>
+                    <p class="text-gray-400 text-sm">Empowering minds, shaping futures.</p>
                 </div>
 
                 <div>
                     <h3 class="text-xl font-bold mb-4">Quick Links</h3>
-                    <ul class="space-y-2">
-                        <li><a href="#about" class="text-gray-400 hover:text-white">About Us</a></li>
-                        <li><a href="#programs" class="text-gray-400 hover:text-white">Programs</a></li>
-                        <li><a href="/apply/" class="text-gray-400 hover:text-white">Apply Now</a></li>
-                        <li><a href="/auth/" class="text-gray-400 hover:text-white">Login</a></li>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#about" class="text-gray-400 hover:text-white transition">About Us</a></li>
+                        <li><a href="#programs" class="text-gray-400 hover:text-white transition">Programs</a></li>
+                        <li><a href="/apply/" class="text-gray-400 hover:text-white transition">Apply Now</a></li>
+                        <li><a href="/auth/" class="text-gray-400 hover:text-white transition">Login</a></li>
                     </ul>
                 </div>
 
                 <div>
                     <h3 class="text-xl font-bold mb-4">Contact Us</h3>
-                    <p class="text-gray-400 mb-2"><i class="fas fa-map-marker-alt mr-2"></i>123 Education Street, Accra
+                    <p class="text-gray-400 mb-2 text-sm"><i class="fas fa-map-marker-alt mr-2"></i>Lakeside Estate,
+                        Infantry Rd, Accra</p>
+                    <p class="text-gray-400 mb-2 text-sm"><i class="fas fa-phone mr-2"></i>0595554706/0595400336</p>
+                    <p class="text-gray-400 text-sm"><i class="fas fa-envelope mr-2"></i>info@excellenceacademy.edu.gh
                     </p>
-                    <p class="text-gray-400 mb-2"><i class="fas fa-phone mr-2"></i>0595554706 / 0595400367</p>
-                    <p class="text-gray-400"><i class="fas fa-envelope mr-2"></i>info@excellenceacademy.edu.gh</p>
                 </div>
             </div>
 
-            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500 text-sm">
                 <p>© 2025 Unique Success Academy. All rights reserved.</p>
             </div>
         </div>
